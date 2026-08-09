@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pitch Coach - Lo-Fi Prototype</title>
+<style>
+  :root{
+    --ink:#2b2b2b; --line:#8a8a8a; --faint:#c9c9c9; --bg:#f4f3f0; --paper:#fdfdfc;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  body{background:#3a3a3a; min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:24px 12px; gap:14px;}
+  .hint{color:#bbb; font-size:13px; text-align:center; max-width:420px;}
+  .phone{width:375px; height:760px; background:var(--paper); border-radius:28px; border:3px solid #111;
+    overflow:hidden; position:relative; display:flex; flex-direction:column; box-shadow:0 12px 40px rgba(0,0,0,.45);}
+  .screen{display:none; flex:1; flex-direction:column; overflow-y:auto;}
+  .screen.active{display:flex;}
+  .topbar{padding:14px 16px 10px; border-bottom:1.5px dashed var(--line); display:flex; align-items:center; gap:10px; background:var(--bg);}
+  .topbar .back{border:1.5px solid var(--ink); background:none; border-radius:6px; padding:4px 10px; font-size:13px; cursor:pointer;}
+  .topbar h1{font-size:16px; font-weight:700; color:var(--ink);}
+  .body{padding:18px 16px; display:flex; flex-direction:column; gap:14px; flex:1;}
+  .box{border:1.5px solid var(--line); border-radius:8px; padding:14px; background:var(--paper);}
+  .box.dashed{border-style:dashed; color:#777; text-align:center;}
+  .btn{display:block; width:100%; padding:13px; border:2px solid var(--ink); border-radius:8px; background:var(--ink);
+    color:#fff; font-size:15px; font-weight:600; cursor:pointer; text-align:center;}
+  .btn.ghost{background:none; color:var(--ink);}
+  .btn.small{padding:8px 10px; font-size:13px; width:auto;}
+  .btn:disabled{opacity:.35; cursor:not-allowed;}
+  .note{font-size:12px; color:#888;}
+  h2{font-size:20px; color:var(--ink); line-height:1.3;}
+  p{font-size:14px; color:#555; line-height:1.45;}
+  .spacer{flex:1;}
+  .row{display:flex; gap:10px; align-items:center;}
+  .song{border:1.5px solid var(--line); border-radius:8px; padding:12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;}
+  .song .meta{font-size:12px; color:#888;}
+  .pill{border:1.5px solid var(--line); border-radius:99px; padding:2px 10px; font-size:11px; color:#666;}
+  .sketch{border:1.5px dashed var(--faint); border-radius:8px; background:repeating-linear-gradient(45deg,#fafafa,#fafafa 8px,#f1f1f1 8px,#f1f1f1 16px);
+    display:flex; align-items:center; justify-content:center; color:#999; font-size:12px;}
+  .meter-wrap{display:flex; flex-direction:column; align-items:center; gap:10px; padding:10px 0;}
+  .meter{width:210px; height:210px; border-radius:50%; border:3px solid var(--ink); display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:6px; transition:background .4s;}
+  .meter .state{font-size:22px; font-weight:800; color:var(--ink);}
+  .meter .sub{font-size:13px; color:#666;}
+  .chordbar{display:flex; gap:6px; justify-content:center;}
+  .chordbar .c{border:1.5px solid var(--line); border-radius:6px; padding:6px 10px; font-size:13px; color:#888;}
+  .chordbar .c.now{border-color:var(--ink); color:var(--ink); font-weight:700; background:#eee;}
+  .bar{height:14px; border:1.5px solid var(--line); border-radius:99px; overflow:hidden; background:#fff;}
+  .bar i{display:block; height:100%; background:#9c9c9c;}
+  .check{display:flex; gap:10px; align-items:flex-start; cursor:pointer; font-size:14px; color:#444;}
+  .check input{width:20px; height:20px; margin-top:1px;}
+  .modal{position:absolute; inset:0; background:rgba(0,0,0,.45); display:none; align-items:center; justify-content:center; padding:24px; z-index:20;}
+  .modal.open{display:flex;}
+  .modal .card{background:var(--paper); border:2px solid var(--ink); border-radius:12px; padding:20px; display:flex; flex-direction:column; gap:12px; width:100%;}
+  .progress{height:10px; border:1.5px solid var(--ink); border-radius:99px; overflow:hidden;}
+  .progress i{display:block; height:100%; width:0%; background:var(--ink); transition:width .3s linear;}
+  .timeline{display:flex; height:34px; border:1.5px solid var(--line); border-radius:6px; overflow:hidden;}
+  .timeline div{flex:1; display:flex; align-items:center; justify-content:center; font-size:11px; color:#666; border-right:1px dashed var(--faint);}
+  .timeline div:last-child{border-right:none;}
+  .section-pick .timeline div{cursor:pointer;}
+  .section-pick .timeline div.sel{background:#ddd; font-weight:700; color:var(--ink);}
+  .stat{display:flex; justify-content:space-between; font-size:14px; color:#444; padding:8px 0; border-bottom:1px dashed var(--faint);}
+  .stat b{color:var(--ink);}
+  .flag{font-size:13px; color:#555; padding:6px 0;}
+  #roll{border:1.5px solid var(--line); border-radius:8px; width:100%; background:#1d1d1d;}
+  .drill-row{display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px dashed var(--faint); font-size:13px; color:#444; cursor:pointer;}
+  .drill-row:last-child{border-bottom:none;}
+  #drillCv{border:1.5px solid var(--line); border-radius:8px; width:100%; background:#1d1d1d;}
+  .mapbar{width:375px; display:flex; flex-wrap:wrap; gap:5px; justify-content:center;}
+  .mapbar button{font-size:10px; padding:4px 7px; border-radius:5px; border:1px solid #777; background:#2e2e2e; color:#ccc; cursor:pointer;}
+  .mapbar button.here{background:#ddd; color:#111; font-weight:700;}
+  .badge{position:absolute; top:10px; right:12px; font-size:10px; border:1px solid var(--line); border-radius:99px; padding:2px 8px; color:#888; background:var(--paper); z-index:5;}
+</style>
+</head>
+<body>
+
+<div class="hint">Lo-fi clickable prototype - Pitch Coach MVP (mobile). Click through, or jump to any screen with the map below.</div>
+
+<div class="phone">
+<div class="badge" id="tierBadge">FREE tier</div>
+
+<!-- 1. Sign in -->
+<section class="screen active" id="s-signin">
+  <div class="body">
+    <div class="spacer"></div>
+    <div class="sketch" style="height:70px">[ logo ]</div>
+    <h2>Pitch Coach</h2>
+    <p>Practice singing with your own instrumentals. Live feedback, no judgment.</p>
+    <div class="spacer"></div>
+    <button class="btn" onclick="go('s-onboard1')">Sign up with email</button>
+    <button class="btn ghost" onclick="go('s-onboard1')">Continue with Google / Apple</button>
+    <button class="btn ghost" onclick="go('s-library')">I already have an account</button>
+    <div class="spacer"></div>
+  </div>
+</section>
+
+<!-- 2. Onboarding -->
+<section class="screen" id="s-onboard1">
+  <div class="body">
+    <div class="spacer"></div>
+    <div class="sketch" style="height:150px">[ illustration: person singing, meter ]</div>
+    <h2>We coach your key and steadiness</h2>
+    <p>You bring an instrumental you have the rights to. We listen while you sing and tell you when you drift out of key or wobble - not whether you sound like the original artist.</p>
+    <div class="spacer"></div>
+    <button class="btn" onclick="go('s-onboard2')">Next</button>
+  </div>
+</section>
+<section class="screen" id="s-onboard2">
+  <div class="body">
+    <div class="spacer"></div>
+    <div class="sketch" style="height:150px">[ illustration: simple meter states ]</div>
+    <h2>Simple feedback, no jargon</h2>
+    <p>While you sing you'll see one of three states: <b>in the chord</b>, <b>in the key</b>, or <b>off</b> - plus whether your note is <b>steady</b> or <b>wandering</b>. No frequencies, no cents.</p>
+    <div class="spacer"></div>
+    <button class="btn" onclick="go('s-library')">Let's go</button>
+  </div>
+</section>
+
+<!-- 3. Library -->
+<section class="screen" id="s-library">
+  <div class="topbar"><h1>Your songs</h1><div class="spacer"></div><span class="pill" id="capPill">2 / 3 saved</span></div>
+  <div class="body">
+    <div class="song" onclick="go('s-ready')">
+      <div><b>Golden Hour (instr.)</b><div class="meta">Key: G major - 4 sessions</div></div><span>&rsaquo;</span>
+    </div>
+    <div class="song" onclick="go('s-ready')">
+      <div><b>Midnight Drive (instr.)</b><div class="meta">Key: A minor - 1 session</div></div><span>&rsaquo;</span>
+    </div>
+    <div class="box dashed" id="slot3">empty slot</div>
+    <div class="spacer"></div>
+    <button class="btn" onclick="tryAddSong()">+ Add a song</button>
+    <p class="note" style="text-align:center">Free plan: up to 3 saved songs.
+      <a href="#" onclick="toggleFull(event)" id="fullToggle" style="color:#888">demo: simulate full library</a></p>
+  </div>
+</section>
+
+<!-- 4. Import -->
+<section class="screen" id="s-import">
+  <div class="topbar"><button class="back" onclick="go('s-library')">&lsaquo;</button><h1>Add a song</h1></div>
+  <div class="body">
+    <p>Pick an instrumental track from your device. MP3, WAV or M4A.</p>
+    <div class="box dashed" style="padding:40px 14px; cursor:pointer" onclick="pickFile()">
+      [ file picker ]<br><br>Tap to browse files
+    </div>
+    <div class="box" id="pickedFile" style="display:none"><b>my_song_instrumental.mp3</b><div class="note">3:42 - 8.1 MB</div></div>
+    <div class="spacer"></div>
+    <button class="btn" id="importNext" disabled onclick="go('s-rights')">Next</button>
+    <p class="note">We can't pull songs from Spotify, Apple Music or YouTube - bring a file you own.</p>
+  </div>
+</section>
+
+<!-- 5. Rights checkbox -->
+<section class="screen" id="s-rights">
+  <div class="topbar"><button class="back" onclick="go('s-import')">&lsaquo;</button><h1>One quick thing</h1></div>
+  <div class="body">
+    <div class="sketch" style="height:90px">[ illustration: checkmark doc ]</div>
+    <p>Pitch Coach only works with files you have the rights to use, for your own private practice.</p>
+    <label class="check">
+      <input type="checkbox" id="rightsCheck" onchange="document.getElementById('rightsBtn').disabled=!this.checked">
+      <span>I have the rights to use this file, and I'll use it for personal practice only.</span>
+    </label>
+    <div class="spacer"></div>
+    <button class="btn" id="rightsBtn" disabled onclick="startAnalysis()">Upload &amp; analyze</button>
+    <button class="btn ghost" onclick="go('s-library')">Cancel</button>
+  </div>
+</section>
+
+<!-- 6. Analyzing -->
+<section class="screen" id="s-analyzing">
+  <div class="body">
+    <div class="spacer"></div>
+    <div class="sketch" style="height:110px">[ animation: listening waveform ]</div>
+    <h2>Figuring out the key &amp; chords...</h2>
+    <p>Usually takes 10-30 seconds. We're mapping the chord progression so we can coach you against it.</p>
+    <div class="progress"><i id="anBar"></i></div>
+    <div class="spacer"></div>
+    <p class="note" style="text-align:center">demo controls:</p>
+    <div class="row">
+      <button class="btn small ghost" style="flex:1" onclick="finishAnalysis(true)">simulate success</button>
+      <button class="btn small ghost" style="flex:1" onclick="finishAnalysis(false)">simulate failure</button>
+    </div>
+  </div>
+</section>
+
+<!-- 7. Analysis failed -->
+<section class="screen" id="s-anfail">
+  <div class="body">
+    <div class="spacer"></div>
+    <div class="sketch" style="height:90px">[ illustration: shrug ]</div>
+    <h2>We couldn't read that one</h2>
+    <p>This track was hard to analyze - that happens with very dense or low-quality mixes. A cleaner, well-produced instrumental usually works best.</p>
+    <div class="spacer"></div>
+    <button class="btn" onclick="go('s-import')">Try another file</button>
+    <button class="btn ghost" onclick="go('s-library')">Back to my songs</button>
+  </div>
+</section>
+
+<!-- 8. Song ready / pick section -->
+<section class="screen section-pick" id="s-ready">
+  <div class="topbar"><button class="back" onclick="go('s-library')">&lsaquo;</button><h1>my_song_instrumental</h1></div>
+  <div class="body">
+    <div class="box"><b>Key: G major</b><div class="note">Chords detected: G - C - D - Em</div></div>
+    <p><b>Pick a section to practice</b></p>
+    <div class="timeline" id="sections">
+      <div onclick="pickSection(this)">Verse 1</div>
+      <div onclick="pickSection(this)" class="sel">Chorus</div>
+      <div onclick="pickSection(this)">Verse 2</div>
+      <div onclick="pickSection(this)">Bridge</div>
+    </div>
+    <div class="box dashed">[ waveform strip with section highlighted ]</div>
+    <div class="spacer"></div>
+    <button class="btn" onclick="askMic()">Start singing</button>
+    <button class="btn ghost" onclick="go('s-history')">Past sessions</button>
+  </div>
+  <div class="modal" id="micModal">
+    <div class="card">
+      <b>"Pitch Coach" would like to access the microphone</b>
+      <p class="note">We listen locally on your device to give live feedback. Your voice is never uploaded.</p>
+      <button class="btn small" onclick="micAllow()">Allow</button>
+      <button class="btn small ghost" onclick="micDeny()">Don't allow</button>
+    </div>
+  </div>
+</section>
+
+<!-- 9. Mic denied help -->
+<section class="screen" id="s-micdenied">
+  <div class="body">
+    <div class="spacer"></div>
+    <div class="sketch" style="height:90px">[ illustration: crossed-out mic ]</div>
+    <h2>We need your mic to coach you</h2>
+    <p>Live feedback works by listening while you sing - on your device only. Nothing is recorded or uploaded.</p>
+    <div class="box"><b>Enable it in Settings</b><div class="note">Settings -> Pitch Coach -> Microphone</div></div>
+    <div class="spacer"></div>
+    <button class="btn" onclick="go('s-ready')">I've enabled it</button>
+    <button class="btn ghost" onclick="go('s-library')">Maybe later</button>
+  </div>
+</section>
+
+<!-- 10. Practice / live meter -->
+<section class="screen" id="s-practice">
+  <div class="topbar"><h1>Chorus - my_song_instrumental</h1><div class="spacer"></div><span class="pill" id="stateChip">in the chord</span></div>
+  <div class="body" style="gap:10px">
+    <div class="chordbar" id="chordbar">
+      <span class="c">G</span><span class="c now">C</span><span class="c">D</span><span class="c">Em</span>
+    </div>
+    <canvas id="roll" width="343" height="400"></canvas>
+    <div class="row" style="justify-content:space-between">
+      <span class="note" id="meterSub">steady</span>
+      <span class="note">sing any highlighted tone</span>
+    </div>
+    <div>
+      <div class="note" style="margin-bottom:4px">confidence</div>
+      <div class="bar"><i id="confBar" style="width:78%"></i></div>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn" onclick="endSession()">End session</button>
+  </div>
+</section>
+
+<!-- 11. Recap (free) -->
+<section class="screen" id="s-recap">
+  <div class="topbar"><h1>Nice work!</h1></div>
+  <div class="body">
+    <div class="box">
+      <div class="stat"><span>Time in key</span><b>81%</b></div>
+      <div class="stat"><span>Time on chord tones</span><b>64%</b></div>
+      <div class="stat" style="border-bottom:none"><span>Steadiness</span><b>Mostly steady</b></div>
+    </div>
+    <div class="box">
+      <b>Worth another look</b>
+      <div class="flag">- Around 0:51 - drifted out of key</div>
+      <div class="flag">- 0:58-1:02 - long note wandered</div>
+    </div>
+    <div class="box dashed" id="proTeaser" style="cursor:pointer" onclick="go('s-upsell')">
+      [PRO] Get a written coaching note on <i>why</i> this keeps happening
+    </div>
+    <div class="spacer"></div>
+    <button class="btn" onclick="saveSession()">Save session</button>
+    <button class="btn ghost" onclick="go('s-practice')">Sing it again</button>
+  </div>
+</section>
+
+<!-- 12. Pro upsell -->
+<section class="screen" id="s-upsell">
+  <div class="topbar"><button class="back" onclick="go('s-recap')">&lsaquo;</button><h1>Pitch Coach Pro</h1></div>
+  <div class="body">
+    <div class="sketch" style="height:90px">[ illustration: coach note ]</div>
+    <h2>Your own AI coach</h2>
+    <div class="box"><b>Written coaching notes</b><p class="note">"You tend to go flat on sustained high notes after 1:30..."</p></div>
+    <div class="box"><b>Progress over time</b><p class="note">Trend view across sessions on the same song.</p></div>
+    <div class="box"><b>Targeted drills</b><p class="note">Train your shakiest notes and intervals with audio + visual guides.</p></div>
+    <div class="box"><b>Unlimited saved songs</b><p class="note">No 3-song cap.</p></div>
+    <div class="spacer"></div>
+    <button class="btn" onclick="upgrade()">Try Pro - $X / month</button>
+    <button class="btn ghost" onclick="go('s-recap')">Not now</button>
+  </div>
+</section>
+
+<!-- 13. Pro summary -->
+<section class="screen" id="s-prosummary">
+  <div class="topbar"><h1>Coach's note</h1><div class="spacer"></div><span class="pill">PRO</span></div>
+  <div class="body">
+    <div class="box">
+      <p><b>This session:</b> You were solidly in key for most of the chorus. Two patterns to watch: you drift flat on notes you hold longer than ~2 seconds, and the jump into the D chord (around 0:51) keeps pulling you out of key. Try singing that transition slowly, without the track, five times.</p>
+    </div>
+    <div class="box">
+      <b>Trend - this song, 5 sessions</b>
+      <div class="sketch" style="height:80px; margin-top:8px">[ line chart: time-in-key trending up ]</div>
+    </div>
+    <div class="box">
+      <b>Your shakiest notes &amp; intervals in this song</b>
+      <div class="drill-row" onclick="openDrill(0)"><span><b>B4</b> - goes flat when held</span><span class="pill">train &rsaquo;</span></div>
+      <div class="drill-row" onclick="openDrill(1)"><span><b>D5</b> - wanders on long notes</span><span class="pill">train &rsaquo;</span></div>
+      <div class="drill-row" onclick="openDrill(2)"><span><b>G4 &rarr; D5</b> - jump lands sharp</span><span class="pill">train &rsaquo;</span></div>
+      <div class="drill-row" onclick="openDrill(3)"><span><b>D4 &rarr; G4</b> - overshoots the 4th</span><span class="pill">train &rsaquo;</span></div>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn" onclick="saveSession()">Save session</button>
+  </div>
+</section>
+
+<!-- 13b. Pro drill -->
+<section class="screen" id="s-train">
+  <div class="topbar"><button class="back" onclick="go('s-prosummary')">&lsaquo;</button><h1 id="drillTitle">Drill</h1><div class="spacer"></div><span class="pill">PRO</span></div>
+  <div class="body" style="gap:10px">
+    <p class="note" id="drillHint">From your last 5 sessions on this song. Listen first, then sing it back.</p>
+    <canvas id="drillCv" width="343" height="240"></canvas>
+    <div class="row" style="justify-content:space-between">
+      <span class="note" id="drillState">ready</span>
+      <span class="note" id="drillSteady"></span>
+    </div>
+    <div class="row">
+      <button class="btn small ghost" style="flex:1" onclick="playDrill(false)">&#9654; Listen</button>
+      <button class="btn small" style="flex:1" onclick="playDrill(true)">&#127908; Sing it back</button>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn ghost" onclick="go('s-prosummary')">Done</button>
+  </div>
+</section>
+
+<!-- 14. Saved -->
+<section class="screen" id="s-saved">
+  <div class="body">
+    <div class="spacer"></div>
+    <div class="sketch" style="height:90px">[ illustration: checkmark ]</div>
+    <h2>Session saved</h2>
+    <p>Added to your history for <b>my_song_instrumental</b>.</p>
+    <div class="spacer"></div>
+    <button class="btn" onclick="go('s-practice')">Practice again</button>
+    <button class="btn ghost" onclick="go('s-library')">Back to my songs</button>
+  </div>
+</section>
+
+<!-- 15. History -->
+<section class="screen" id="s-history">
+  <div class="topbar"><button class="back" onclick="go('s-ready')">&lsaquo;</button><h1>Past sessions</h1></div>
+  <div class="body">
+    <div class="song"><div><b>Today - Chorus</b><div class="meta">81% in key - mostly steady</div></div></div>
+    <div class="song"><div><b>Mon - Chorus</b><div class="meta">74% in key - wandering</div></div></div>
+    <div class="song"><div><b>Sun - Verse 1</b><div class="meta">69% in key - wandering</div></div></div>
+    <div class="box dashed" style="cursor:pointer" onclick="go('s-upsell')">[PRO] See your trend across sessions</div>
+  </div>
+</section>
+
+<!-- cap modal at phone level -->
+<div class="modal" id="capModal">
+  <div class="card">
+    <b>Your library is full</b>
+    <p class="note">The free plan holds 3 songs. Go Pro for unlimited songs, or remove one to make room.</p>
+    <button class="btn small" onclick="closeCap(); go('s-upsell')">See Pro</button>
+    <button class="btn small ghost" onclick="closeCap()">Remove a song</button>
+    <button class="btn small ghost" onclick="closeCap()">Cancel</button>
+  </div>
+</div>
+</div>
+
+<div class="mapbar" id="mapbar"></div>
+
+<script>
+  var isPro = false;
+  var libraryFull = false;
+  var screens = [
+    ['s-signin','Sign in'],['s-onboard1','Onboard 1'],['s-onboard2','Onboard 2'],['s-library','Library'],
+    ['s-import','Import'],['s-rights','Rights'],['s-analyzing','Analyzing'],['s-anfail','Failed'],
+    ['s-ready','Song ready'],['s-micdenied','Mic denied'],['s-practice','Practice'],['s-recap','Recap'],
+    ['s-upsell','Pro upsell'],['s-prosummary','Pro note'],['s-train','Drill'],['s-saved','Saved'],['s-history','History']
+  ];
+  var mapbar = document.getElementById('mapbar');
+  screens.forEach(function(s){
+    var b = document.createElement('button');
+    b.textContent = s[1]; b.dataset.target = s[0];
+    b.onclick = function(){ go(s[0]); };
+    mapbar.appendChild(b);
+  });
+
+  function go(id){
+    document.querySelectorAll('.screen').forEach(function(el){ el.classList.remove('active'); });
+    document.getElementById(id).classList.add('active');
+    document.querySelectorAll('.mapbar button').forEach(function(b){
+      b.classList.toggle('here', b.dataset.target === id);
+    });
+    if(id === 's-practice') startMeter(); else stopMeter();
+    if(id === 's-analyzing') runProgress();
+  }
+
+  function tryAddSong(){
+    if(libraryFull && !isPro){ document.getElementById('capModal').classList.add('open'); }
+    else { resetImport(); go('s-import'); }
+  }
+  function closeCap(){ document.getElementById('capModal').classList.remove('open'); }
+  function toggleFull(e){
+    e.preventDefault();
+    libraryFull = !libraryFull;
+    document.getElementById('capPill').textContent = libraryFull ? '3 / 3 saved' : '2 / 3 saved';
+    document.getElementById('slot3').textContent = libraryFull ? 'Acoustic Demo (instr.) - Key: C major' : 'empty slot';
+    document.getElementById('fullToggle').textContent = libraryFull ? 'demo: simulate space available' : 'demo: simulate full library';
+  }
+
+  function resetImport(){
+    document.getElementById('pickedFile').style.display = 'none';
+    document.getElementById('importNext').disabled = true;
+    document.getElementById('rightsCheck').checked = false;
+    document.getElementById('rightsBtn').disabled = true;
+  }
+  function pickFile(){
+    document.getElementById('pickedFile').style.display = 'block';
+    document.getElementById('importNext').disabled = false;
+  }
+
+  var anTimer = null;
+  function startAnalysis(){ go('s-analyzing'); }
+  function runProgress(){
+    var bar = document.getElementById('anBar'); var w = 0;
+    bar.style.width = '0%';
+    clearInterval(anTimer);
+    anTimer = setInterval(function(){
+      w = Math.min(w + 4, 92); bar.style.width = w + '%';
+      if(w >= 92) clearInterval(anTimer);
+    }, 400);
+  }
+  function finishAnalysis(ok){
+    clearInterval(anTimer);
+    document.getElementById('anBar').style.width = '100%';
+    setTimeout(function(){ go(ok ? 's-ready' : 's-anfail'); }, 300);
+  }
+
+  function pickSection(el){
+    var sibs = el.parentNode.children;
+    for(var i = 0; i < sibs.length; i++) sibs[i].classList.remove('sel');
+    el.classList.add('sel');
+  }
+
+  function askMic(){ document.getElementById('micModal').classList.add('open'); }
+  function micAllow(){ document.getElementById('micModal').classList.remove('open'); go('s-practice'); }
+  function micDeny(){ document.getElementById('micModal').classList.remove('open'); go('s-micdenied'); }
+
+  /* horizontal piano-roll practice view (screenshot-1 style) */
+  var meterTimer = null;
+  var KEY_PCS = [7,9,11,0,2,4,6];               // G major
+  var CHORDS = [
+    {name:'G',  tones:[62,67,71,74]},
+    {name:'C',  tones:[60,64,67,72]},
+    {name:'D',  tones:[62,66,69,74]},
+    {name:'Em', tones:[64,67,71,76]}
+  ];
+  var CHORD_SECS = 4, PX_PER_SEC = 46;
+  var MIN_M = 58, MAX_M = 78;                    // Bb3..F#5 view range
+  var NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  var tSec = 0, pitchHist = [], simPitch = 64, simTarget = 64, driftBias = 0, driftT = 0;
+  var lastState = 'in the chord';
+
+  function startMeter(){
+    stopMeter();
+    tSec = 0; pitchHist = []; simPitch = 64; simTarget = 64; driftBias = 0; driftT = 0;
+    meterTimer = setInterval(stepRoll, 50);
+  }
+  function stopMeter(){ clearInterval(meterTimer); }
+
+  function chordAt(t){ return CHORDS[Math.floor(t / CHORD_SECS) % CHORDS.length]; }
+
+  function stepRoll(){
+    tSec += 0.05;
+    var ch = chordAt(tSec);
+
+    // update chord chips
+    var idx = Math.floor(tSec / CHORD_SECS) % CHORDS.length;
+    var cs = document.getElementById('chordbar').children;
+    for(var k = 0; k < cs.length; k++) cs[k].classList.toggle('now', k === idx);
+
+    // simulated singer: hops between chord tones, wobbles, occasionally drifts
+    if(Math.random() < 0.012){
+      var opts = ch.tones.filter(function(m){ return Math.abs(m - simPitch) <= 7; });
+      simTarget = opts[Math.floor(Math.random() * opts.length)] || ch.tones[1];
+    }
+    if(driftT <= 0 && Math.random() < 0.004){ driftBias = (Math.random() < 0.5 ? -1 : 1) * 0.06; driftT = 50; }
+    if(driftT > 0){ driftT--; if(driftT === 0) driftBias = 0; }
+    simPitch += (simTarget - simPitch) * 0.12 + (Math.random() - 0.5) * 0.22 + driftBias;
+    pitchHist.push({t: tSec, m: simPitch});
+    while(pitchHist.length && pitchHist[0].t < tSec - 8) pitchHist.shift();
+
+    // classify current frame (states only, no numbers)
+    var nearChord = Math.min.apply(null, ch.tones.map(function(m){ return Math.abs(simPitch - m); }));
+    var pc = ((Math.round(simPitch) % 12) + 12) % 12;
+    var state = nearChord < 0.45 ? 'in the chord' : (KEY_PCS.indexOf(pc) >= 0 ? 'in the key' : 'off');
+    lastState = state;
+    var recent = pitchHist.slice(-20).map(function(p){ return p.m; });
+    var spread = Math.max.apply(null, recent) - Math.min.apply(null, recent);
+    document.getElementById('stateChip').textContent = state;
+    document.getElementById('meterSub').textContent = spread < 0.9 ? 'steady' : 'wandering';
+    document.getElementById('confBar').style.width = Math.round(Math.max(10, 100 - nearChord * 55)) + '%';
+
+    drawRoll();
+  }
+
+  function drawRoll(){
+    var cv = document.getElementById('roll'), ctx = cv.getContext('2d');
+    var W = cv.width, H = cv.height;
+    var GUT = 30, PIANO_H = 44, TOP = 8;
+    var gridH = H - PIANO_H - TOP - 6;
+    var rowH = gridH / (MAX_M - MIN_M);
+    var playX = GUT + 78;                        // fixed playhead
+    function yOf(m){ return TOP + (MAX_M - m) * rowH; }
+    function xOf(t){ return playX + (t - tSec) * PX_PER_SEC; }
+
+    ctx.fillStyle = '#1d1d1d'; ctx.fillRect(0, 0, W, H);
+
+    // lane lines + note letters (naturals only, like the reference)
+    ctx.font = '10px sans-serif';
+    for(var m = MIN_M; m <= MAX_M; m++){
+      var pc = m % 12, y = yOf(m);
+      if([0,2,4,5,7,9,11].indexOf(pc) >= 0){
+        ctx.strokeStyle = pc === 0 ? '#5a5a5a' : '#333';
+        ctx.beginPath(); ctx.moveTo(GUT, y); ctx.lineTo(W - 4, y); ctx.stroke();
+        ctx.fillStyle = '#9a9a9a';
+        ctx.fillText(NAMES[pc] + (pc === 0 ? Math.floor(m / 12 - 1) : ''), 4, y + 3);
+      }
+    }
+
+    // chord-tone target bars per chord segment (cyan, like reference)
+    var t0 = tSec - (playX - GUT) / PX_PER_SEC, t1 = tSec + (W - playX) / PX_PER_SEC;
+    var seg = Math.floor(t0 / CHORD_SECS);
+    for(; seg * CHORD_SECS < t1; seg++){
+      if(seg < 0) continue;
+      var ch = CHORDS[seg % CHORDS.length];
+      var xA = Math.max(GUT, xOf(seg * CHORD_SECS) + 2);
+      var xB = Math.min(W - 4, xOf((seg + 1) * CHORD_SECS) - 2);
+      if(xB <= xA) continue;
+      ch.tones.forEach(function(m){
+        var y = yOf(m);
+        ctx.fillStyle = 'rgba(90,205,215,0.85)';
+        ctx.beginPath();
+        ctx.roundRect(xA, y - rowH * 0.42, xB - xA, rowH * 0.84, 4);
+        ctx.fill();
+      });
+    }
+
+    // playhead
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+    ctx.beginPath(); ctx.moveTo(playX, TOP); ctx.lineTo(playX, TOP + gridH); ctx.stroke();
+
+    // pitch trace, colored by proximity to chord tones
+    for(var i = 1; i < pitchHist.length; i++){
+      var a = pitchHist[i - 1], b = pitchHist[i];
+      var chB = chordAt(b.t);
+      var d = Math.min.apply(null, chB.tones.map(function(m){ return Math.abs(b.m - m); }));
+      ctx.strokeStyle = d < 0.45 ? '#eafccf' : (d < 1.2 ? '#e8d48a' : '#e06048');
+      ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(xOf(a.t), yOf(a.m)); ctx.lineTo(xOf(b.t), yOf(b.m)); ctx.stroke();
+    }
+
+    // piano strip at bottom, current chord tones highlighted
+    var pTop = H - PIANO_H - 2;
+    var whites = [];
+    for(var m2 = MIN_M; m2 <= MAX_M; m2++) if([1,3,6,8,10].indexOf(m2 % 12) < 0) whites.push(m2);
+    var wW = (W - 8) / whites.length;
+    var chNow = chordAt(tSec);
+    whites.forEach(function(m, i){
+      var x = 4 + i * wW;
+      ctx.fillStyle = chNow.tones.indexOf(m) >= 0 ? 'rgba(90,205,215,0.9)' : '#f2f2ee';
+      ctx.fillRect(x, pTop, wW - 1.5, PIANO_H);
+    });
+    whites.forEach(function(m, i){
+      var hasSharp = [0,2,5,7,9].indexOf(m % 12) >= 0 && m < MAX_M;
+      if(hasSharp){
+        var x = 4 + (i + 1) * wW - wW * 0.3;
+        ctx.fillStyle = chNow.tones.indexOf(m + 1) >= 0 ? 'rgba(60,160,170,1)' : '#222';
+        ctx.fillRect(x, pTop, wW * 0.6, PIANO_H * 0.6);
+      }
+    });
+  }
+  /* Pro drills: unstable notes & intervals, audio + visualization */
+  var DRILLS = [
+    {title:'Hold B4 steady',      hint:'You tend to go flat holding this note. Listen, then hold it for 2 beats.', notes:[71], dur:[2.0]},
+    {title:'Hold D5 steady',      hint:'This one wanders on long notes. Listen, then hold it for 2 beats.',        notes:[74], dur:[2.0]},
+    {title:'Jump G4 to D5',       hint:'You land sharp on this jump. Listen to the interval, then sing both notes.', notes:[67,74], dur:[1.0,1.4]},
+    {title:'Jump D4 to G4',       hint:'You overshoot this fourth. Listen to the interval, then sing both notes.',   notes:[62,67], dur:[1.0,1.4]}
+  ];
+  var curDrill = 0, drillTimer = null, drillT = 0, drillTrace = [], drillSing = false, audioCtx = null;
+
+  function openDrill(i){
+    curDrill = i;
+    document.getElementById('drillTitle').textContent = DRILLS[i].title;
+    document.getElementById('drillHint').textContent = DRILLS[i].hint;
+    document.getElementById('drillState').textContent = 'ready';
+    document.getElementById('drillSteady').textContent = '';
+    drillTrace = []; drillT = -1;
+    go('s-train');
+    drawDrill();
+  }
+
+  function midiFreq(m){ return 440 * Math.pow(2, (m - 69) / 12); }
+  function playTone(m, at, dur){
+    var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = 'triangle'; o.frequency.value = midiFreq(m);
+    g.gain.setValueAtTime(0, at);
+    g.gain.linearRampToValueAtTime(0.28, at + 0.04);
+    g.gain.setValueAtTime(0.28, at + dur - 0.12);
+    g.gain.linearRampToValueAtTime(0, at + dur);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(at); o.stop(at + dur);
+  }
+
+  function playDrill(sing){
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    var d = DRILLS[curDrill], t0 = audioCtx.currentTime + 0.1, acc = 0;
+    d.notes.forEach(function(m, i){ playTone(m, t0 + acc, d.dur[i]); acc += d.dur[i]; });
+    drillSing = sing; drillT = 0; drillTrace = [];
+    document.getElementById('drillState').textContent = sing ? 'sing!' : 'listen...';
+    document.getElementById('drillSteady').textContent = '';
+    clearInterval(drillTimer);
+    var total = acc + 0.3;
+    drillTimer = setInterval(function(){
+      drillT += 0.05;
+      if(drillSing){
+        var tgt = targetAt(d, drillT);
+        if(tgt !== null){
+          var last = drillTrace.length ? drillTrace[drillTrace.length - 1].m : tgt + (Math.random() - 0.5);
+          var m = last + (tgt - last) * 0.2 + (Math.random() - 0.5) * 0.3 + (drillT > 0.8 ? -0.008 : 0);
+          drillTrace.push({t: drillT, m: m});
+        }
+      }
+      drawDrill();
+      if(drillT >= total){
+        clearInterval(drillTimer);
+        finishDrill(d);
+      }
+    }, 50);
+  }
+
+  function targetAt(d, t){
+    var acc = 0;
+    for(var i = 0; i < d.notes.length; i++){
+      if(t >= acc && t < acc + d.dur[i]) return d.notes[i];
+      acc += d.dur[i];
+    }
+    return null;
+  }
+
+  function finishDrill(d){
+    if(!drillSing){ document.getElementById('drillState').textContent = 'your turn - Sing it back'; return; }
+    var devs = drillTrace.map(function(p){ return Math.abs(p.m - targetAt(d, p.t)); }).filter(function(x){ return !isNaN(x); });
+    var avg = devs.reduce(function(a, b){ return a + b; }, 0) / (devs.length || 1);
+    var res = avg < 0.3 ? 'steady - nice!' : (avg < 0.6 ? 'close - a little wandering' : 'wandering - try it slower');
+    document.getElementById('drillState').textContent = 'done';
+    document.getElementById('drillSteady').textContent = res;
+  }
+
+  function drawDrill(){
+    var cv = document.getElementById('drillCv'), ctx = cv.getContext('2d');
+    var W = cv.width, H = cv.height, GUT = 30;
+    var d = DRILLS[curDrill];
+    var lo = Math.min.apply(null, d.notes) - 4, hi = Math.max.apply(null, d.notes) + 4;
+    var rowH = (H - 16) / (hi - lo);
+    var total = d.dur.reduce(function(a, b){ return a + b; }, 0) + 0.3;
+    function yOf(m){ return 8 + (hi - m) * rowH; }
+    function xOf(t){ return GUT + (t / total) * (W - GUT - 8); }
+
+    ctx.fillStyle = '#1d1d1d'; ctx.fillRect(0, 0, W, H);
+    ctx.font = '10px sans-serif';
+    for(var m = lo; m <= hi; m++){
+      var pc = m % 12, y = yOf(m);
+      if([0,2,4,5,7,9,11].indexOf(pc) >= 0){
+        ctx.strokeStyle = pc === 0 ? '#5a5a5a' : '#333';
+        ctx.beginPath(); ctx.moveTo(GUT, y); ctx.lineTo(W - 4, y); ctx.stroke();
+        ctx.fillStyle = '#9a9a9a';
+        ctx.fillText(NAMES[pc] + Math.floor(m / 12 - 1), 4, y + 3);
+      }
+    }
+    // target note bars
+    var acc = 0;
+    d.notes.forEach(function(m, i){
+      var y = yOf(m);
+      ctx.fillStyle = 'rgba(90,205,215,0.85)';
+      ctx.beginPath();
+      ctx.roundRect(xOf(acc) + 2, y - rowH * 0.42, xOf(acc + d.dur[i]) - xOf(acc) - 4, rowH * 0.84, 4);
+      ctx.fill();
+      acc += d.dur[i];
+    });
+    // progress playhead
+    if(drillT >= 0 && drillT <= total){
+      ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+      ctx.beginPath(); ctx.moveTo(xOf(drillT), 8); ctx.lineTo(xOf(drillT), H - 8); ctx.stroke();
+    }
+    // sung trace
+    for(var i = 1; i < drillTrace.length; i++){
+      var a = drillTrace[i - 1], b = drillTrace[i];
+      var tgt = targetAt(d, b.t); if(tgt === null) continue;
+      var dev = Math.abs(b.m - tgt);
+      ctx.strokeStyle = dev < 0.45 ? '#eafccf' : (dev < 1.2 ? '#e8d48a' : '#e06048');
+      ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(xOf(a.t), yOf(a.m)); ctx.lineTo(xOf(b.t), yOf(b.m)); ctx.stroke();
+    }
+  }
+
+  function endSession(){ go(isPro ? 's-prosummary' : 's-recap'); }
+  function upgrade(){
+    isPro = true;
+    document.getElementById('tierBadge').textContent = 'PRO tier';
+    go('s-prosummary');
+  }
+  function saveSession(){ go('s-saved'); }
+</script>
+</body>
+</html>

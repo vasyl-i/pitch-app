@@ -1,0 +1,53 @@
+{
+  "expo": {
+    "name": "EarGym",
+    "slug": "sing-mvp",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#101113",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "app.anya.eargym"
+    },
+    "android": {
+      "package": "app.anya.eargym",
+      "adaptiveIcon": {
+        "backgroundColor": "#101113",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "experiments": {
+      "tsconfigPaths": true
+    },
+    "plugins": [
+      [
+        "react-native-audio-api",
+        {
+          "iosMicrophonePermission": "EarGym listens while you sing to show you the note you are hitting. Audio never leaves your device.",
+          "iosBackgroundMode": false,
+          "androidPermissions": [
+            "android.permission.RECORD_AUDIO"
+          ],
+          "androidForegroundService": false
+        }
+      ],
+      "./plugins/with-spaces-in-path-fix",
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/Satoshi-Regular.ttf",
+            "./assets/fonts/Satoshi-Medium.ttf",
+            "./assets/fonts/Satoshi-Bold.ttf",
+            "./assets/fonts/Satoshi-Black.ttf"
+          ]
+        }
+      ]
+    ]
+  }
+}

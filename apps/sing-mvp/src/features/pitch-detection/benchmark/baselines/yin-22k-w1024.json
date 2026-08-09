@@ -1,0 +1,229 @@
+{
+  "configId": "yin-22k-w1024",
+  "config": {
+    "analysisRateHz": 22050,
+    "windowSamples": 1024,
+    "hopSamples": 256,
+    "captureRateHz": 44100,
+    "decimation": 2,
+    "stabilizer": "none"
+  },
+  "corpus": {
+    "cases": 85,
+    "frames": 6706,
+    "scoredFrames": 6139
+  },
+  "bands": [
+    {
+      "bandId": "sub-low",
+      "cases": 3,
+      "absCents": {
+        "count": 120,
+        "mean": 2.8189,
+        "median": 0.1327,
+        "p95": 8.2637,
+        "max": 8.2637
+      },
+      "biasCents": 2.7728,
+      "within10": 1,
+      "within25": 1,
+      "octaveErrorRate": 0,
+      "octaveLow": 0,
+      "octaveHigh": 0,
+      "lostVoiceRate": 0,
+      "falsePitchRate": 0,
+      "jitterCents": 0.0804,
+      "maxFrameDeltaCents": 0.3791,
+      "noteFlipsPerSec": 0
+    },
+    {
+      "bandId": "low",
+      "cases": 9,
+      "absCents": {
+        "count": 324,
+        "mean": 1.7107,
+        "median": 0.0621,
+        "p95": 11.4899,
+        "max": 37.3151
+      },
+      "biasCents": 1.57,
+      "within10": 0.9383,
+      "within25": 0.9691,
+      "octaveErrorRate": 0,
+      "octaveLow": 0,
+      "octaveHigh": 0,
+      "lostVoiceRate": 0,
+      "falsePitchRate": 0,
+      "jitterCents": 1.6062,
+      "maxFrameDeltaCents": 38.0345,
+      "noteFlipsPerSec": 0
+    },
+    {
+      "bandId": "mid",
+      "cases": 32,
+      "absCents": {
+        "count": 1350,
+        "mean": 0.3208,
+        "median": 0.0899,
+        "p95": 0.471,
+        "max": 19.457
+      },
+      "biasCents": 0.2283,
+      "within10": 0.9941,
+      "within25": 1,
+      "octaveErrorRate": 0,
+      "octaveLow": 0,
+      "octaveHigh": 0,
+      "lostVoiceRate": 0,
+      "falsePitchRate": 0,
+      "jitterCents": 0.468,
+      "maxFrameDeltaCents": 27.7048,
+      "noteFlipsPerSec": 0
+    },
+    {
+      "bandId": "upper-mid",
+      "cases": 26,
+      "absCents": {
+        "count": 3067,
+        "mean": 0.3429,
+        "median": 0.2482,
+        "p95": 0.6658,
+        "max": 8.2194
+      },
+      "biasCents": 0.3067,
+      "within10": 1,
+      "within25": 1,
+      "octaveErrorRate": 0,
+      "octaveLow": 0,
+      "octaveHigh": 0,
+      "lostVoiceRate": 0,
+      "falsePitchRate": 0,
+      "jitterCents": 0.3846,
+      "maxFrameDeltaCents": 7.2535,
+      "noteFlipsPerSec": 0
+    },
+    {
+      "bandId": "high",
+      "cases": 6,
+      "absCents": {
+        "count": 599,
+        "mean": 0.9205,
+        "median": 0.5733,
+        "p95": 2.7196,
+        "max": 3.0724
+      },
+      "biasCents": 0.9192,
+      "within10": 1,
+      "within25": 1,
+      "octaveErrorRate": 0,
+      "octaveLow": 0,
+      "octaveHigh": 0,
+      "lostVoiceRate": 0,
+      "falsePitchRate": 0,
+      "jitterCents": 0.1632,
+      "maxFrameDeltaCents": 0.4639,
+      "noteFlipsPerSec": 0
+    },
+    {
+      "bandId": "above-range",
+      "cases": 3,
+      "absCents": {
+        "count": 93,
+        "mean": 1.3519,
+        "median": 1.2421,
+        "p95": 2.4519,
+        "max": 2.874
+      },
+      "biasCents": 0.259,
+      "within10": 1,
+      "within25": 1,
+      "octaveErrorRate": 0,
+      "octaveLow": 0,
+      "octaveHigh": 0,
+      "lostVoiceRate": 0,
+      "falsePitchRate": 0,
+      "jitterCents": 0.1127,
+      "maxFrameDeltaCents": 0.4683,
+      "noteFlipsPerSec": 0
+    }
+  ],
+  "latency": {
+    "windowMs": 46.4399,
+    "hopMs": 11.61,
+    "analyticFloorMs": 58.0499,
+    "medianSettlingMs": 41.1791,
+    "settling": [
+      {
+        "fromHz": 261.6256,
+        "toHz": 277.1826,
+        "semitones": 1,
+        "settlingMs": 41.1791,
+        "transitionFrames": 3
+      },
+      {
+        "fromHz": 261.6256,
+        "toHz": 391.9954,
+        "semitones": 7,
+        "settlingMs": 41.1791,
+        "transitionFrames": 3
+      },
+      {
+        "fromHz": 261.6256,
+        "toHz": 523.2511,
+        "semitones": 12,
+        "settlingMs": 52.7891,
+        "transitionFrames": 4
+      },
+      {
+        "fromHz": 440,
+        "toHz": 293.6648,
+        "semitones": -7,
+        "settlingMs": 41.1791,
+        "transitionFrames": 3
+      },
+      {
+        "fromHz": 110,
+        "toHz": 220,
+        "semitones": 12,
+        "settlingMs": 41.1791,
+        "transitionFrames": 3
+      },
+      {
+        "fromHz": 440,
+        "toHz": 466.1638,
+        "semitones": 1,
+        "settlingMs": 41.1791,
+        "transitionFrames": 3
+      }
+    ]
+  },
+  "confidence": {
+    "clarity": {
+      "count": 6481,
+      "mean": 0.9899,
+      "median": 0.9988,
+      "p95": 0.9996,
+      "max": 0.9999
+    },
+    "accuracyAuc": 0.7539,
+    "separation": 0.063
+  },
+  "voiceVsMusicAuc": 1,
+  "clarityGate": {
+    "voiceClarityMedian": 0.9992,
+    "breathyClarityMedian": 0.8536,
+    "musicClarityMedian": 0.9834,
+    "musicRejectingThreshold": 0.9856,
+    "voiceLostAtThatThreshold": 0.6667
+  },
+  "outliers": [
+    {
+      "caseId": "confidence-very-breathy",
+      "bandId": "mid",
+      "medianAbsCents": 20.1817,
+      "maxAbsCents": 502.5893,
+      "octaveErrorRate": 0.5,
+      "noteFlipsPerSec": 41.9621
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+export { ExercisesHubScreen } from './ExercisesHubScreen';

@@ -1,0 +1,1 @@
+export { WeakSpotsScreen } from './WeakSpotsScreen';

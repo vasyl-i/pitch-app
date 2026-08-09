@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "Pitch Spike",
+    "slug": "expo-spike",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "app.pitchcoach.spike"
+    },
+    "android": {
+      "package": "app.pitchcoach.spike",
+      "adaptiveIcon": {
+        "backgroundColor": "#101113",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "plugins": [
+      [
+        "react-native-audio-api",
+        {
+          "iosMicrophonePermission": "Pitch Spike listens to your singing to measure real-time pitch-tracking latency. Audio never leaves the device.",
+          "iosBackgroundMode": false,
+          "androidPermissions": ["android.permission.RECORD_AUDIO"],
+          "androidForegroundService": false
+        }
+      ]
+    ]
+  }
+}

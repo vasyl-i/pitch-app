@@ -1,0 +1,205 @@
+{
+  "configId": "yin-22k-w1024",
+  "corpus": {
+    "recordings": 100,
+    "sustainedRecordings": 100,
+    "trustedRecordings": 0,
+    "frames": 84518,
+    "scoredFrames": 67235,
+    "steadyFrames": 12684,
+    "excludedRate": 0.0717,
+    "bandCoverage": {
+      "mid": 32149,
+      "high": 13743,
+      "above-range": 986,
+      "upper-mid": 27745,
+      "low": 9026
+    }
+  },
+  "annotatorErrorFloorCents": 1.443,
+  "steadyBands": [
+    {
+      "bandId": "low",
+      "frames": 98,
+      "absCents": {
+        "count": 98,
+        "mean": 1.9213,
+        "median": 1.6227,
+        "p95": 4.5933,
+        "max": 7.3633
+      },
+      "biasCents": -0.3062,
+      "within10": 1,
+      "within25": 1,
+      "within50": 1,
+      "octaveErrorRate": 0,
+      "lostVoiceRate": 0
+    },
+    {
+      "bandId": "mid",
+      "frames": 3261,
+      "absCents": {
+        "count": 3261,
+        "mean": 2.282,
+        "median": 1.6153,
+        "p95": 4.986,
+        "max": 101.5629
+      },
+      "biasCents": -0.454,
+      "within10": 0.9936,
+      "within25": 0.9948,
+      "within50": 0.9948,
+      "octaveErrorRate": 0.015,
+      "lostVoiceRate": 0
+    },
+    {
+      "bandId": "upper-mid",
+      "frames": 6190,
+      "absCents": {
+        "count": 6190,
+        "mean": 1.8432,
+        "median": 1.5745,
+        "p95": 4.4499,
+        "max": 9.2809
+      },
+      "biasCents": -0.725,
+      "within10": 1,
+      "within25": 1,
+      "within50": 1,
+      "octaveErrorRate": 0.027,
+      "lostVoiceRate": 0
+    },
+    {
+      "bandId": "high",
+      "frames": 3115,
+      "absCents": {
+        "count": 3115,
+        "mean": 1.7077,
+        "median": 1.4977,
+        "p95": 4.1082,
+        "max": 9.0844
+      },
+      "biasCents": -0.6781,
+      "within10": 1,
+      "within25": 1,
+      "within50": 1,
+      "octaveErrorRate": 0,
+      "lostVoiceRate": 0
+    },
+    {
+      "bandId": "above-range",
+      "frames": 20,
+      "absCents": {
+        "count": 20,
+        "mean": 1.589,
+        "median": 1.3535,
+        "p95": 3.9634,
+        "max": 4.6112
+      },
+      "biasCents": -0.643,
+      "within10": 1,
+      "within25": 1,
+      "within50": 1,
+      "octaveErrorRate": 0,
+      "lostVoiceRate": 0
+    }
+  ],
+  "bands": [
+    {
+      "bandId": "low",
+      "frames": 6411,
+      "absCents": {
+        "count": 6050,
+        "mean": 3.5784,
+        "median": 2.6053,
+        "p95": 10.0409,
+        "max": 84.6098
+      },
+      "biasCents": -1.6503,
+      "within10": 0.9494,
+      "within25": 0.9979,
+      "within50": 0.9995,
+      "octaveErrorRate": 0.0012,
+      "lostVoiceRate": 0.0563
+    },
+    {
+      "bandId": "mid",
+      "frames": 26504,
+      "absCents": {
+        "count": 26234,
+        "mean": 4.0719,
+        "median": 2.454,
+        "p95": 10.9328,
+        "max": 598.4076
+      },
+      "biasCents": -1.025,
+      "within10": 0.9382,
+      "within25": 0.9926,
+      "within50": 0.9957,
+      "octaveErrorRate": 0.0107,
+      "lostVoiceRate": 0.0102
+    },
+    {
+      "bandId": "upper-mid",
+      "frames": 22843,
+      "absCents": {
+        "count": 22615,
+        "mean": 3.4203,
+        "median": 2.2006,
+        "p95": 10.4174,
+        "max": 503.2852
+      },
+      "biasCents": -1.1197,
+      "within10": 0.9461,
+      "within25": 0.9947,
+      "within50": 0.9996,
+      "octaveErrorRate": 0.0455,
+      "lostVoiceRate": 0.01
+    },
+    {
+      "bandId": "high",
+      "frames": 11018,
+      "absCents": {
+        "count": 10440,
+        "mean": 3.2659,
+        "median": 2.1041,
+        "p95": 10.4499,
+        "max": 51.4266
+      },
+      "biasCents": -1.064,
+      "within10": 0.9455,
+      "within25": 0.9951,
+      "within50": 0.9999,
+      "octaveErrorRate": 0,
+      "lostVoiceRate": 0.0525
+    },
+    {
+      "bandId": "above-range",
+      "frames": 459,
+      "absCents": {
+        "count": 224,
+        "mean": 21.032,
+        "median": 2.7725,
+        "p95": 9.6451,
+        "max": 511.4261
+      },
+      "biasCents": 18.5415,
+      "within10": 0.9509,
+      "within25": 0.9643,
+      "within50": 0.9643,
+      "octaveErrorRate": 0.0357,
+      "lostVoiceRate": 0.512
+    }
+  ],
+  "confidence": {
+    "clarity": {
+      "count": 67299,
+      "mean": 0.987,
+      "median": 0.9958,
+      "p95": 0.9996,
+      "max": 1
+    },
+    "accuracyAuc": 0.9686,
+    "separation": 0.0769
+  }
+}
