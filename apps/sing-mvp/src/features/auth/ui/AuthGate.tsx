@@ -16,6 +16,7 @@ interface AuthGateProps {
 export function AuthGate({ fallback, children }: AuthGateProps) {
   const loading = useAuthStore((s) => s.loading);
   const session = useAuthStore((s) => s.session);
+  const guest = useAuthStore((s) => s.guest);
   const initialize = useAuthStore((s) => s.initialize);
 
   useEffect(() => {
@@ -38,5 +39,5 @@ export function AuthGate({ fallback, children }: AuthGateProps) {
     );
   }
 
-  return <>{session ? children : fallback}</>;
+  return <>{session || guest ? children : fallback}</>;
 }

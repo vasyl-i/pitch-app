@@ -15,6 +15,7 @@ import {
   totalStars,
   useProgressStore,
 } from '@/features/progress';
+import { useAuthStore } from '@/features/auth';
 import { AppText, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
 import { useFloatingTabBarClearance } from '@/app/navigation/FloatingTabBar';
@@ -28,7 +29,9 @@ import { WeeklyStreakRow } from './ui/WeeklyStreakRow';
 export function TodayScreen({ navigation }: HomeScreenProps<'Today'>) {
   const { spacing, typography } = useTheme();
   const tabBarClearance = useFloatingTabBarClearance(spacing.xl);
+  const user = useAuthStore((s) => s.user);
   const sessions = useProgressStore((s) => s.sessions);
+  const firstName = user?.user_metadata?.full_name?.split(' ')[0] ?? user?.email?.split('@')[0];
 
   const overall = useMemo(
     () => ({
@@ -49,7 +52,7 @@ export function TodayScreen({ navigation }: HomeScreenProps<'Today'>) {
             color={todayColor.ink}
             style={{ fontFamily: typography.family.bold, fontSize: 40, lineHeight: 44, letterSpacing: -0.8 }}
           >
-            Home
+            {firstName ? `Hi, ${firstName}` : 'Home'}
           </AppText>
           <Pressable
             accessibilityRole="button"

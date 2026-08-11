@@ -52,6 +52,7 @@ export default function App() {
     setError(null);
 
     const permission = await AudioManager.requestRecordingPermissions();
+    console.log('permission initial', permission);
     if (permission !== 'Granted') {
       setError(`mic permission: ${permission}`);
       return;

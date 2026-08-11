@@ -8,8 +8,10 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { acquireMic, MicPermissionError, type MicLease } from '@/features/pitch-detection';
+import { AudioManager } from 'react-native-audio-api';
 
 export type CalibrationStatus =
+  | "initial"
   | 'checking'
   | 'listen-quiet'
   | 'listen-level'
@@ -36,9 +38,10 @@ export interface CalibrationState {
 }
 
 export function useMicCalibration(): CalibrationState {
-  const [status, setStatus] = useState<CalibrationStatus>('checking');
+  const [status, setStatus] = useState<CalibrationStatus>('initial');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [level, setLevel] = useState(0);
+  const [recordingPermissionStatus, setRecordingPermissionStatus] = useState(false);
   const runRef = useRef(0);
   const leaseRef = useRef<MicLease | null>(null);
 
@@ -100,8 +103,24 @@ export function useMicCalibration(): CalibrationState {
       });
   }, []);
 
+  const checkPermissions = async () => {
+    let recordingPermissions = await AudioManager.checkRecordingPermissions()
+    if (recordingPermissions !== 'Granted') {
+      recordingPermissions = await AudioManager.requestRecordingPermissions()
+      setRecordingPermissionStatus(recordingPermissions === 'Granted');
+    }
+  };
+
   useEffect(() => {
-    run();
+    if (!recordingPermissionStatus) {
+      void checkPermissions().then(() => {
+        setTimeout(() => {
+          run()
+        }, 1500);
+      });
+    } else {
+      run();
+    }
     return () => {
       runRef.current++;
       void leaseRef.current?.release();

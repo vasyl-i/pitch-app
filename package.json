@@ -10,7 +10,8 @@
     "sing:ios": "npm -w sing-mvp run ios",
     "sing:android": "npm -w sing-mvp run android",
     "typecheck": "npm -w sing-mvp run typecheck",
-    "test": "npm -w sing-mvp run test"
+    "test": "npm -w sing-mvp run test",
+    "postinstall": "npx patch-package"
   },
   "engines": {
     "node": ">=20"

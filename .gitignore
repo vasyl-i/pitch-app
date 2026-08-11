@@ -33,7 +33,13 @@ yarn-error.*
 *.pem
 
 # Environment
+.env
+.env.local
 .env*.local
+
+# Google OAuth credential files
+*.plist
+client_secret_*.json
 
 # TypeScript
 *.tsbuildinfo

@@ -2,8 +2,8 @@ import { createClient } from '@supabase/supabase-js';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
-const SUPABASE_URL = 'https://YOUR_PROJECT_ID.supabase.co'; // TODO: replace
-const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY'; // TODO: replace
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL!;
+const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
 
 /**
  * Secure token storage for native platforms, falls back to localStorage on web.

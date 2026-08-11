@@ -1,10 +1,11 @@
-import type { PropsWithChildren } from 'react';
+import { PropsWithChildren, useEffect, useState } from 'react';
 import { Linking, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AppText, Button } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
 import { useMicCalibration } from '../lib/calibration';
+import { AudioManager } from 'react-native-audio-api';
 
 const COPY: Record<string, { title: string; body: string }> = {
   checking: { title: 'Checking your microphone…', body: 'One moment.' },

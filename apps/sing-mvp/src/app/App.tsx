@@ -6,6 +6,8 @@ import { useFonts } from 'expo-font';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { startLearningTracker } from '@/features/learning';
+import { AuthGate, useAuthStore, startSync, stopSync, pullFromServer } from '@/features/auth';
+import { SignInScreen } from '@/screens/auth';
 import { ThemeProvider, theme } from '@/shared/theme';
 import { RootNavigator } from './navigation/RootNavigator';
 
@@ -27,6 +29,20 @@ const navigationTheme = {
   },
 };
 
+/** Starts cloud sync + pulls latest data when the user is authenticated. */
+function SyncManager() {
+  const user = useAuthStore((s) => s.user);
+
+  useEffect(() => {
+    if (!user) return;
+    pullFromServer();
+    startSync();
+    return () => stopSync();
+  }, [user]);
+
+  return null;
+}
+
 export default function App() {
   const [fontsLoaded] = useFonts(satoshiFonts);
 
@@ -43,10 +59,13 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <ThemeProvider>
-          <NavigationContainer theme={navigationTheme}>
-            <RootNavigator />
-            <StatusBar style="light" />
-          </NavigationContainer>
+          <AuthGate fallback={<SignInScreen />}>
+            <NavigationContainer theme={navigationTheme}>
+              <SyncManager />
+              <RootNavigator />
+              <StatusBar style="light" />
+            </NavigationContainer>
+          </AuthGate>
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
