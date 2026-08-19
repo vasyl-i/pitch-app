@@ -6,11 +6,36 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { supabase } from '@/shared/lib/supabase';
 import { mmkv } from '@/shared/lib/storage';
+import { useProfileStore } from '@/entities/profile';
+import { useProgressStore } from '@/features/progress';
+import { useLearningStore, usePreferencesStore, useLessonSessionStore } from '@/features/learning';
+import { useInstrumentalStore } from '@/features/instrumental';
+import { useSubscriptionStore } from '@/features/subscription';
 
 GoogleSignin.configure({
   webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
   iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
 });
+
+/** Wipe all user-scoped persisted stores (progress, profile, learning, etc.) —
+ *  both the MMKV-persisted data and the in-memory Zustand state so navigation
+ *  immediately reflects a fresh-install experience. */
+function clearUserStores() {
+  useProfileStore.getState().clearProfile();
+  useProfileStore.persist.clearStorage();
+  useProgressStore.getState().clear();
+  useProgressStore.persist.clearStorage();
+  useLearningStore.getState().clearLearningData();
+  useLearningStore.persist.clearStorage();
+  usePreferencesStore.getState().clearPreferences();
+  usePreferencesStore.persist.clearStorage();
+  useLessonSessionStore.setState({ dayKey: null, steps: [], estMinutes: 0, completedSlots: [], activeSlot: null });
+  useLessonSessionStore.persist.clearStorage();
+  useInstrumentalStore.setState({ tracks: [] });
+  useInstrumentalStore.persist.clearStorage();
+  useSubscriptionStore.getState().reset();
+  useSubscriptionStore.persist.clearStorage();
+}
 
 interface AuthState {
   session: Session | null;
@@ -155,6 +180,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     } catch {
       // Google sign-out failure is non-critical
     }
+    clearUserStores();
     set({ session: null, user: null, guest: false });
   },
 
@@ -167,6 +193,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     } catch {
       // non-critical
     }
+    clearUserStores();
     set({ session: null, user: null, guest: false });
   },
 }));

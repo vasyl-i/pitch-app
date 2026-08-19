@@ -9,6 +9,7 @@
 import { useEffect, useRef } from 'react';
 import { View } from 'react-native';
 import { useEarTrainingSession, useEarTrainingStore } from '@/features/ear-training';
+import { MicGlow } from '@/features/staff-practice';
 import { AppText, Button, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
 import type { RootScreenProps } from '@/app/navigation/types';
@@ -52,7 +53,7 @@ export function EarSessionScreen({ navigation, route }: RootScreenProps<'EarSess
   }
 
   return (
-    <Screen>
+    <Screen overlay={<MicGlow />}>
       {stepLabel && (
         <AppText variant="caption" style={{ textAlign: 'center', marginBottom: spacing.sm }}>
           {stepLabel}

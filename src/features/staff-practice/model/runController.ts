@@ -50,6 +50,7 @@ import {
 } from '@/entities/exercise';
 import { createThrottle, createVoiceGate } from '@/features/pitch-detection';
 import { freqToMidi } from '@/shared/lib/music';
+import { micActive, micRms } from '@/shared/lib/micRmsBus';
 import type { MelodyPlayer } from '../lib/melodyPlayer';
 import type { StaffStatus, SungSample } from './staffStore';
 
@@ -93,7 +94,7 @@ export interface RunStore {
     currentTargetMidi: number | null;
   }): void;
   /** written only by microphone frames */
-  setPitch(patch: { liveMidi: number | null; liveCents: number | null; trail: SungSample[] }): void;
+  setPitch(patch: { liveMidi: number | null; liveCents: number | null; trail: SungSample[]; liveRms: number }): void;
   addResult(result: NoteResult): void;
   setAccompaniedSummary(summary: PhraseSummary): void;
   setSummary(summary: PhraseSummary, comparison: AttemptComparison | null): void;
@@ -253,7 +254,8 @@ export function createRunController({
     evaluator: ReturnType<typeof createPhraseEvaluator>,
     t: number,
     voicedMidi: number | null,
-    ui: boolean
+    ui: boolean,
+    rms: number,
   ) => {
     for (const result of evaluator.collectCompleted(t - GRADE_LAG_SEC)) {
       store.addResult(result);
@@ -263,7 +265,8 @@ export function createRunController({
     }
 
     if (voicedMidi === null) {
-      if (ui) store.setPitch({ liveMidi: null, liveCents: null, trail: [...trail] });
+      micRms.value = rms;
+      if (ui) store.setPitch({ liveMidi: null, liveCents: null, trail: [...trail], liveRms: rms });
       return;
     }
 
@@ -277,7 +280,8 @@ export function createRunController({
     evaluator.addFrame(t, voicedMidi);
     trail.push({ t, midi: voicedMidi, cents });
     while (trail.length && trail[0].t < t - TRAIL_SECONDS) trail.shift();
-    if (ui) store.setPitch({ liveMidi: voicedMidi, liveCents: cents, trail: [...trail] });
+    micRms.value = rms;
+    if (ui) store.setPitch({ liveMidi: voicedMidi, liveCents: cents, trail: [...trail], liveRms: rms });
   };
 
   return {
@@ -365,7 +369,7 @@ export function createRunController({
         // starting it, so there is no onset gate
         if (!accompaniment.playing) return;
         if (voicedMidi !== null) heardVoiceInAccompanied = true;
-        gradeFrame(accompaniedEvaluator, accompaniment.currentTime(), voicedMidi, ui);
+        gradeFrame(accompaniedEvaluator, accompaniment.currentTime(), voicedMidi, ui, frame.rms);
         return;
       }
 
@@ -381,7 +385,7 @@ export function createRunController({
       // the unaided pass has no reference timeline, so the singer's own clock
       // is what moves the playhead
       if (ui) publishPlayback(t, at);
-      gradeFrame(soloEvaluator, t, voicedMidi, ui);
+      gradeFrame(soloEvaluator, t, voicedMidi, ui, frame.rms);
     },
 
     dispose() {

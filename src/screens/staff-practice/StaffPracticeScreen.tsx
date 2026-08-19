@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { exercises, fitToRange, odeToJoy, transposeExercise } from '@/entities/exercise';
 import { useProfileStore } from '@/entities/profile';
 import { buildSessionRecord, useProgressStore } from '@/features/progress';
-import { LiveReadout, PianoKeyboard, StaffView, useStaffSession, useStaffStore, VERDICT_LABEL } from '@/features/staff-practice';
+import { LiveReadout, MicGlow, PianoKeyboard, StaffView, useStaffSession, useStaffStore, VERDICT_LABEL } from '@/features/staff-practice';
 import { AppText, BackButton, Button, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
 import type { RootScreenProps } from '@/app/navigation/types';
@@ -145,7 +145,7 @@ function StaffSession({
   })();
 
   return (
-    <Screen>
+    <Screen overlay={<MicGlow />}>
       <View style={styles.header}>
         <BackButton onPress={() => navigation.goBack()} />
         <View style={{ flex: 1 }}>

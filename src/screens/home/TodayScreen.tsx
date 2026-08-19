@@ -98,7 +98,7 @@ export function TodayScreen({ navigation }: HomeScreenProps<'Today'>) {
           {/*/>*/}
           <PillButton
             title="Ear Training Exercises"
-            variant="soft"
+            variant="dark"
             onPress={() => navigation.navigate('ExercisesTab', { screen: 'ExercisesHub' })}
           />
         </View>

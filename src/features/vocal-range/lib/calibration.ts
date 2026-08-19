@@ -8,6 +8,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { acquireMic, MicPermissionError, type MicLease } from '@/features/pitch-detection';
+import { micActive, micRms } from '@/shared/lib/micRmsBus';
 import { AudioManager } from 'react-native-audio-api';
 
 export type CalibrationStatus =
@@ -76,14 +77,18 @@ export function useMicCalibration(): CalibrationState {
           }
           stage = 'level';
           setStatus('listen-level');
+          micActive.value = true;
           return;
         }
 
         // stage === 'level'
         peakLevel = Math.max(peakLevel, frame.rms);
+        micRms.value = frame.rms;
         setLevel(Math.min(1, peakLevel / (ABS_MIN_LEVEL_RMS * MIN_LEVEL_MARGIN)));
         if (elapsed < QUIET_STAGE_MS + LEVEL_STAGE_MS) return;
         stage = 'done';
+        micActive.value = false;
+        micRms.value = 0;
         void leaseRef.current?.release();
         setStatus(peakLevel < Math.max(ABS_MIN_LEVEL_RMS, ambientFloor * MIN_LEVEL_MARGIN) ? 'too-quiet' : 'ok');
       },
@@ -125,6 +130,8 @@ export function useMicCalibration(): CalibrationState {
       runRef.current++;
       void leaseRef.current?.release();
       leaseRef.current = null;
+      micActive.value = false;
+      micRms.value = 0;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

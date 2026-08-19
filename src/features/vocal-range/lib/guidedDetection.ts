@@ -26,6 +26,7 @@ import {
   type MicLease,
 } from '@/features/pitch-detection';
 import { freqToMidi } from '@/shared/lib/music';
+import { micActive, micRms } from '@/shared/lib/micRmsBus';
 
 export type RangeDirection = 'low' | 'high';
 
@@ -125,6 +126,8 @@ export function useGuidedRangeDetection(direction: RangeDirection): GuidedDetect
     setCurrentFrequency(null);
     setLiveConfidence(0);
     setHoldProgress(0);
+    micRms.value = 0;
+    micActive.value = false;
   }, []);
 
   const start = useCallback(() => {
@@ -135,6 +138,7 @@ export function useGuidedRangeDetection(direction: RangeDirection): GuidedDetect
     const uiTick = createThrottle(UI_TICK_MS);
 
     setStatus('listening');
+    micActive.value = true;
     acquireMic({
       iosMode: 'measurement',
       onInterruption: (phase) => {
@@ -156,6 +160,7 @@ export function useGuidedRangeDetection(direction: RangeDirection): GuidedDetect
             setLiveConfidence(0);
             setHoldProgress(0);
           }
+          micRms.value = frame.rms;
           return;
         }
 
@@ -205,6 +210,7 @@ export function useGuidedRangeDetection(direction: RangeDirection): GuidedDetect
           setCurrentMidi(rawMidi);
           setCurrentFrequency(frame.frequency);
           setLiveConfidence(stable ? frame.clarity : frame.clarity * 0.5);
+          micRms.value = frame.rms;
           const elapsed = holdStartRef.current === null ? 0 : now - holdStartRef.current;
           setHoldProgress(stable ? Math.min(1, elapsed / SUSTAIN_MS) : 0);
         }

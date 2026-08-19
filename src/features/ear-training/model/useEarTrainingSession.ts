@@ -27,6 +27,7 @@ import { useEffect, useRef } from 'react';
 import { promptRange, useProfileStore } from '@/entities/profile';
 import { acquireMic, createThrottle, MicPermissionError, type MicLease, type PitchFrame } from '@/features/pitch-detection';
 import { useProgressStore } from '@/features/progress';
+import { micActive, micRms } from '@/shared/lib/micRmsBus';
 import { createSessionGuard } from '@/shared/lib/sessionGuard';
 import { createSingCapture } from '../lib/capture';
 import { summarizeSession, type RoundScore } from '../lib/evaluators';
@@ -88,6 +89,8 @@ export function useEarTrainingSession() {
     guard.invalidate();
     player.cancel();
     listeningRef.current = false;
+    micActive.value = false;
+    micRms.value = 0;
     capture.reset();
     void releaseLease();
   };
@@ -111,6 +114,7 @@ export function useEarTrainingSession() {
 
   const onFrame = (frame: PitchFrame) => {
     capture.push(frame);
+    micRms.value = frame.rms;
     if (!listeningRef.current) return;
     const response = currentRoundRef.current?.response;
     if (!response || response.kind !== 'sing') return;
@@ -197,11 +201,13 @@ export function useEarTrainingSession() {
   function openSingWindow(gen: number, response: SingResponse) {
     capture.begin();
     listeningRef.current = true;
+    micActive.value = true;
     setStore({ phase: 'listening', countdown: null, waitSecondsLeft: null });
     guard.later(
       gen,
       () => {
         listeningRef.current = false;
+        micActive.value = false;
         capture.end();
         setStore({ phase: 'evaluating' });
         const result = response.evaluate(capture.frames);

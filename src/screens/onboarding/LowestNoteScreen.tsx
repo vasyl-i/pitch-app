@@ -1,11 +1,12 @@
 import { ScrollView, View } from 'react-native';
 import { BackButton, Screen } from '@/shared/ui';
 import { DetectionFlow, MicCalibrationGate } from '@/features/vocal-range';
+import { MicGlow } from '@/features/staff-practice';
 import type { OnboardingScreenProps } from '@/app/navigation/types';
 
 export function LowestNoteScreen({ navigation }: OnboardingScreenProps<'Lowest'>) {
-  return (
-    <Screen>
+    return (
+    <Screen overlay={<MicGlow />}>
       <View style={{ flexDirection: 'row', marginBottom: 8 }}>
         <BackButton onPress={() => navigation.goBack()} />
       </View>

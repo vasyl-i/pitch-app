@@ -68,6 +68,8 @@ interface PitchState {
   liveCents: number | null;
   /** trailing sung samples for the overlay (~last 6s) */
   trail: SungSample[];
+  /** live mic amplitude (AC-level RMS), 0 when silent */
+  liveRms: number;
 }
 
 interface StaffState extends PlaybackState, PitchState {
@@ -115,6 +117,7 @@ const blankPitch: PitchState = {
   liveMidi: null,
   liveCents: null,
   trail: [],
+  liveRms: 0,
 };
 
 const initial = {

@@ -102,28 +102,33 @@ export function ActiveRound({ session }: { session: SessionControls }) {
       </View>
 
       <View style={styles.center}>
-        <AppText
-          variant="display"
-          color={headlineColor}
-          style={{ fontSize: phase === 'listening' && isChoice ? 30 : 44, textAlign: 'center' }}
-        >
-          {headline}
-        </AppText>
+        <View style={styles.headlineBlock}>
+          <AppText
+            variant="display"
+            color={headlineColor}
+            style={{ fontSize: phase === 'listening' && isChoice ? 30 : 44, textAlign: 'center' }}
+          >
+            {headline}
+          </AppText>
+        </View>
         <AppText variant="body" style={{ textAlign: 'center', marginTop: spacing.sm }}>
           {support}
         </AppText>
 
-        {phase === 'listening' && !isChoice && (
-          <AppText variant="caption" style={{ textAlign: 'center', marginTop: spacing.sm }}>
-            {live.score && live.score.actual !== '—' ? `score so far: ${live.score.score}` : 'any octave is fine'}
-          </AppText>
-        )}
-        {phase === 'listening' && live.outcomes && <OutcomeDots outcomes={live.outcomes} />}
-        {phase === 'round-result' && roundResult && roundResult.actual !== '—' && (
-          <AppText variant="caption" style={{ textAlign: 'center', marginTop: spacing.md }}>
-            target {roundResult.expected} · you {roundResult.actual}
-          </AppText>
-        )}
+        {/* fixed-height slot for auxiliary info so layout never shifts */}
+        <View style={styles.auxBlock}>
+          {phase === 'listening' && !isChoice && (
+            <AppText variant="caption" style={{ textAlign: 'center' }}>
+              {live.score && live.score.actual !== '—' ? `score so far: ${live.score.score}` : 'any octave is fine'}
+            </AppText>
+          )}
+          {phase === 'listening' && live.outcomes && <OutcomeDots outcomes={live.outcomes} />}
+          {phase === 'round-result' && roundResult && roundResult.actual !== '—' && (
+            <AppText variant="caption" style={{ textAlign: 'center' }}>
+              target {roundResult.expected} · you {roundResult.actual}
+            </AppText>
+          )}
+        </View>
       </View>
 
       {phase === 'listening' && isChoice && (
@@ -145,5 +150,9 @@ export function ActiveRound({ session }: { session: SessionControls }) {
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   center: { flex: 1, justifyContent: 'center' },
+  /** tall enough for the largest fontSize (44) + breathing room */
+  headlineBlock: { height: 60, justifyContent: 'center', alignItems: 'center' },
+  /** reserve space for score caption + outcome dots so they don't push layout */
+  auxBlock: { minHeight: 64, justifyContent: 'center' },
   row: { flexDirection: 'row' },
 });

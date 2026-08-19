@@ -13,7 +13,7 @@ import { AppBackground } from './AppBackground';
  * touching this default for every other screen — omit it and behavior is
  * unchanged.
  */
-export function Screen({ children, style, backdrop }: PropsWithChildren<{ style?: ViewStyle; backdrop?: ReactNode }>) {
+export function Screen({ children, style, backdrop, overlay }: PropsWithChildren<{ style?: ViewStyle; backdrop?: ReactNode; overlay?: ReactNode }>) {
   const { palette, spacing } = useTheme();
   return (
     <View style={[styles.root, { backgroundColor: palette.background }]}>
@@ -21,6 +21,7 @@ export function Screen({ children, style, backdrop }: PropsWithChildren<{ style?
       <SafeAreaView style={styles.safe}>
         <View style={[styles.content, { padding: spacing.lg }, style]}>{children}</View>
       </SafeAreaView>
+      {overlay}
     </View>
   );
 }

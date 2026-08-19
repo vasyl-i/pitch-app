@@ -11,6 +11,7 @@ import { useEffect, useRef } from 'react';
 import type { Exercise } from '@/entities/exercise';
 import { recordObservedNote } from '@/entities/profile';
 import { acquireMic, MicPermissionError, type MicLease } from '@/features/pitch-detection';
+import { micActive } from '@/shared/lib/micRmsBus';
 import { watchOutputRoute } from '@/shared/audio';
 import { createMelodyPlayer } from '../lib/melodyPlayer';
 import { createRunController } from './runController';
@@ -89,6 +90,7 @@ export function useStaffSession(exercise: Exercise, rate = 1): StaffSessionContr
           void lease.release();
           return;
         }
+        micActive.value = true;
         controller.startRun();
       } catch (err: unknown) {
         if (disposed) return;
@@ -112,6 +114,7 @@ export function useStaffSession(exercise: Exercise, rate = 1): StaffSessionContr
       accompaniment.dispose();
       solo.dispose();
       void lease?.release();
+      micActive.value = false;
       useStaffStore.getState().reset();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
