@@ -2,14 +2,17 @@
 
 A singing practice app where users bring their own instrumental track, sing along, and get real-time visual feedback on pitch accuracy against the song's chord/key progression. Target user: beginner-to-intermediate singers.
 
-## Monorepo layout
+## Project layout
 
 ```
-apps/sing-mvp/     Main Expo app (production)
-apps/expo-spike/   Feasibility spike (YIN pitch detection proof on mobile)
-packages/          Shared packages (future)
-scripts/           Python utilities (MIDI/MusicXML converters, audio analysis)
-docs/              PRD, architecture, design system, legal, roadmap, prototypes
+src/            App source (Feature-Sliced Design)
+assets/         Fonts, icons, splash images
+plugins/        Expo config plugins
+scripts/        Python utilities + TS test helpers
+docs/           PRD, architecture, design system, legal, roadmap, pitch-detection deep-dives
+supabase/       Database migrations
+benchmark-corpus/  Pitch detection test audio
+patches/        patch-package patches
 ```
 
 ## Tech stack
@@ -20,11 +23,10 @@ docs/              PRD, architecture, design system, legal, roadmap, prototypes
 - react-native-audio-api (mic capture)
 - @shopify/react-native-skia (staff rendering, pitch overlay)
 - react-native-reanimated 4.5 + react-native-worklets
-- npm workspaces (monorepo)
 
 ## App architecture (Feature-Sliced Design)
 
-`apps/sing-mvp/src/`:
+`src/`:
 ```
 app/        Navigation setup, providers, App.tsx
 entities/   Domain models (exercise, profile) -- no UI, shared by features
@@ -71,15 +73,11 @@ Import direction: `app -> screens -> features -> entities -> shared` (no reverse
 ## Commands
 
 ```bash
-# From root:
-npm run sing            # Start Expo dev server
-npm run sing:ios        # Run on iOS simulator
-npm run sing:android    # Run on Android emulator
+npm start               # Expo dev server
+npm run ios             # Run on iOS simulator
+npm run android         # Run on Android emulator
 npm run typecheck       # TypeScript checking
 npm run test            # Run tests
-
-# From apps/sing-mvp/:
-npm start               # Expo dev server
 npm run benchmark       # Pitch detection benchmark suite
 npm run benchmark:check # Check against committed baselines
 ```
@@ -105,4 +103,6 @@ Expo has changed significantly. Read versioned docs at https://docs.expo.dev/ver
 - `docs/DESIGN_SYSTEM.md` -- complete design tokens & component catalog
 - `docs/LEGAL_AND_COMPLIANCE.md` -- copyright strategy, licensing boundaries
 - `docs/MVP_ROADMAP.md` -- phased build order (currently at end of Phase 2)
-- `apps/sing-mvp/docs/` -- pitch detection deep-dives (benchmark, smoother analysis, error analysis)
+- `docs/PITCH_BENCHMARK.md` -- pitch detection benchmark analysis
+- `docs/PITCH_SMOOTHER_ANALYSIS.md` -- pitch smoother deep-dive
+- `docs/PITCH_ERROR_ANALYSIS.md` -- error analysis

@@ -16,9 +16,9 @@ expo-env.d.ts
 *.mobileprovision
 .kotlin/
 
-# Generated native folders (per-app)
-apps/*/ios/
-apps/*/android/
+# Generated native folders
+ios/
+android/
 
 # Metro
 .metro-health-check*

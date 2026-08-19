@@ -1,0 +1,69 @@
+{
+  "expo": {
+    "name": "PitchGym",
+    "slug": "sing-mvp",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#101113",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#08070C"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "app.anya.eargym",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "app.anya.eargym",
+      "adaptiveIcon": {
+        "backgroundColor": "#0D1726",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "scheme": "app.anya.eargym",
+    "experiments": {
+      "tsconfigPaths": true
+    },
+    "plugins": [
+      [
+        "react-native-audio-api",
+        {
+          "iosMicrophonePermission": "PitchGym listens while you sing to show you the note you are hitting. Audio never leaves your device.",
+          "iosBackgroundMode": false,
+          "androidPermissions": [
+            "android.permission.RECORD_AUDIO"
+          ],
+          "androidForegroundService": false
+        }
+      ],
+      "./plugins/with-spaces-in-path-fix",
+      "expo-apple-authentication",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.937030610704-j994i9qmsootnnltkps2pudvtc6iuqcn"
+        }
+      ],
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/Satoshi-Regular.ttf",
+            "./assets/fonts/Satoshi-Medium.ttf",
+            "./assets/fonts/Satoshi-Bold.ttf",
+            "./assets/fonts/Satoshi-Black.ttf"
+          ]
+        }
+      ]
+    ]
+  }
+}
