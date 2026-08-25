@@ -9,6 +9,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { acquireMic, MicPermissionError, type MicLease } from '@/features/pitch-detection';
 import { micActive, micRms } from '@/shared/lib/micRmsBus';
+import { hapticMicReady } from '@/shared/audio';
 import { AudioManager } from 'react-native-audio-api';
 
 export type CalibrationStatus =
@@ -78,6 +79,7 @@ export function useMicCalibration(): CalibrationState {
           stage = 'level';
           setStatus('listen-level');
           micActive.value = true;
+          hapticMicReady();
           return;
         }
 

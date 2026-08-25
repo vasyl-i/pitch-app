@@ -1,6 +1,4 @@
 import { useEffect, type ReactNode } from 'react';
-import { View, ActivityIndicator } from 'react-native';
-import { theme } from '@/shared/theme';
 import { useAuthStore } from '../model/authStore';
 
 interface AuthGateProps {
@@ -12,6 +10,9 @@ interface AuthGateProps {
 /**
  * Wraps the app tree. Renders children when authenticated,
  * fallback (sign-in screen) when not.
+ *
+ * While auth is loading the native splash screen stays visible (held by
+ * App.tsx), so no spinner is needed here.
  */
 export function AuthGate({ fallback, children }: AuthGateProps) {
   const loading = useAuthStore((s) => s.loading);
@@ -24,20 +25,7 @@ export function AuthGate({ fallback, children }: AuthGateProps) {
     return unsubscribe;
   }, [initialize]);
 
-  if (loading) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: 'center',
-          alignItems: 'center',
-          backgroundColor: theme.palette.background,
-        }}
-      >
-        <ActivityIndicator size="large" color={theme.palette.accent} />
-      </View>
-    );
-  }
+  if (loading) return null;
 
   return <>{session || guest ? children : fallback}</>;
 }

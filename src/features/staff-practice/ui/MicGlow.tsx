@@ -1,22 +1,21 @@
 /**
- * Edge glow that responds to microphone volume during mic-active stages.
+ * Edge glow that responds to microphone volume and pitch accuracy.
  *
  * Four radial-ish gradient strips sit on the screen edges (top, bottom, left,
  * right). Their opacity is driven by a reanimated shared value that tracks the
  * live RMS from the pitch pipeline — louder singing → brighter glow, silence →
- * a faint ambient hint that the mic is listening.
+ * invisible.
  *
- * The component reads RMS from the global `micRms` shared value bus
- * (`shared/lib/micRmsBus`) so it never causes React re-renders.
+ * Color reflects pitch accuracy via `micGlowTier`: blue (default/no pitch),
+ * green (in tune), orange (slightly off), red (off).
  *
- * The component is absolutely positioned and pointer-events-transparent so it
- * sits over the practice UI without intercepting touches.
+ * The component reads shared values from `micRmsBus` so it never causes React
+ * re-renders.
  */
 import { StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
-import { palette } from '@/shared/theme/tokens';
-import { micActive, micRms } from '@/shared/lib/micRmsBus';
+import { micActive, micGlowTier, micRms } from '@/shared/lib/micRmsBus';
 
 const AnimatedGradient = Animated.createAnimatedComponent(LinearGradient);
 
@@ -29,62 +28,72 @@ const RMS_FLOOR = 0.004;
  */
 const RMS_CEILING = 0.12;
 
-/** Minimum opacity so the glow is always faintly visible when mounted. */
 const MIN_OPACITY = 0.08;
 const MAX_OPACITY = 0.55;
 
 const EDGE_SIZE = 60;
 
-/**
- * Map raw RMS (0 → ~0.3) to a glow opacity.
- * Clamped and eased so the response feels organic rather than twitchy.
- */
 function rmsToOpacity(rms: number): number {
   'worklet';
   const t = Math.min(1, Math.max(0, (rms - RMS_FLOOR) / (RMS_CEILING - RMS_FLOOR)));
-  // ease-out quad for a gentle rise
   const eased = 1 - (1 - t) * (1 - t);
   return MIN_OPACITY + eased * (MAX_OPACITY - MIN_OPACITY);
 }
 
-const ACCENT_TRANSPARENT = 'rgba(200, 218, 89, 0)';
+/** tier → [solid, transparent] color pair */
+const TIER_COLORS = {
+  0: { solid: '#5B8DEF', transparent: 'rgba(91, 141, 239, 0)' },   // blue (default)
+  1: { solid: '#C8DA59', transparent: 'rgba(200, 218, 89, 0)' },   // in tune
+  2: { solid: '#f0954a', transparent: 'rgba(240, 149, 74, 0)' },   // slightly off
+  3: { solid: '#ff6d5c', transparent: 'rgba(255, 109, 92, 0)' },   // off
+} as const;
 
-export function MicGlow() {
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: micActive.value ? rmsToOpacity(micRms.value) : 0,
+type Tier = keyof typeof TIER_COLORS;
+
+function GlowLayer({ tier }: { tier: Tier }) {
+  const { solid, transparent } = TIER_COLORS[tier];
+  const style = useAnimatedStyle(() => ({
+    opacity: micActive.value && micGlowTier.value === tier ? rmsToOpacity(micRms.value) : 0,
   }));
 
   return (
-    <Animated.View style={[styles.container, animatedStyle]} pointerEvents="none">
-      {/* top edge */}
+    <Animated.View style={[styles.container, style]} pointerEvents="none">
       <AnimatedGradient
-        colors={[palette.accent, ACCENT_TRANSPARENT]}
+        colors={[solid, transparent]}
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1 }}
         style={styles.top}
       />
-      {/* bottom edge */}
       <AnimatedGradient
-        colors={[ACCENT_TRANSPARENT, palette.accent]}
+        colors={[transparent, solid]}
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1 }}
         style={styles.bottom}
       />
-      {/* left edge */}
       <AnimatedGradient
-        colors={[palette.accent, ACCENT_TRANSPARENT]}
+        colors={[solid, transparent]}
         start={{ x: 0, y: 0.5 }}
         end={{ x: 1, y: 0.5 }}
         style={styles.left}
       />
-      {/* right edge */}
       <AnimatedGradient
-        colors={[ACCENT_TRANSPARENT, palette.accent]}
+        colors={[transparent, solid]}
         start={{ x: 0, y: 0.5 }}
         end={{ x: 1, y: 0.5 }}
         style={styles.right}
       />
     </Animated.View>
+  );
+}
+
+export function MicGlow() {
+  return (
+    <>
+      <GlowLayer tier={0} />
+      <GlowLayer tier={1} />
+      <GlowLayer tier={2} />
+      <GlowLayer tier={3} />
+    </>
   );
 }
 

@@ -8,10 +8,12 @@
  * and tearing everything down on unmount.
  */
 import { useEffect, useRef } from 'react';
+import { InteractionManager } from 'react-native';
 import type { Exercise } from '@/entities/exercise';
 import { recordObservedNote } from '@/entities/profile';
 import { acquireMic, MicPermissionError, type MicLease } from '@/features/pitch-detection';
-import { micActive } from '@/shared/lib/micRmsBus';
+import { micActive, micGlowTier } from '@/shared/lib/micRmsBus';
+import { hapticMicReady } from '@/shared/audio';
 import { watchOutputRoute } from '@/shared/audio';
 import { createMelodyPlayer } from '../lib/melodyPlayer';
 import { createRunController } from './runController';
@@ -91,6 +93,7 @@ export function useStaffSession(exercise: Exercise, rate = 1): StaffSessionContr
           return;
         }
         micActive.value = true;
+        hapticMicReady();
         controller.startRun();
       } catch (err: unknown) {
         if (disposed) return;
@@ -104,9 +107,15 @@ export function useStaffSession(exercise: Exercise, rate = 1): StaffSessionContr
 
     restartRef.current = () => controller.startRun();
 
-    void begin();
+    // Defer mic acquisition until the screen transition animation finishes —
+    // AudioRecorder creation and audio session setup are heavy native calls
+    // that block the JS thread and cause the slide-in to stutter.
+    const task = InteractionManager.runAfterInteractions(() => {
+      void begin();
+    });
 
     return () => {
+      task.cancel();
       disposed = true;
       unwatchRoute();
       controller.dispose();
@@ -115,6 +124,7 @@ export function useStaffSession(exercise: Exercise, rate = 1): StaffSessionContr
       solo.dispose();
       void lease?.release();
       micActive.value = false;
+      micGlowTier.value = 0;
       useStaffStore.getState().reset();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

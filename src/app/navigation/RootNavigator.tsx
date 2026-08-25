@@ -164,8 +164,8 @@ export function RootNavigator() {
   const { palette } = useTheme();
 
   // profile persistence hydrates from MMKV synchronously, but Zustand's
-  // the initial route before it resolves would send a returning user (whose
-  // `hasOnboarded` hasn't loaded yet) into onboarding for a frame
+  // persist middleware can defer — choosing the initial route before it
+  // resolves would send a returning user into onboarding for a frame
   const [hydrated, setHydrated] = useState(() => useProfileStore.persist.hasHydrated());
   useEffect(() => {
     if (hydrated) return;

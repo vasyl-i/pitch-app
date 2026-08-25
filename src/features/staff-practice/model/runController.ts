@@ -50,7 +50,7 @@ import {
 } from '@/entities/exercise';
 import { createThrottle, createVoiceGate } from '@/features/pitch-detection';
 import { freqToMidi } from '@/shared/lib/music';
-import { micActive, micRms } from '@/shared/lib/micRmsBus';
+import { centsToGlowTier, micActive, micGlowTier, micRms } from '@/shared/lib/micRmsBus';
 import type { MelodyPlayer } from '../lib/melodyPlayer';
 import type { StaffStatus, SungSample } from './staffStore';
 
@@ -266,6 +266,7 @@ export function createRunController({
 
     if (voicedMidi === null) {
       micRms.value = rms;
+      micGlowTier.value = 0;
       if (ui) store.setPitch({ liveMidi: null, liveCents: null, trail: [...trail], liveRms: rms });
       return;
     }
@@ -281,6 +282,7 @@ export function createRunController({
     trail.push({ t, midi: voicedMidi, cents });
     while (trail.length && trail[0].t < t - TRAIL_SECONDS) trail.shift();
     micRms.value = rms;
+    micGlowTier.value = centsToGlowTier(cents);
     if (ui) store.setPitch({ liveMidi: voicedMidi, liveCents: cents, trail: [...trail], liveRms: rms });
   };
 

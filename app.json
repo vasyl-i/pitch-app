@@ -13,6 +13,7 @@
       "backgroundColor": "#08070C"
     },
     "ios": {
+      "icon": "./Icons.icon",
       "supportsTablet": false,
       "bundleIdentifier": "app.anya.eargym",
       "infoPlist": {
@@ -63,7 +64,8 @@
             "./assets/fonts/Satoshi-Black.ttf"
           ]
         }
-      ]
+      ],
+      "expo-splash-screen"
     ]
   }
 }

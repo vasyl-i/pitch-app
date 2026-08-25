@@ -1,7 +1,9 @@
-import { useEffect } from 'react';
-import { View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { Platform, View } from 'react-native';
 import { DarkTheme, NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
+import * as SplashScreen from 'expo-splash-screen';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import { useFonts } from 'expo-font';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -11,6 +13,8 @@ import { SignInScreen } from '@/screens/auth';
 import { ThemeProvider, theme } from '@/shared/theme';
 import { preloadPianoSamples } from '@/shared/audio';
 import { RootNavigator } from './navigation/RootNavigator';
+
+SplashScreen.preventAutoHideAsync();
 
 const satoshiFonts = {
   'Satoshi-Regular': require('../../assets/fonts/Satoshi-Regular.ttf'),
@@ -46,6 +50,8 @@ function SyncManager() {
 
 export default function App() {
   const [fontsLoaded] = useFonts(satoshiFonts);
+  const authLoading = useAuthStore((s) => s.loading);
+  const [appleReady, setAppleReady] = useState(Platform.OS !== 'ios');
 
   // every finished practice session flows into the learning profile from here
   useEffect(() => {
@@ -57,12 +63,34 @@ export default function App() {
     preloadPianoSamples();
   }, []);
 
+  // resolve Apple sign-in availability once so SignInScreen renders complete
+  useEffect(() => {
+    if (Platform.OS === 'ios') {
+      AppleAuthentication.isAvailableAsync().then(() => setAppleReady(true));
+    }
+    setTimeout(() => {
+      void SplashScreen.hideAsync();
+    }, 2000);
+  }, []);
+
+  const appReady = fontsLoaded && !authLoading && appleReady;
+
+  // Hide the native splash screen once everything is initialised — fonts
+  // loaded, auth state settled, Apple availability resolved. The screen
+  // beneath (SignInScreen or RootNavigator) is fully laid out before it
+  // becomes visible, so there are no layout jumps.
+  const onLayoutReady = useCallback(() => {
+    if (appReady) {
+      void SplashScreen.hideAsync();
+    }
+  }, [appReady]);
+
   if (!fontsLoaded) {
-    return <View style={{ flex: 1, backgroundColor: theme.palette.background }} />;
+    return null;
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutReady}>
       <SafeAreaProvider>
         <ThemeProvider>
           <AuthGate fallback={<SignInScreen />}>

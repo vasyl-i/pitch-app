@@ -7,7 +7,7 @@
  * releases the mic and resets the store (the engine's own cleanup).
  */
 import { useEffect, useRef } from 'react';
-import { View } from 'react-native';
+import { InteractionManager, View } from 'react-native';
 import { useEarTrainingSession, useEarTrainingStore } from '@/features/ear-training';
 import { MicGlow } from '@/features/staff-practice';
 import { AppText, Button, Screen } from '@/shared/ui';
@@ -26,7 +26,13 @@ export function EarSessionScreen({ navigation, route }: RootScreenProps<'EarSess
   sessionRef.current = session;
 
   useEffect(() => {
-    void sessionRef.current.start(exerciseId, difficultyId);
+    // Defer mic + audio session init until the screen transition animation
+    // finishes — these are heavy native calls that block the JS thread and
+    // cause the slide-in to stutter.
+    const task = InteractionManager.runAfterInteractions(() => {
+      void sessionRef.current.start(exerciseId, difficultyId);
+    });
+    return () => task.cancel();
   }, [exerciseId, difficultyId]);
 
   const phase = useEarTrainingStore((s) => s.phase);

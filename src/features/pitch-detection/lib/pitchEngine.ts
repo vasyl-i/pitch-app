@@ -122,6 +122,7 @@ export function createPitchEngine(
       iosCategory: 'playAndRecord',
       iosMode: options.iosMode ?? 'measurement',
       iosOptions: ['defaultToSpeaker'],
+      iosAllowHaptics: true,
     });
     await AudioManager.setAudioSessionActivity(true);
     holdsSession = true;

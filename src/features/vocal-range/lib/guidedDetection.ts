@@ -27,6 +27,7 @@ import {
 } from '@/features/pitch-detection';
 import { freqToMidi } from '@/shared/lib/music';
 import { micActive, micRms } from '@/shared/lib/micRmsBus';
+import { hapticMicReady } from '@/shared/audio';
 
 export type RangeDirection = 'low' | 'high';
 
@@ -139,6 +140,7 @@ export function useGuidedRangeDetection(direction: RangeDirection): GuidedDetect
 
     setStatus('listening');
     micActive.value = true;
+    hapticMicReady();
     acquireMic({
       iosMode: 'measurement',
       onInterruption: (phase) => {

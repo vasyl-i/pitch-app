@@ -19,15 +19,13 @@
     {
       "layers" : [
         {
-          "glass" : false,
-          "hidden" : false,
-          "image-name" : "Ear1024.png",
-          "name" : "Ear1024",
+          "image-name" : "WinkCat.svg",
+          "name" : "WinkCat",
           "position" : {
-            "scale" : 0.8,
+            "scale" : 6.5,
             "translation-in-points" : [
-              0,
-              0
+              96.49597755463765,
+              240.06707726575036
             ]
           }
         }

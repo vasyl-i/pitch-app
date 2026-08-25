@@ -43,6 +43,12 @@ export const gradient = {
   accent: ['#C8DA59', '#9FB84A'] as const,
   /** faint sheen on glass card edges */
   cardSheen: ['rgba(255,255,255,0.14)', 'rgba(255,255,255,0.02)'] as const,
+  /**
+   * Full-screen background radial gradient — lime burst from top-right fading
+   * through translucent violet into near-black. Originates at (107%, -19%),
+   * ellipse axes ≈ 102% × 118% of screen.
+   */
+  screenBg: ['#F2FFC2', 'rgba(121, 134, 255, 0.40)', 'rgba(30, 30, 30, 0.40)'] as const,
 } as const;
 
 /**

@@ -12,6 +12,9 @@ export type { SoundType } from './soundStore';
 /** Piano sampler (Salamander Grand Piano). */
 export { preloadPianoSamples } from './pianoSampler';
 
+/** Haptic cues and UI sound effects. */
+export { hapticMicReady, hapticWarning, hapticTick, playTick } from './sfx';
+
 /** Where the sound is going — decides whether the interlock is needed at all. */
 export { isPrivateOutput } from './outputRoute';
 export { outputIsPrivate, watchOutputRoute } from './routeWatcher';

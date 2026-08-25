@@ -15,6 +15,7 @@ import { AppBackground } from './AppBackground';
  */
 export function Screen({ children, style, backdrop, overlay }: PropsWithChildren<{ style?: ViewStyle; backdrop?: ReactNode; overlay?: ReactNode }>) {
   const { palette, spacing } = useTheme();
+
   return (
     <View style={[styles.root, { backgroundColor: palette.background }]}>
       {backdrop ?? <AppBackground />}

@@ -27,7 +27,8 @@ import { useEffect, useRef } from 'react';
 import { promptRange, useProfileStore } from '@/entities/profile';
 import { acquireMic, createThrottle, MicPermissionError, type MicLease, type PitchFrame } from '@/features/pitch-detection';
 import { useProgressStore } from '@/features/progress';
-import { micActive, micRms } from '@/shared/lib/micRmsBus';
+import { centsToGlowTier, micActive, micGlowTier, micRms } from '@/shared/lib/micRmsBus';
+import { hapticMicReady, playTick } from '@/shared/audio';
 import { createSessionGuard } from '@/shared/lib/sessionGuard';
 import { createSingCapture } from '../lib/capture';
 import { summarizeSession, type RoundScore } from '../lib/evaluators';
@@ -91,6 +92,7 @@ export function useEarTrainingSession() {
     listeningRef.current = false;
     micActive.value = false;
     micRms.value = 0;
+    micGlowTier.value = 0;
     capture.reset();
     void releaseLease();
   };
@@ -123,6 +125,7 @@ export function useEarTrainingSession() {
     // the live readout IS the round evaluation, just run early
     const frames = capture.frames;
     const score = frames.length > 0 ? response.evaluate(frames) : null;
+    micGlowTier.value = centsToGlowTier(score?.signedCents ?? null);
     setStore({ live: { note: capture.live.note, score, outcomes: score?.notes ?? null } });
   };
 
@@ -179,6 +182,7 @@ export function useEarTrainingSession() {
         openSingWindow(gen, response);
         return;
       }
+      playTick();
       setStore({ phase: 'waiting', waitSecondsLeft: left });
       guard.later(gen, () => tick(left - 1), 1000);
     };
@@ -192,6 +196,7 @@ export function useEarTrainingSession() {
         openSingWindow(gen, response);
         return;
       }
+      playTick();
       setStore({ phase: 'countdown', countdown: k, waitSecondsLeft: null });
       guard.later(gen, () => step(k - 1), COUNTDOWN_STEP_MS);
     };
@@ -202,6 +207,7 @@ export function useEarTrainingSession() {
     capture.begin();
     listeningRef.current = true;
     micActive.value = true;
+    hapticMicReady();
     setStore({ phase: 'listening', countdown: null, waitSecondsLeft: null });
     guard.later(
       gen,

@@ -2,6 +2,7 @@ import { PropsWithChildren, useEffect, useState } from 'react';
 import { Linking, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { hapticWarning } from '@/shared/audio';
 import { AppText, Button } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
 import { useMicCalibration } from '../lib/calibration';
@@ -26,6 +27,12 @@ const COPY: Record<string, { title: string; body: string }> = {
 export function MicCalibrationGate({ children }: PropsWithChildren) {
   const { palette, spacing, radii, gradient } = useTheme();
   const { status, errorMessage, level, retry } = useMicCalibration();
+
+  useEffect(() => {
+    if (status === 'too-noisy' || status === 'too-quiet' || status === 'error' || status === 'permission-denied') {
+      hapticWarning();
+    }
+  }, [status]);
 
   if (status === 'ok') return <>{children}</>;
 

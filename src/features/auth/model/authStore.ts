@@ -68,6 +68,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     // Track whether we cleared a stale session so the auth listener doesn't
     // immediately restore it from the SIGNED_OUT event's null → SIGNED_IN echo.
     let clearedStale = false;
+    // Block the onAuthStateChange listener until the initial hydrate settles.
+    // Without this, the listener can fire with a stale session before hydrate
+    // decides to clear it, causing a login → onboarding → login flash.
+    let hydrated = false;
 
     const hydrate = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -75,9 +79,11 @@ export const useAuthStore = create<AuthState>((set) => ({
         // Stale Keychain session from a previous install — clear it
         clearedStale = true;
         await supabase.auth.signOut();
+        hydrated = true;
         set({ session: null, user: null, loading: false });
         return;
       }
+      hydrated = true;
       set({ session, user: session?.user ?? null, loading: false });
     };
 
@@ -87,6 +93,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
+      // Ignore events until the initial hydrate has settled
+      if (!hydrated) return;
       // After clearing a stale session, ignore the SIGNED_OUT echo
       if (clearedStale && !session) return;
       clearedStale = false;
