@@ -8,12 +8,13 @@
     "userInterfaceStyle": "dark",
     "backgroundColor": "#101113",
     "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
+      "image": "./assets/splash.png",
+      "resizeMode": "cover",
       "backgroundColor": "#08070C"
     },
     "ios": {
       "icon": "./Icons.icon",
+      "appleTeamId": "4F6C4GS493",
       "supportsTablet": false,
       "bundleIdentifier": "app.anya.eargym",
       "infoPlist": {
@@ -23,9 +24,8 @@
     "android": {
       "package": "app.anya.eargym",
       "adaptiveIcon": {
-        "backgroundColor": "#0D1726",
+        "backgroundColor": "#7C92F9",
         "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false
@@ -65,7 +65,8 @@
           ]
         }
       ],
-      "expo-splash-screen"
+      "./plugins/with-liquid-glass-icon-fix",
+      "./plugins/with-splash-cover"
     ]
   }
 }

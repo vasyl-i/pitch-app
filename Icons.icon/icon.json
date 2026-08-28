@@ -1,42 +1,61 @@
 {
   "fill" : {
-    "linear-gradient" : [
-      "display-p3:0.02882,0.12655,0.29088,1.00000",
-      "display-p3:0.00000,0.00000,0.00000,1.00000"
-    ],
-    "orientation" : {
-      "start" : {
-        "x" : 0.5,
-        "y" : 0
-      },
-      "stop" : {
-        "x" : 0.5,
-        "y" : 0.7
-      }
-    }
+    "solid" : "display-p3:0.50244,0.56982,0.94824,1.00000"
   },
   "groups" : [
     {
+      "blend-mode" : "normal",
+      "blur-material" : 0,
+      "hidden" : false,
       "layers" : [
         {
-          "image-name" : "WinkCat.svg",
-          "name" : "WinkCat",
+          "glass" : false,
+          "image-name" : "flowbite_music-solid.svg",
+          "name" : "flowbite_music-solid",
           "position" : {
-            "scale" : 6.5,
+            "scale" : 9,
             "translation-in-points" : [
-              96.49597755463765,
-              240.06707726575036
+              200,
+              -490
+            ]
+          }
+        },
+        {
+          "fill" : "automatic",
+          "glass" : false,
+          "image-name" : "smirk.svg",
+          "name" : "smirk",
+          "position" : {
+            "scale" : 8,
+            "translation-in-points" : [
+              0,
+              0
             ]
           }
         }
       ],
+      "lighting" : "combined",
+      "opacity" : 1,
+      "position" : {
+        "scale" : 1,
+        "translation-in-points" : [
+          0,
+          200
+        ]
+      },
+      "refractivity" : {
+        "depth" : 0,
+        "enabled" : false,
+        "strength" : 0.0109375
+      },
       "shadow" : {
         "kind" : "neutral",
-        "opacity" : 0.5
+        "opacity" : 0
       },
+      "specular" : false,
       "translucency" : {
-        "enabled" : true,
-        "value" : 0.5
+        "enabled" : false,
+        "value" : 0
       }
     }
   ],
