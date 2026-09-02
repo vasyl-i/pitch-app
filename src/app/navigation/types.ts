@@ -90,6 +90,17 @@ export type RootStackParamList = {
   Paywall: { source: PaywallSource; feature?: PremiumFeature };
 };
 
+/** Auth screens shown before the user is signed in. */
+export type AuthStackParamList = {
+  SignIn: undefined;
+  EmailEntry: undefined;
+  EmailSignIn: { email: string };
+  EmailSignUp: { email: string };
+  CheckEmail: { email: string; password: string };
+};
+
+export type AuthScreenProps<T extends keyof AuthStackParamList> = NativeStackScreenProps<AuthStackParamList, T>;
+
 export type RootScreenProps<T extends keyof RootStackParamList> = NativeStackScreenProps<RootStackParamList, T>;
 
 export type TabScreenProps<T extends keyof MainTabParamList> = CompositeScreenProps<

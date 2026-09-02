@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PitchGym — Train your ear. Find your pitch.</title>
+  <meta name="description" content="PitchGym helps beginner-to-intermediate singers train their ear, find their pitch, and sing with confidence." />
+  <meta property="og:title" content="PitchGym" />
+  <meta property="og:description" content="Train your ear. Find your pitch. Sing with confidence." />
+  <meta property="og:image" content="https://pitchgym.anyabedrytska.com/assets/app-icon.webp" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #08070C;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      overflow: hidden;
+    }
+
+    /* Background gradient — radial lime burst from top-right, fading through violet */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 102% 118% at 107% -19%, rgba(242, 255, 194, 0.18) 0%, rgba(121, 134, 255, 0.12) 40%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Atmospheric glow blobs */
+    .glow {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(100px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .glow-indigo {
+      width: 380px; height: 380px;
+      background: #7B7FE0;
+      top: -100px; right: -80px;
+      opacity: 0.25;
+    }
+    .glow-lavender {
+      width: 280px; height: 280px;
+      background: #B79FE8;
+      bottom: 8%; left: -60px;
+      opacity: 0.2;
+    }
+    .glow-blue {
+      width: 200px; height: 200px;
+      background: #6FA0E8;
+      top: 40%; left: 60%;
+      opacity: 0.1;
+    }
+    .glow-coral {
+      width: 160px; height: 160px;
+      background: #EE8672;
+      bottom: -30px; right: 15%;
+      opacity: 0.15;
+    }
+
+    .content {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      max-width: 440px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+    }
+
+    .app-icon {
+      width: 140px;
+      height: 140px;
+      border-radius: 32px;
+      object-fit: cover;
+      margin-bottom: 28px;
+      animation: float 4s ease-in-out infinite;
+      filter: drop-shadow(0 12px 40px rgba(123, 127, 224, 0.3));
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .title {
+      font-size: 42px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.75) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .tagline {
+      font-size: 17px;
+      line-height: 1.6;
+      color: rgba(255, 255, 255, 0.5);
+      margin-bottom: 40px;
+    }
+
+    .badge-row {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.06);
+      padding: 12px 22px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.65);
+      transition: background 0.2s;
+    }
+    .badge:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .badge svg {
+      flex-shrink: 0;
+    }
+
+    .divider {
+      width: 48px;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 1px;
+      margin: 32px 0;
+    }
+
+    .coming-soon {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.3);
+      letter-spacing: 0.5px;
+    }
+
+    .footer {
+      position: fixed;
+      bottom: 24px;
+      left: 0; right: 0;
+      text-align: center;
+      z-index: 1;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.15);
+    }
+  </style>
+</head>
+<body>
+  <!-- Glow blobs -->
+  <div class="glow glow-indigo"></div>
+  <div class="glow glow-lavender"></div>
+  <div class="glow glow-blue"></div>
+  <div class="glow glow-coral"></div>
+
+  <div class="content">
+    <img class="app-icon" src="assets/app-icon.webp" alt="PitchGym" />
+    <h1 class="title">PitchGym</h1>
+    <p class="tagline">
+      Train your ear. Find your pitch.<br />
+      Sing with confidence.
+    </p>
+
+    <div class="badge-row">
+      <span class="badge">
+        <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 1 0 6 0V5a3 3 0 0 0-3-3Z" fill="rgba(200,218,89,0.8)"/><path d="M19 10v1a7 7 0 1 1-14 0v-1M12 18v4m-3 0h6" stroke="rgba(200,218,89,0.8)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Real-time pitch
+      </span>
+      <span class="badge">
+        <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13" stroke="rgba(139,124,255,0.8)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6" cy="18" r="3" fill="rgba(139,124,255,0.8)"/><circle cx="18" cy="16" r="3" fill="rgba(139,124,255,0.8)"/></svg>
+        Ear training
+      </span>
+      <span class="badge">
+        <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Z" stroke="rgba(238,134,114,0.8)" stroke-width="1.5"/><path d="M8 12h.01M12 12h.01M16 12h.01" stroke="rgba(238,134,114,0.8)" stroke-width="2" stroke-linecap="round"/></svg>
+        Sing along
+      </span>
+    </div>
+
+    <div class="divider"></div>
+    <p class="coming-soon">Coming soon to iOS and Android</p>
+  </div>
+
+  <div class="footer">&copy; 2026 PitchGym</div>
+</body>
+</html>

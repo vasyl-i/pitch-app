@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Alert, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { BlurView } from 'expo-blur';
 import { Canvas, LinearGradient, Text as SkText, useFont, vec } from '@shopify/react-native-skia';
@@ -8,6 +10,7 @@ import { AppText, Screen } from '@/shared/ui';
 import { palette, spacing, useTheme } from '@/shared/theme';
 import { useAuthStore } from '@/features/auth';
 import { WinkCat } from '../../../assets/svg';
+import type { AuthStackParamList } from '@/app/navigation/types';
 
 /**
  * Resolved once at module load. App.tsx waits for this before hiding the
@@ -25,6 +28,7 @@ const FONT_SIZE = 16;
 const LINE_HEIGHT = 24; // matches body variant (fontSize * 1.5)
 
 export function SignInScreen() {
+    const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
     const { spacing, palette, radii, blur } = useTheme();
     const signInWithGoogle = useAuthStore((s) => s.signInWithGoogle);
     const signInWithApple = useAuthStore((s) => s.signInWithApple);
@@ -112,9 +116,7 @@ export function SignInScreen() {
                     </Pressable>
                     <Pressable
                         accessibilityRole="button"
-                        onPress={() => {
-                            Alert.alert('Coming soon!');
-                        }}
+                        onPress={() => navigation.navigate('EmailEntry')}
                         style={({ pressed }) => [
                             styles.authButton,
                             { borderRadius: radii.pill, overflow: 'hidden' as const },

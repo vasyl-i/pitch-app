@@ -46,6 +46,9 @@ interface AuthState {
   initialize: () => () => void;
   signInWithGoogle: () => Promise<void>;
   signInWithApple: () => Promise<void>;
+  signInWithEmail: (email: string, password: string) => Promise<void>;
+  /** Returns true if the user's email is already confirmed (instant sign-in). */
+  signUpWithEmail: (email: string, name: string, password: string) => Promise<boolean>;
   continueAsGuest: () => void;
   signOut: () => Promise<void>;
   deleteAccount: () => Promise<void>;
@@ -174,6 +177,26 @@ export const useAuthStore = create<AuthState>((set) => ({
     if (fullName) {
       await supabase.auth.updateUser({ data: { full_name: fullName } });
     }
+  },
+
+  signInWithEmail: async (email, password) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+  },
+
+  signUpWithEmail: async (email, name, password) => {
+    const redirectTo = 'https://pitchgym.anyabedrytska.com/auth/callback.html';
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { full_name: name },
+        emailRedirectTo: redirectTo,
+      },
+    });
+    if (error) throw error;
+    // If the session exists, the user was auto-confirmed (no email verification needed)
+    return !!data.session;
   },
 
   continueAsGuest: () => {

@@ -3,18 +3,38 @@ import { Platform, View } from 'react-native';
 import { DarkTheme, NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
+import * as Linking from 'expo-linking';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { useFonts } from 'expo-font';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { startLearningTracker } from '@/features/learning';
 import { AuthGate, useAuthStore, startSync, stopSync, pullFromServer } from '@/features/auth';
-import { SignInScreen } from '@/screens/auth';
 import { ThemeProvider, theme } from '@/shared/theme';
+import { supabase } from '@/shared/lib/supabase';
 import { preloadPianoSamples } from '@/shared/audio';
 import { RootNavigator } from './navigation/RootNavigator';
+import { AuthNavigator } from './navigation/AuthNavigator';
 
 SplashScreen.preventAutoHideAsync();
+
+/**
+ * Handle Supabase auth deep links (email confirmation, magic links).
+ * Supabase appends tokens as a URL fragment: #access_token=…&refresh_token=…
+ */
+function handleAuthDeepLink(url: string) {
+  // The fragment comes after '#' — parse it for tokens
+  const fragment = url.split('#')[1];
+  if (!fragment) return;
+
+  const params = new URLSearchParams(fragment);
+  const accessToken = params.get('access_token');
+  const refreshToken = params.get('refresh_token');
+
+  if (accessToken && refreshToken) {
+    supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+  }
+}
 
 const satoshiFonts = {
   'Satoshi-Regular': require('../../assets/fonts/Satoshi-Regular.ttf'),
@@ -52,6 +72,17 @@ export default function App() {
   const [fontsLoaded] = useFonts(satoshiFonts);
   const authLoading = useAuthStore((s) => s.loading);
   const [appleReady, setAppleReady] = useState(Platform.OS !== 'ios');
+
+  // Handle auth deep links (email confirmation callback)
+  useEffect(() => {
+    // Handle link that launched the app (cold start)
+    Linking.getInitialURL().then((url) => {
+      if (url) handleAuthDeepLink(url);
+    });
+    // Handle links while the app is already open
+    const sub = Linking.addEventListener('url', ({ url }) => handleAuthDeepLink(url));
+    return () => sub.remove();
+  }, []);
 
   // every finished practice session flows into the learning profile from here
   useEffect(() => {
@@ -93,13 +124,13 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutReady}>
       <SafeAreaProvider>
         <ThemeProvider>
-          <AuthGate fallback={<SignInScreen />}>
-            <NavigationContainer theme={navigationTheme}>
+          <NavigationContainer theme={navigationTheme}>
+            <AuthGate fallback={<AuthNavigator />}>
               <SyncManager />
               <RootNavigator />
-              <StatusBar style="light" />
-            </NavigationContainer>
-          </AuthGate>
+            </AuthGate>
+            <StatusBar style="light" />
+          </NavigationContainer>
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
