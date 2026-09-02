@@ -6,7 +6,7 @@ import type { OnboardingScreenProps } from '@/app/navigation/types';
 
 export function LowestNoteScreen({ navigation }: OnboardingScreenProps<'Lowest'>) {
     return (
-    <Screen overlay={<MicGlow />}>
+    <Screen>
       <View style={{ flexDirection: 'row', marginBottom: 8 }}>
         <BackButton onPress={() => navigation.goBack()} />
       </View>

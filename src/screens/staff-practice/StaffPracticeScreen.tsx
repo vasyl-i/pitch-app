@@ -3,7 +3,8 @@ import { StyleSheet, View } from 'react-native';
 import { exercises, fitToRange, odeToJoy, transposeExercise } from '@/entities/exercise';
 import { useProfileStore } from '@/entities/profile';
 import { buildSessionRecord, useProgressStore } from '@/features/progress';
-import { LiveReadout, MicGlow, PianoKeyboard, StaffView, useStaffSession, useStaffStore, VERDICT_LABEL } from '@/features/staff-practice';
+import { LiveReadout, MicGlow, PianoKeyboard, useStaffSession, useStaffStore, VERDICT_LABEL } from '@/features/staff-practice';
+import { ScrollingPitchCanvas } from '@/features/pitch-visualization';
 import { AppText, BackButton, Button, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
 import type { RootScreenProps } from '@/app/navigation/types';
@@ -88,6 +89,15 @@ function StaffSession({
   const comparison = useStaffStore((s) => s.comparison);
   const outputIsolated = useStaffStore((s) => s.outputIsolated);
   const lastVerdict = useStaffStore((s) => s.lastVerdict);
+
+  // scrolling canvas data
+  const trail = useStaffStore((s) => s.trail);
+  const liveMidi = useStaffStore((s) => s.liveMidi);
+  const liveCents = useStaffStore((s) => s.liveCents);
+  const currentTargetMidi = useStaffStore((s) => s.currentTargetMidi);
+  const position = useStaffStore((s) => s.position);
+  const positionUpdatedAt = useStaffStore((s) => s.positionUpdatedAt);
+  const canvasRunning = status === 'running' || status === 'listen' || status === 'accompanied';
 
   const lowMidi = Math.min(...exercise.notes.map((n) => n.midi));
   const highMidi = Math.max(...exercise.notes.map((n) => n.midi));
@@ -220,7 +230,17 @@ function StaffSession({
           </View>
 
           <View style={{ flex: 1, marginVertical: spacing.md }}>
-            <StaffView exercise={exercise} rate={rate} />
+            <ScrollingPitchCanvas
+              trail={trail}
+              liveMidi={liveMidi}
+              liveCents={liveCents}
+              targetMidi={currentTargetMidi}
+              currentTime={position}
+              positionUpdatedAt={positionUpdatedAt}
+              running={canvasRunning}
+              targets={exercise.notes}
+              rate={rate}
+            />
           </View>
 
           <PianoKeyboard lowMidi={lowMidi} highMidi={highMidi} />

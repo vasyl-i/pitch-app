@@ -9,6 +9,7 @@ export { PitchKeyboard } from './ui/PitchKeyboard';
 export { MiniStaff } from './ui/MiniStaff';
 export { CentsGauge } from './ui/CentsGauge';
 export { ConfidenceMeter } from './ui/ConfidenceMeter';
+export { ScrollingPitchCanvas } from './ui/ScrollingPitchCanvas';
 
 /**
  * Display stabilization — the UI-only half of the pitch path.
@@ -20,3 +21,4 @@ export { ConfidenceMeter } from './ui/ConfidenceMeter';
 export { createNoteStabilizer, DEFAULT_NOTE_HYSTERESIS_SEMITONES } from '@/shared/lib/noteStabilizer';
 export type { NoteStabilizer } from '@/shared/lib/noteStabilizer';
 export { useStabilizedNote } from './lib/useStabilizedNote';
+export { usePitchTrail } from './lib/usePitchTrail';

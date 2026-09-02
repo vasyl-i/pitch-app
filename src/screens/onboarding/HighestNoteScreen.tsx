@@ -7,7 +7,7 @@ import type { OnboardingScreenProps } from '@/app/navigation/types';
 export function HighestNoteScreen({ navigation, route }: OnboardingScreenProps<'Highest'>) {
   const { low } = route.params;
   return (
-    <Screen overlay={<MicGlow />}>
+    <Screen>
       <View style={{ flexDirection: 'row', marginBottom: 8 }}>
         <BackButton onPress={() => navigation.goBack()} />
       </View>

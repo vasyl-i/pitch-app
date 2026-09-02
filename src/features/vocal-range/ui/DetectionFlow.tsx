@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AppText, Button, Card } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
-import { ConfidenceMeter, MiniStaff, useStabilizedNote } from '@/features/pitch-visualization';
+import { ConfidenceMeter, ScrollingPitchCanvas, usePitchTrail, useStabilizedNote } from '@/features/pitch-visualization';
 import { midiToName } from '@/shared/lib/music';
 import { LOW_CONFIDENCE_THRESHOLD, useGuidedRangeDetection, type RangeDirection } from '../lib/guidedDetection';
 
@@ -53,10 +53,8 @@ export function DetectionFlow({
     retry,
   } = useGuidedRangeDetection(direction);
 
-  // Presentation only: holds the displayed note through small excursions across
-  // a note boundary so the readout stops flickering. `currentMidi` is the raw
-  // detector pitch and is passed to MiniStaff unchanged.
   const shownNote = useStabilizedNote(currentMidi);
+  const { trail, now, push, reset: resetTrail } = usePitchTrail();
 
   useEffect(() => {
     start();
@@ -64,6 +62,12 @@ export function DetectionFlow({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // feed live pitch into the trail buffer
+  useEffect(() => {
+    push(currentMidi);
+  }, [currentMidi, push]);
+
+  const confidenceColor = liveConfidence >= 0.35 ? palette.accent : palette.textFaint;
   const lowConfidence = bestMidi !== null && bestConfidence < LOW_CONFIDENCE_THRESHOLD;
 
   return (
@@ -87,22 +91,32 @@ export function DetectionFlow({
       ) : (
         <>
           <Card style={{ ...styles.card, marginTop: spacing.lg }}>
-            <AppText variant="display" style={styles.noteName}>
-              {shownNote === null ? '—' : midiToName(shownNote)}
+            <AppText variant="title" color={shownNote !== null ? confidenceColor : palette.textFaint} style={styles.noteName}>
+              {shownNote === null ? ' ' : midiToName(shownNote)}
             </AppText>
-            <MiniStaff liveMidi={currentMidi} color={liveConfidence >= 0.35 ? palette.accent : palette.textFaint} />
-            <View style={{ marginTop: spacing.sm }}>
-              <ConfidenceMeter confidence={liveConfidence} />
-            </View>
-            <View style={[styles.holdTrack, { backgroundColor: palette.borderSubtle, borderRadius: radii.pill, marginTop: spacing.md }]}>
-              <View style={[styles.holdFill, { width: `${Math.round(holdProgress * 100)}%`, borderRadius: radii.pill, overflow: 'hidden' }]}>
-                <LinearGradient colors={gradient.accent} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />
-              </View>
+            <View style={styles.canvasWrap}>
+              <ScrollingPitchCanvas
+                trail={trail}
+                liveMidi={currentMidi}
+                liveCents={null}
+                targetMidi={null}
+                currentTime={now}
+                trailColor={confidenceColor}
+              />
             </View>
             <AppText variant="caption" style={{ marginTop: spacing.xs, textAlign: 'center' }}>
               {currentFrequency !== null ? `${Math.round(currentFrequency)} Hz` : ' '}
             </AppText>
           </Card>
+
+          <View style={{ marginTop: spacing.sm }}>
+            <ConfidenceMeter confidence={liveConfidence} />
+          </View>
+          <View style={[styles.holdTrack, { backgroundColor: palette.borderSubtle, borderRadius: radii.pill, marginTop: spacing.sm }]}>
+            <View style={[styles.holdFill, { width: `${Math.round(holdProgress * 100)}%`, borderRadius: radii.pill, overflow: 'hidden' }]}>
+              <LinearGradient colors={gradient.accent} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />
+            </View>
+          </View>
 
           <AppText variant="body" color={palette.textSecondary} style={{ marginTop: spacing.lg, textAlign: 'center' }}>
             {message}
@@ -128,7 +142,7 @@ export function DetectionFlow({
             {bestMidi !== null ? (
               <>
                 <Button title="Continue" onPress={() => onCaptured({ midi: bestMidi, confidence: bestConfidence })} />
-                <Button title="Try again" variant="ghost" onPress={retry} />
+                <Button title="Try again" variant="ghost" onPress={() => { retry(); resetTrail(); }} />
               </>
             ) : (
               <Button title="Back" variant="ghost" onPress={onBack} />
@@ -143,7 +157,8 @@ export function DetectionFlow({
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   card: { padding: 20 },
-  noteName: { fontSize: 40, textAlign: 'center', fontVariant: ['tabular-nums'] },
+  canvasWrap: { height: 160, marginBottom: 8 },
+  noteName: { fontSize: 28, textAlign: 'center', fontVariant: ['tabular-nums'], marginBottom: 8 },
   holdTrack: { height: 6, overflow: 'hidden' },
   holdFill: { height: '100%' },
   spacer: { flex: 1 },
