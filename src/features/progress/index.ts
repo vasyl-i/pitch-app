@@ -19,9 +19,13 @@ export {
   localDayKey,
   weeklyAccuracyTrend,
   perfectExercises,
+  todayExerciseStats,
 } from './lib/stats';
-export type { WeeklyStats, HeatmapEntry, WeeklyAccuracyPoint, PerfectExercise } from './lib/stats';
+export type { WeeklyStats, HeatmapEntry, WeeklyAccuracyPoint, PerfectExercise, TodayExerciseStat } from './lib/stats';
 export { NoteHeatmap } from './ui/NoteHeatmap';
 export { TrendSparkline } from './ui/TrendSparkline';
 export { WeeklyAccuracyChart } from './ui/WeeklyAccuracyChart';
 export { PracticeCalendar } from './ui/PracticeCalendar';
+export { SkillTrendChart } from './ui/SkillTrendChart';
+export { MasterySparkline } from './ui/MasterySparkline';
+export type { SnapshotPoint } from './ui/SkillTrendChart';

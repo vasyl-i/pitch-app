@@ -36,6 +36,7 @@ import { buildEarSessionRecord } from '../lib/progressRecord';
 import { createPromptPlayer, ensurePlaybackReady, PlaybackError } from '../lib/promptPlayer';
 import { exerciseById } from './definitions';
 import { useEarTrainingStore } from './earTrainingStore';
+import type { PartialProgress } from '@/features/learning';
 import type { EarRound, ExerciseDefinition, SingResponse } from './types';
 
 const LIVE_EVAL_MS = 150;
@@ -280,13 +281,15 @@ export function useEarTrainingSession() {
     void releaseLease();
     const results = useEarTrainingStore.getState().results;
     const summary = summarizeSession(results);
-    // only full sessions reach here (exit/unmount/failure reset instead), so
-    // every completion is a real attempt worth recording
     const def = defRef.current;
     if (def && results.length > 0) {
+      // On resume, roundsRef only has NEW rounds while results has ALL.
+      // Pair roundsRef with the matching tail of results for tendency data.
+      const resumedCount = results.length - roundsRef.current.length;
+      const newResults = results.slice(resumedCount);
       useProgressStore
         .getState()
-        .addSession(buildEarSessionRecord(def, difficultyRef.current, roundsRef.current, results, summary));
+        .addSession(buildEarSessionRecord(def, difficultyRef.current, roundsRef.current, newResults, summary));
     }
     setStore({ phase: 'completed', summary });
   }
@@ -294,7 +297,7 @@ export function useEarTrainingSession() {
   /* ---------------------------- controls --------------------------- */
 
   /** begin a session; difficulty defaults to the exercise's own default */
-  async function start(exerciseId: string, difficultyId?: string) {
+  async function start(exerciseId: string, difficultyId?: string, resume?: PartialProgress) {
     const def = exerciseById(exerciseId);
     if (!def) return;
     const gen = freshGeneration();
@@ -306,13 +309,14 @@ export function useEarTrainingSession() {
     difficultyRef.current = difficultyId ?? def.defaultDifficulty ?? null;
     roundsRef.current = [];
     currentRoundRef.current = null;
-    previousPcRef.current = undefined;
+    previousPcRef.current = resume?.lastAnswerPc;
     useEarTrainingStore.getState().reset();
     setStore({
       phase: 'preparing',
       exerciseId: def.id,
       difficultyId: difficultyRef.current,
       totalRounds: def.rounds,
+      ...(resume ? { round: resume.completedRounds, results: resume.results } : {}),
     });
 
     try {
@@ -336,6 +340,18 @@ export function useEarTrainingSession() {
 
   return {
     start,
+
+    /** Snapshot current round progress for later resumption. */
+    getProgress(): PartialProgress | null {
+      const { round, results } = useEarTrainingStore.getState();
+      if (round === 0) return null;
+      return {
+        completedRounds: results.length,
+        results,
+        lastAnswerPc: previousPcRef.current,
+        savedAt: Date.now(),
+      };
+    },
 
     /**
      * Replay the current round's prompt. The round restarts cleanly (fresh

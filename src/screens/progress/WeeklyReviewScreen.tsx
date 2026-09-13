@@ -17,9 +17,9 @@ import {
 import { currentStreak, formatPracticeTime, localDayKey, useProgressStore } from '@/features/progress';
 import { AppText, BackButton, Card, IconBubble, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
-import type { ProfileScreenProps } from '@/app/navigation/types';
+import type { ProgressScreenProps } from '@/app/navigation/types';
 
-export function WeeklyReviewScreen({ navigation }: ProfileScreenProps<'WeeklyReview'>) {
+export function WeeklyReviewScreen({ navigation }: ProgressScreenProps<'WeeklyReview'>) {
   const { palette, spacing } = useTheme();
   const sessions = useProgressStore((s) => s.sessions);
   const skills = useLearningStore((s) => s.skills);

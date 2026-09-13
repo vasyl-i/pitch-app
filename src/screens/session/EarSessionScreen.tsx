@@ -6,9 +6,10 @@
  * The session engine still owns all behaviour; unmounting this screen
  * releases the mic and resets the store (the engine's own cleanup).
  */
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { InteractionManager, View } from 'react-native';
 import { useEarTrainingSession, useEarTrainingStore } from '@/features/ear-training';
+import { useLessonSessionStore } from '@/features/learning';
 import { MicGlow } from '@/features/staff-practice';
 import { AppText, Button, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
@@ -21,19 +22,33 @@ export function EarSessionScreen({ navigation, route }: RootScreenProps<'EarSess
   const { palette, spacing } = useTheme();
   const { exerciseId, difficultyId, guided } = route.params;
   const session = useEarTrainingSession();
+  const activeSlot = useLessonSessionStore((s) => s.activeSlot);
 
   const sessionRef = useRef(session);
   sessionRef.current = session;
 
+  // capture partial progress once on mount so resume state isn't lost
+  const partialRef = useRef(
+    activeSlot ? useLessonSessionStore.getState().partialProgress[activeSlot] : undefined
+  );
+
   useEffect(() => {
-    // Defer mic + audio session init until the screen transition animation
-    // finishes — these are heavy native calls that block the JS thread and
-    // cause the slide-in to stutter.
     const task = InteractionManager.runAfterInteractions(() => {
-      void sessionRef.current.start(exerciseId, difficultyId);
+      void sessionRef.current.start(exerciseId, difficultyId, partialRef.current);
     });
     return () => task.cancel();
   }, [exerciseId, difficultyId]);
+
+  const handleExit = useCallback(() => {
+    if (guided && activeSlot) {
+      const progress = sessionRef.current.getProgress();
+      if (progress && progress.completedRounds > 0) {
+        useLessonSessionStore.getState().savePartial(activeSlot, progress);
+      }
+    }
+    session.exit();
+    navigation.goBack();
+  }, [guided, activeSlot, navigation, session]);
 
   const phase = useEarTrainingStore((s) => s.phase);
   const notice = useEarTrainingStore((s) => s.notice);
@@ -83,7 +98,7 @@ export function EarSessionScreen({ navigation, route }: RootScreenProps<'EarSess
       ) : phase === 'idle' ? (
         <View style={{ flex: 1 }} />
       ) : (
-        <ActiveRound session={{ ...session, exit: () => navigation.goBack() }} />
+        <ActiveRound session={{ ...session, exit: handleExit }} />
       )}
     </Screen>
   );

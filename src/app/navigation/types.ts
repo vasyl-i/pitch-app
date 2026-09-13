@@ -22,14 +22,20 @@ export type ExercisesStackParamList = {
   ExercisesHub: undefined;
 };
 
-/**
- * The Account tab: your voice, your goals, the free-practice library, and
- * (relocated here from their former top-level tabs) the stats dashboard and
- * the skill-tree journey.
- */
+/** The Progress tab: stats, trends, calendar, journey, and weekly review. */
+export type ProgressStackParamList = {
+  ProgressOverview: undefined;
+  WeeklyReview: undefined;
+  PerfectExercises: undefined;
+  JourneyOverview: undefined;
+  JourneyArea: { category: SkillCategory };
+};
+
+/** The Account tab: your voice, your goals, the free-practice library, and settings. */
 export type ProfileStackParamList = {
   ProfileHome: undefined;
   LearningPreferences: undefined;
+  ExerciseSettings: undefined;
   SoundSettings: undefined;
   ManageSubscription: undefined;
   PracticeLibrary: undefined;
@@ -37,11 +43,6 @@ export type ProfileStackParamList = {
   RedetectLow: undefined;
   RedetectHigh: { low: DetectionResult };
   RedetectResults: { low: DetectionResult; high: DetectionResult };
-  ProgressOverview: undefined;
-  WeeklyReview: undefined;
-  PerfectExercises: undefined;
-  JourneyOverview: undefined;
-  JourneyArea: { category: SkillCategory };
 };
 
 /** First-launch onboarding: welcome, why it matters, detection, results, learning goals. */
@@ -58,6 +59,7 @@ export type MainTabParamList = {
   HomeTab: NavigatorScreenParams<HomeStackParamList>;
   SingTab: NavigatorScreenParams<SingStackParamList>;
   ExercisesTab: NavigatorScreenParams<ExercisesStackParamList>;
+  ProgressTab: NavigatorScreenParams<ProgressStackParamList>;
   AccountTab: NavigatorScreenParams<ProfileStackParamList>;
 };
 
@@ -120,6 +122,11 @@ export type SingScreenProps<T extends keyof SingStackParamList> = CompositeScree
 
 export type ExercisesScreenProps<T extends keyof ExercisesStackParamList> = CompositeScreenProps<
   NativeStackScreenProps<ExercisesStackParamList, T>,
+  TabScreenProps<keyof MainTabParamList>
+>;
+
+export type ProgressScreenProps<T extends keyof ProgressStackParamList> = CompositeScreenProps<
+  NativeStackScreenProps<ProgressStackParamList, T>,
   TabScreenProps<keyof MainTabParamList>
 >;
 

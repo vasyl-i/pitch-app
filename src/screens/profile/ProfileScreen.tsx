@@ -13,10 +13,12 @@ import { useSoundStore, SOUND_TYPE_LABELS } from '@/shared/audio';
 import { midiToName } from '@/shared/lib/music';
 import { AppText, Card, IconBubble, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
+import { useFloatingTabBarClearance } from '@/app/navigation/FloatingTabBar';
 import type { ProfileScreenProps } from '@/app/navigation/types';
 
 export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>) {
   const { palette, spacing } = useTheme();
+  const tabBarClearance = useFloatingTabBarClearance(spacing.xl);
   const profile = useProfileStore((s) => s.profile);
   const prefs = usePreferencesStore((s) => s.preferences);
   const premium = usePremiumStatus();
@@ -61,7 +63,7 @@ export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>)
 
   return (
     <Screen>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: spacing.xxl }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: tabBarClearance }}>
         <AppText variant="title" style={{ fontSize: 40 }}>
           Account
         </AppText>
@@ -100,27 +102,21 @@ export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>)
             subtitle={
               prefs
                 ? `${GOAL_LABELS[prefs.primaryGoal]} · ${prefs.dailyMinutes} min a day`
-                : 'Set what you’re working toward'
+                : "Set what you're working toward"
             }
             onPress={() => navigation.navigate('LearningPreferences')}
+          />
+          <Row
+            icon="options"
+            title="Exercise settings"
+            subtitle="Choose which exercises appear in your daily plan"
+            onPress={() => navigation.navigate('ExerciseSettings')}
           />
           <Row
             icon="albums"
             title="Practice library"
             subtitle="Explore any exercise freely, outside your daily practice"
             onPress={() => navigation.navigate('PracticeLibrary')}
-          />
-          <Row
-            icon="stats-chart"
-            title="Progress"
-            subtitle="Trends, streaks, and your practice calendar"
-            onPress={() => navigation.navigate('ProgressOverview')}
-          />
-          <Row
-            icon="map"
-            title="Journey"
-            subtitle="What you've learned, by musical ability"
-            onPress={() => navigation.navigate('JourneyOverview')}
           />
         </View>
 

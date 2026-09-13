@@ -15,9 +15,9 @@ import {
 } from '@/features/learning';
 import { AppText, BackButton, Card, IconBubble, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
-import type { ProfileScreenProps } from '@/app/navigation/types';
+import type { ProgressScreenProps } from '@/app/navigation/types';
 
-export function JourneyAreaScreen({ navigation, route }: ProfileScreenProps<'JourneyArea'>) {
+export function JourneyAreaScreen({ navigation, route }: ProgressScreenProps<'JourneyArea'>) {
   const { palette, spacing } = useTheme();
   const skills = useLearningStore((s) => s.skills);
   const area = useMemo(() => buildJourneyArea(route.params.category, skills), [route.params.category, skills]);

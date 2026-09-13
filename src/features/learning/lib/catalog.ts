@@ -28,6 +28,7 @@ const EAR_ACTIVITIES: Activity[] = [
     difficulties: null,
     minutes: 2,
     challenge: 0.15,
+    rounds: 5,
   },
   {
     kind: 'ear',
@@ -38,6 +39,7 @@ const EAR_ACTIVITIES: Activity[] = [
     difficulties: null,
     minutes: 2,
     challenge: 0.2,
+    rounds: 8,
   },
   {
     kind: 'ear',
@@ -48,6 +50,7 @@ const EAR_ACTIVITIES: Activity[] = [
     difficulties: ['beginner', 'intermediate', 'advanced'],
     minutes: 3,
     challenge: 0.35,
+    rounds: 4,
   },
   {
     kind: 'ear',
@@ -58,6 +61,7 @@ const EAR_ACTIVITIES: Activity[] = [
     difficulties: ['easy', 'medium', 'hard', 'expert'],
     minutes: 3,
     challenge: 0.35,
+    rounds: 3,
   },
   {
     kind: 'ear',
@@ -68,6 +72,7 @@ const EAR_ACTIVITIES: Activity[] = [
     difficulties: ['intervals', 'chords', 'scales'],
     minutes: 3,
     challenge: 0.4,
+    rounds: 6,
   },
   {
     kind: 'ear',
@@ -78,6 +83,7 @@ const EAR_ACTIVITIES: Activity[] = [
     difficulties: null,
     minutes: 2,
     challenge: 0.4,
+    rounds: 5,
   },
   {
     kind: 'ear',
@@ -88,6 +94,7 @@ const EAR_ACTIVITIES: Activity[] = [
     difficulties: ['beginner', 'intermediate', 'advanced'],
     minutes: 3,
     challenge: 0.35,
+    rounds: 5,
   },
   {
     kind: 'ear',
@@ -98,6 +105,7 @@ const EAR_ACTIVITIES: Activity[] = [
     difficulties: ['beginner', 'intermediate', 'advanced'],
     minutes: 3,
     challenge: 0.5,
+    rounds: 5,
   },
   {
     kind: 'ear',
@@ -108,6 +116,7 @@ const EAR_ACTIVITIES: Activity[] = [
     difficulties: ['beginner', 'intermediate', 'advanced'],
     minutes: 3,
     challenge: 0.6,
+    rounds: 4,
   },
 ];
 
@@ -176,6 +185,7 @@ const MELODY_ACTIVITIES: Activity[] = melodyLibrary.map((e) => {
     difficulties: null,
     minutes: profile.minutes,
     challenge: Math.max(profile.minChallenge, DIFFICULTY_CHALLENGE[e.difficulty] ?? 0.4),
+    rounds: 1,
   };
 });
 

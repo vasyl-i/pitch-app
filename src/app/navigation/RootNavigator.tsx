@@ -10,7 +10,7 @@ import { ExercisesHubScreen } from '@/screens/exercises';
 import { NotificationsScreen } from '@/screens/notifications';
 import { ProgressScreen, WeeklyReviewScreen, PerfectExercisesScreen } from '@/screens/progress';
 import { JourneyScreen, JourneyAreaScreen } from '@/screens/journey';
-import { ProfileScreen, LearningPreferencesScreen, SoundSettingsScreen } from '@/screens/profile';
+import { ProfileScreen, LearningPreferencesScreen, ExerciseSettingsScreen, SoundSettingsScreen } from '@/screens/profile';
 import { PracticeLibraryScreen } from '@/screens/library';
 import { EarSessionScreen, PracticeCompleteScreen } from '@/screens/session';
 import { PaywallScreen } from '@/screens/paywall';
@@ -28,6 +28,7 @@ import type {
   MainTabParamList,
   OnboardingStackParamList,
   ProfileStackParamList,
+  ProgressStackParamList,
   RootStackParamList,
   SingStackParamList,
 } from './types';
@@ -37,6 +38,7 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 const SingStack = createNativeStackNavigator<SingStackParamList>();
 const ExercisesStack = createNativeStackNavigator<ExercisesStackParamList>();
+const ProgressStack = createNativeStackNavigator<ProgressStackParamList>();
 const ProfileStack = createNativeStackNavigator<ProfileStackParamList>();
 const OnboardingStack = createNativeStackNavigator<OnboardingStackParamList>();
 
@@ -77,12 +79,26 @@ function ExercisesNavigator() {
   );
 }
 
-/** Account: your voice, your goal, the library, progress and journey. */
+/** Progress: stats, trends, calendar, journey, and weekly review. */
+function ProgressNavigator() {
+  return (
+    <ProgressStack.Navigator screenOptions={useStackScreenOptions()}>
+      <ProgressStack.Screen name="ProgressOverview" component={ProgressScreen} />
+      <ProgressStack.Screen name="WeeklyReview" component={WeeklyReviewScreen} />
+      <ProgressStack.Screen name="PerfectExercises" component={PerfectExercisesScreen} />
+      <ProgressStack.Screen name="JourneyOverview" component={JourneyScreen} />
+      <ProgressStack.Screen name="JourneyArea" component={JourneyAreaScreen} />
+    </ProgressStack.Navigator>
+  );
+}
+
+/** Account: your voice, your goal, the library, and settings. */
 function AccountNavigator() {
   return (
     <ProfileStack.Navigator screenOptions={useStackScreenOptions()}>
       <ProfileStack.Screen name="ProfileHome" component={ProfileScreen} />
       <ProfileStack.Screen name="LearningPreferences" component={LearningPreferencesScreen} />
+      <ProfileStack.Screen name="ExerciseSettings" component={ExerciseSettingsScreen} />
       <ProfileStack.Screen name="SoundSettings" component={SoundSettingsScreen} />
       <ProfileStack.Screen name="ManageSubscription" component={ManageSubscriptionScreen} />
       <ProfileStack.Screen name="PracticeLibrary" component={PracticeLibraryScreen} />
@@ -90,11 +106,6 @@ function AccountNavigator() {
       <ProfileStack.Screen name="RedetectLow" component={RedetectLowScreen} />
       <ProfileStack.Screen name="RedetectHigh" component={RedetectHighScreen} />
       <ProfileStack.Screen name="RedetectResults" component={RedetectResultsScreen} />
-      <ProfileStack.Screen name="ProgressOverview" component={ProgressScreen} />
-      <ProfileStack.Screen name="WeeklyReview" component={WeeklyReviewScreen} />
-      <ProfileStack.Screen name="PerfectExercises" component={PerfectExercisesScreen} />
-      <ProfileStack.Screen name="JourneyOverview" component={JourneyScreen} />
-      <ProfileStack.Screen name="JourneyArea" component={JourneyAreaScreen} />
     </ProfileStack.Navigator>
   );
 }
@@ -147,6 +158,14 @@ function MainTabs() {
           title: 'Exercises',
           // no ear glyph in Feather — Ionicons carries this one icon
           tabBarIcon: ({ color, size }) => <Ionicons name="ear-outline" size={size} color={color} />,
+        }}
+      />
+      <Tab.Screen
+        name="ProgressTab"
+        component={ProgressNavigator}
+        options={{
+          title: 'Progress',
+          tabBarIcon: ({ color, size }) => <Ionicons name="stats-chart-outline" size={size} color={color} />,
         }}
       />
       <Tab.Screen

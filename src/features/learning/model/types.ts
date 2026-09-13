@@ -119,6 +119,12 @@ export interface LearningPreferences {
   /** local hour 0–23 the user wants a practice reminder, null = none */
   reminderHour: number | null;
   preferredDifficulty: PreferredDifficulty;
+  /** 0–1 weighting toward ear training vs melody practice; 0.5 = balanced */
+  exerciseBalance?: number;
+  /** activity IDs the user has disabled from daily plans */
+  disabledExercises?: string[];
+  /** suppress the "this will clear results" warning when re-doing a completed exercise */
+  skipRedoWarning?: boolean;
   updatedAt: number;
 }
 
@@ -165,6 +171,8 @@ export interface Activity {
   minutes: number;
   /** intrinsic difficulty 0–1, for warm-up/challenge slotting */
   challenge: number;
+  /** number of rounds per session (ear exercises 3–8, melody always 1) */
+  rounds: number;
 }
 
 /* ------------------------------------------------------------------ *

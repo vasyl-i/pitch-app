@@ -11,7 +11,7 @@ import { supabase } from '@/shared/lib/supabase';
 import { useAuthStore } from './authStore';
 import { useProfileStore } from '@/entities/profile';
 import { useProgressStore } from '@/features/progress';
-import { useLearningStore, usePreferencesStore, type SkillId } from '@/features/learning';
+import { useLearningStore, useLessonSessionStore, usePreferencesStore, type SkillId } from '@/features/learning';
 
 type Unsubscribe = () => void;
 
@@ -89,6 +89,9 @@ async function pushLearningPreferences() {
     preferred_genres: prefs.preferredGenres,
     coach_style: prefs.coachStyle,
     preferred_difficulty: prefs.preferredDifficulty,
+    exercise_balance: prefs.exerciseBalance ?? 0.5,
+    disabled_exercises: prefs.disabledExercises ?? [],
+    skip_redo_warning: prefs.skipRedoWarning ?? false,
     updated_at: new Date().toISOString(),
   });
 }
@@ -147,6 +150,33 @@ async function pushSession(session: { exerciseId: string; exerciseTitle: string;
   });
 }
 
+async function pushDailyPlan() {
+  const userId = getUserId();
+  const { dayKey, steps, estMinutes, completedSlots, partialProgress, updatedAt } = useLessonSessionStore.getState();
+  if (!userId || !dayKey || steps.length === 0) return;
+
+  await supabase.from('daily_plans').upsert({
+    user_id: userId,
+    day_key: dayKey,
+    plan_data: { steps, estMinutes, completedSlots, partialProgress },
+    updated_at: new Date(updatedAt || Date.now()).toISOString(),
+  });
+}
+
+async function pushWeekSnapshots() {
+  const userId = getUserId();
+  const { weekSnapshots } = useLearningStore.getState();
+  if (!userId || weekSnapshots.length === 0) return;
+
+  const rows = weekSnapshots.map((s) => ({
+    user_id: userId,
+    week_key: s.weekKey,
+    mastery: s.mastery,
+  }));
+
+  await supabase.from('skill_snapshots').upsert(rows);
+}
+
 // ── Pull from server (on sign-in) ──────────────────────────────────
 export async function pullFromServer() {
   const userId = getUserId();
@@ -197,7 +227,56 @@ export async function pullFromServer() {
         preferredGenres: lp.preferred_genres ?? [],
         coachStyle: lp.coach_style,
         preferredDifficulty: lp.preferred_difficulty,
+        exerciseBalance: lp.exercise_balance ?? 0.5,
+        disabledExercises: lp.disabled_exercises ?? [],
+        skipRedoWarning: lp.skip_redo_warning ?? false,
       });
+    }
+
+    // Skill snapshots (for long-term progress charts)
+    const { data: snapshots } = await supabase
+      .from('skill_snapshots')
+      .select('week_key, mastery')
+      .eq('user_id', userId)
+      .order('week_key', { ascending: false })
+      .limit(52);
+
+    if (snapshots && snapshots.length > 0) {
+      const local = useLearningStore.getState().weekSnapshots;
+      const localKeys = new Set(local.map((s) => s.weekKey));
+      const merged = [...local];
+      for (const row of snapshots) {
+        if (!localKeys.has(row.week_key)) {
+          merged.push({ weekKey: row.week_key, mastery: row.mastery });
+        }
+      }
+      merged.sort((a, b) => b.weekKey.localeCompare(a.weekKey));
+      useLearningStore.setState({ weekSnapshots: merged.slice(0, 52) });
+    }
+
+    // Daily plan progress (restore today's completedSlots from server)
+    const localSession = useLessonSessionStore.getState();
+    const todayDayKey = localSession.dayKey;
+    if (todayDayKey) {
+      const { data: dp } = await supabase
+        .from('daily_plans')
+        .select('plan_data, updated_at')
+        .eq('user_id', userId)
+        .eq('day_key', todayDayKey)
+        .single();
+
+      if (dp?.plan_data) {
+        const serverUpdatedAt = dp.updated_at ? new Date(dp.updated_at).getTime() : 0;
+        const localUpdatedAt = localSession.updatedAt ?? 0;
+        // Server wins if newer — handles new-device login and multi-device sync
+        if (serverUpdatedAt > localUpdatedAt && Array.isArray(dp.plan_data.completedSlots)) {
+          useLessonSessionStore.setState({
+            completedSlots: dp.plan_data.completedSlots,
+            ...(dp.plan_data.partialProgress ? { partialProgress: dp.plan_data.partialProgress } : {}),
+            updatedAt: serverUpdatedAt,
+          });
+        }
+      }
     }
   } finally {
     resolveSyncGate();
@@ -237,6 +316,35 @@ export function startSync() {
         const newSession = state.sessions[0]; // newest is prepended
         if (newSession) pushSession(newSession);
         lastSessionCount = state.sessions.length;
+      }
+    }),
+  );
+
+  // Watch daily plan changes (new day, regeneration, step completion, or partial progress)
+  let lastDayKey = useLessonSessionStore.getState().dayKey;
+  let lastCompletedCount = useLessonSessionStore.getState().completedSlots.length;
+  let lastPartialKeys = Object.keys(useLessonSessionStore.getState().partialProgress).length;
+  activeSubs.push(
+    useLessonSessionStore.subscribe((state) => {
+      const dayChanged = state.dayKey != null && state.dayKey !== lastDayKey;
+      const slotsChanged = state.completedSlots.length !== lastCompletedCount;
+      const partialChanged = Object.keys(state.partialProgress).length !== lastPartialKeys;
+      if (dayChanged || slotsChanged || partialChanged) {
+        lastDayKey = state.dayKey;
+        lastCompletedCount = state.completedSlots.length;
+        lastPartialKeys = Object.keys(state.partialProgress).length;
+        debounced('daily-plan', pushDailyPlan);
+      }
+    }),
+  );
+
+  // Watch week snapshots (pushed when ensureWeek runs)
+  let lastSnapshotCount = useLearningStore.getState().weekSnapshots.length;
+  activeSubs.push(
+    useLearningStore.subscribe((state) => {
+      if (state.weekSnapshots.length > lastSnapshotCount) {
+        lastSnapshotCount = state.weekSnapshots.length;
+        debounced('week-snapshots', pushWeekSnapshots);
       }
     }),
   );

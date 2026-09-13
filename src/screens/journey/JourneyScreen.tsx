@@ -9,9 +9,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { buildJourney, useLearningStore, type JourneyArea } from '@/features/learning';
 import { AppText, Card, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
-import type { ProfileScreenProps } from '@/app/navigation/types';
+import type { ProgressScreenProps } from '@/app/navigation/types';
 
-export function JourneyScreen({ navigation }: ProfileScreenProps<'JourneyOverview'>) {
+export function JourneyScreen({ navigation }: ProgressScreenProps<'JourneyOverview'>) {
   const { spacing } = useTheme();
   const skills = useLearningStore((s) => s.skills);
   const journey = useMemo(() => buildJourney(skills), [skills]);

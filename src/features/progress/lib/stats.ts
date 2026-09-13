@@ -195,6 +195,31 @@ export function noteHeatmap(sessions: SessionRecord[], limitDays = 30, now = Dat
     .sort((a, b) => a.pitchClass - b.pitchClass);
 }
 
+export interface TodayExerciseStat {
+  avgScore: number;
+  attempts: number;
+}
+
+/** Per-exercise stats for today: average score and attempt count. */
+export function todayExerciseStats(
+  sessions: SessionRecord[],
+  now = Date.now(),
+): Map<string, TodayExerciseStat> {
+  const todayKey = localDayKey(now);
+  const map = new Map<string, TodayExerciseStat>();
+  for (const s of sessions) {
+    if (localDayKey(s.at) !== todayKey) continue;
+    const cur = map.get(s.exerciseId);
+    if (cur) {
+      cur.avgScore = Math.round((cur.avgScore * cur.attempts + s.score) / (cur.attempts + 1));
+      cur.attempts += 1;
+    } else {
+      map.set(s.exerciseId, { avgScore: s.score, attempts: 1 });
+    }
+  }
+  return map;
+}
+
 /** most recent scores, oldest first, for the trend sparkline */
 export function scoreTrend(sessions: SessionRecord[], limit = 12): number[] {
   return sessions.slice(0, limit).map((s) => s.score).reverse();

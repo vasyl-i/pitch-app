@@ -60,6 +60,9 @@ function generateToday() {
   const today = localDayKey(Date.now());
   const minutesToday =
     sessions.filter((s) => localDayKey(s.at) === today).reduce((sum, s) => sum + (s.durationSec ?? 0), 0) / 60;
+  const disabled = new Set(prefs?.disabledExercises ?? []);
+  const catalog = catalogForTier('premium').filter((a) => !disabled.has(a.id));
+
   return generateDailyLesson({
     dayKey: todayKey(),
     prefs,
@@ -70,7 +73,7 @@ function generateToday() {
     annotations: learning.annotations,
     tendencies: noteHeatmap(sessions),
     minutesPracticedToday: minutesToday,
-    catalog: catalogForTier('premium'),
+    catalog,
   });
 }
 
@@ -123,6 +126,12 @@ export function beginStep(step: GuidedStep, navigation: FlowNavigation) {
   } else {
     navigation.navigate('EarSession', { exerciseId: step.activityId, difficultyId: step.difficultyId, guided: true });
   }
+}
+
+/** Redo a completed step: remove it from completedSlots then launch it */
+export function redoStep(step: GuidedStep, navigation: FlowNavigation) {
+  useLessonSessionStore.getState().removeCompleted(step.slot);
+  beginStep(step, navigation);
 }
 
 /** Home's CTA: start (or resume) today's practice at the next unfinished step */

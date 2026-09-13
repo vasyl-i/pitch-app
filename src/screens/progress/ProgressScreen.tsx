@@ -8,6 +8,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
   PracticeCalendar,
+  SkillTrendChart,
   WeeklyAccuracyChart,
   formatPracticeTime,
   localDayKey,
@@ -19,16 +20,19 @@ import {
   weeklyAccuracyTrend,
   weeklyStats,
 } from '@/features/progress';
-import { buildSessionInsights, useLearningStore } from '@/features/learning';
+import { ALL_SKILLS, buildSessionInsights, useLearningStore } from '@/features/learning';
 import { AppText, Card, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
-import type { ProfileScreenProps } from '@/app/navigation/types';
+import { useFloatingTabBarClearance } from '@/app/navigation/FloatingTabBar';
+import type { ProgressScreenProps } from '@/app/navigation/types';
 
-export function ProgressScreen({ navigation }: ProfileScreenProps<'ProgressOverview'>) {
+export function ProgressScreen({ navigation }: ProgressScreenProps<'ProgressOverview'>) {
   const { palette, spacing } = useTheme();
+  const tabBarClearance = useFloatingTabBarClearance(spacing.xl);
   const sessions = useProgressStore((s) => s.sessions);
   const skills = useLearningStore((s) => s.skills);
   const annotations = useLearningStore((s) => s.annotations);
+  const weekSnapshots = useLearningStore((s) => s.weekSnapshots);
 
   const week = useMemo(() => weeklyStats(sessions), [sessions]);
   const trend = useMemo(() => weeklyAccuracyTrend(sessions), [sessions]);
@@ -45,7 +49,7 @@ export function ProgressScreen({ navigation }: ProfileScreenProps<'ProgressOverv
 
   return (
     <Screen>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: spacing.xl }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: tabBarClearance }}>
         <AppText variant="title" style={{ fontSize: 40 }}>
           Progress
         </AppText>
@@ -110,6 +114,15 @@ export function ProgressScreen({ navigation }: ProfileScreenProps<'ProgressOverv
                 <WeeklyAccuracyChart points={trend} />
               </View>
             </Card>
+
+            {weekSnapshots.length >= 2 && (
+              <Card style={[styles.card, { marginTop: spacing.md }]}>
+                <AppText variant="caption">Skill mastery over time</AppText>
+                <View style={{ marginTop: spacing.md }}>
+                  <SkillTrendChart snapshots={weekSnapshots} skills={[...ALL_SKILLS]} />
+                </View>
+              </Card>
+            )}
 
             <Card style={[styles.card, { marginTop: spacing.md }]}>
               <PracticeCalendar practicedDays={calendarDays} />

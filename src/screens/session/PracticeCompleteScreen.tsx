@@ -50,7 +50,7 @@ export function PracticeCompleteScreen({ navigation }: RootScreenProps<'Practice
         <Button
           title="See your progress"
           variant="ghost"
-          onPress={() => navigation.navigate('Main', { screen: 'AccountTab', params: { screen: 'ProgressOverview' } })}
+          onPress={() => navigation.navigate('Main', { screen: 'ProgressTab', params: { screen: 'ProgressOverview' } })}
         />
       </View>
     </Screen>

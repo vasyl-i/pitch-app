@@ -28,7 +28,7 @@ export { ALL_SKILLS, GOAL_LABELS, SKILL_LABELS, SLOT_LABELS } from './model/type
 export { useLearningStore, emptySkills } from './model/learningStore';
 export { usePreferencesStore, DEFAULT_PREFERENCES, GENRE_OPTIONS } from './model/preferencesStore';
 export { useLessonSessionStore, nextGuidedStep } from './model/lessonSessionStore';
-export type { GuidedStep } from './model/lessonSessionStore';
+export type { GuidedStep, PartialProgress } from './model/lessonSessionStore';
 
 export { startLearningTracker } from './lib/tracker';
 export { masteryBand, BAND_LABELS, currentConfidence } from './lib/mastery';

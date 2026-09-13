@@ -136,6 +136,12 @@ export function generateDailyLesson(input: LessonInput): DailyLesson {
     let score = best.score;
     score -= Math.abs(activity.challenge - challengeTarget) * 25;
     if (recentIds.has(activity.id)) score -= 18; // novelty: rotate material
+
+    // exercise balance: bias toward the user's preferred mix of ear vs melody
+    const balance = prefs?.exerciseBalance ?? 0.5;
+    if (activity.kind === 'ear') score += (1 - balance - 0.5) * 20;
+    else score += (balance - 0.5) * 20;
+
     score += rand() * 6; // seeded tie-break jitter
     return { activity, score, why: best.why };
   };

@@ -1,37 +1,48 @@
 /**
- * Home: the dashboard. Overall all-time progress, this week's streak, and the
- * two doors into practicing — sing with an instrumental, or train your ear.
- * The guided daily lesson itself lives on the Sing tab (`SingHubScreen`).
+ * Home: the dashboard. Overall all-time progress, this week's streak, and
+ * today's exercise plan — the primary entry point into daily practice.
  */
-import { useMemo } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Alert, ScrollView, View } from 'react-native';
 import {
+  MasterySparkline,
   currentStreak,
   formatPracticeTime,
   practicedDayKeys,
+  todayExerciseStats,
   totalPracticeDays,
   totalPracticeSeconds,
   totalStars,
   useProgressStore,
 } from '@/features/progress';
-import { useAuthStore } from '@/features/auth';
+import { useLearningStore, useLessonSessionStore, usePreferencesStore } from '@/features/learning';
+import { useEntitlement } from '@/features/subscription';
 import { AppText, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
 import { useFloatingTabBarClearance } from '@/app/navigation/FloatingTabBar';
 import type { HomeScreenProps } from '@/app/navigation/types';
+import type { GuidedStep } from '@/features/learning';
+import { ensureTodaysLesson, beginStep, continuePractice, redoStep } from '../session/lessonFlow';
 import { TodayBackground } from './TodayBackground';
 import { todayColor } from './todayPalette';
-import { PillButton } from './ui/PillButton';
 import { SoftCard } from './ui/SoftCard';
+import { TodayExerciseList } from './ui/TodayExerciseList';
 import { WeeklyStreakRow } from './ui/WeeklyStreakRow';
 
 export function TodayScreen({ navigation }: HomeScreenProps<'Today'>) {
   const { spacing, typography } = useTheme();
   const tabBarClearance = useFloatingTabBarClearance(spacing.xl);
-  const user = useAuthStore((s) => s.user);
   const sessions = useProgressStore((s) => s.sessions);
-  const firstName = user?.user_metadata?.full_name?.split(' ')[0] ?? user?.email?.split('@')[0];
+  const prefs = usePreferencesStore((s) => s.preferences);
+  const adaptive = useEntitlement('adaptive-lessons');
+  const weekSnapshots = useLearningStore((s) => s.weekSnapshots);
+  const steps = useLessonSessionStore((s) => s.steps);
+  const completedSlots = useLessonSessionStore((s) => s.completedSlots);
+  // snapshot today's plan once all persisted stores are hydrated
+  const [planReady, setPlanReady] = useState(false);
+  useEffect(() => {
+    ensureTodaysLesson(() => setPlanReady(true));
+  }, [prefs, adaptive]);
 
   const overall = useMemo(
     () => ({
@@ -43,29 +54,45 @@ export function TodayScreen({ navigation }: HomeScreenProps<'Today'>) {
     [sessions]
   );
   const practicedDays = useMemo(() => practicedDayKeys(sessions), [sessions]);
+  const todayStats = useMemo(() => todayExerciseStats(sessions), [sessions]);
+
+  const doneCount = steps.filter((s) => completedSlots.includes(s.slot)).length;
+  const allDone = planReady && steps.length > 0 && doneCount === steps.length;
+  const skipRedoWarning = prefs?.skipRedoWarning ?? false;
+
+  const handleStepPress = useCallback(
+    (step: GuidedStep) => {
+      const isCompleted = completedSlots.includes(step.slot);
+      if (!isCompleted) {
+        beginStep(step, navigation);
+        return;
+      }
+      if (skipRedoWarning) {
+        redoStep(step, navigation);
+        return;
+      }
+      Alert.alert(
+        'Redo exercise?',
+        'This will clear your previous results for this exercise.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: "Don't show again",
+            onPress: () => {
+              usePreferencesStore.getState().setPreferences({ skipRedoWarning: true });
+              redoStep(step, navigation);
+            },
+          },
+          { text: 'Continue', onPress: () => redoStep(step, navigation) },
+        ],
+      );
+    },
+    [completedSlots, skipRedoWarning, navigation],
+  );
 
   return (
     <Screen backdrop={<TodayBackground />}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: tabBarClearance }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <AppText
-            color={todayColor.ink}
-            style={{ fontFamily: typography.family.bold, fontSize: 40, lineHeight: 44, letterSpacing: -0.8 }}
-          >
-            {firstName ? `Hi, ${firstName}` : 'Home'}
-          </AppText>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Notifications"
-            onPress={() => navigation.navigate('Notifications')}
-            hitSlop={8}
-          >
-            {({ pressed }) => (
-              <Ionicons name="notifications-outline" size={26} color={todayColor.ink} style={pressed && { opacity: 0.7 }} />
-            )}
-          </Pressable>
-        </View>
-
         <SoftCard style={{ padding: spacing.lg, marginTop: spacing.xl }}>
           <AppText color={todayColor.inkSecondary} style={{ fontFamily: typography.family.medium, fontSize: 15 }}>
             Your progress
@@ -73,11 +100,29 @@ export function TodayScreen({ navigation }: HomeScreenProps<'Today'>) {
           <View style={{ flexDirection: 'row', marginTop: spacing.md }}>
             <Stat value={overall.days > 0 ? `${overall.days}d` : '—'} label="Days practiced" />
             <Stat value={overall.time} label="Total time" divider />
-            <Stat value={`${overall.stars}★`} label="Stars earned" divider />
+            <Stat value={`${overall.stars} ★`} label="Stars earned" divider starHighlight />
           </View>
+          {weekSnapshots.length >= 2 && (
+            <View style={{ marginTop: spacing.md }}>
+              <MasterySparkline snapshots={weekSnapshots} color={todayColor.orange} />
+            </View>
+          )}
         </SoftCard>
 
-        <SoftCard style={{ padding: spacing.lg, marginTop: spacing.md }}>
+        <View style={{ marginTop: spacing.xl }}>
+          <TodayExerciseList
+            steps={steps}
+            completedSlots={completedSlots}
+            planReady={planReady}
+            allDone={allDone}
+            doneCount={doneCount}
+            onPrimaryAction={() => continuePractice(navigation)}
+            onStepPress={handleStepPress}
+            todayStats={todayStats}
+          />
+        </View>
+
+        <SoftCard style={{ padding: spacing.lg, marginTop: spacing.xl }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <AppText color={todayColor.inkSecondary} style={{ fontFamily: typography.family.medium, fontSize: 15 }}>
               This week
@@ -90,24 +135,12 @@ export function TodayScreen({ navigation }: HomeScreenProps<'Today'>) {
             <WeeklyStreakRow practicedDays={practicedDays} />
           </View>
         </SoftCard>
-
-        <View style={{ marginTop: spacing.xl, gap: spacing.md }}>
-          {/*<PillButton*/}
-          {/*  title="Sing with Instrumental"*/}
-          {/*  onPress={() => navigation.navigate('SingTab', { screen: 'InstrumentalUpload' })}*/}
-          {/*/>*/}
-          <PillButton
-            title="Ear Training Exercises"
-            variant="dark"
-            onPress={() => navigation.navigate('ExercisesTab', { screen: 'ExercisesHub' })}
-          />
-        </View>
       </ScrollView>
     </Screen>
   );
 }
 
-function Stat({ value, label, divider = false }: { value: string; label: string; divider?: boolean }) {
+function Stat({ value, label, divider = false, starHighlight = false }: { value: string; label: string; divider?: boolean; starHighlight?: boolean }) {
   const { typography, spacing } = useTheme();
   return (
     <View
@@ -119,7 +152,10 @@ function Stat({ value, label, divider = false }: { value: string; label: string;
         borderLeftColor: 'rgba(255, 255, 255, 0.14)',
       }}
     >
-      <AppText color={todayColor.ink} style={{ fontFamily: typography.family.bold, fontSize: 19, letterSpacing: -0.3 }}>
+      <AppText
+        color={starHighlight ? todayColor.orange : todayColor.ink}
+        style={{ fontFamily: typography.family.bold, fontSize: 19, letterSpacing: -0.3 }}
+      >
         {value}
       </AppText>
       <AppText color={todayColor.inkSecondary} variant="caption" style={{ fontSize: 12, marginTop: 2 }} numberOfLines={1}>

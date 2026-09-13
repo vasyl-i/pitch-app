@@ -25,7 +25,7 @@ import {
 } from './types';
 
 const MAX_ANNOTATIONS = 400;
-const MAX_SNAPSHOTS = 12;
+const MAX_SNAPSHOTS = 52;
 
 export function emptySkills(): Record<SkillId, SkillState> {
   return Object.fromEntries(ALL_SKILLS.map((s) => [s, emptySkillState()])) as Record<SkillId, SkillState>;

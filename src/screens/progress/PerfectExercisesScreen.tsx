@@ -4,10 +4,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { perfectExercises, useProgressStore } from '@/features/progress';
 import { AppText, BackButton, Card, IconBubble, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
-import type { ProfileScreenProps } from '@/app/navigation/types';
+import type { ProgressScreenProps } from '@/app/navigation/types';
 
 /** Every exercise the singer has nailed with a 3-star run. Rows re-open the exercise. */
-export function PerfectExercisesScreen({ navigation }: ProfileScreenProps<'PerfectExercises'>) {
+export function PerfectExercisesScreen({ navigation }: ProgressScreenProps<'PerfectExercises'>) {
   const { palette, spacing } = useTheme();
   const sessions = useProgressStore((s) => s.sessions);
   const perfect = useMemo(() => perfectExercises(sessions), [sessions]);
