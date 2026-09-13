@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["PitchNativeModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.pitchnative.PitchNativeModule"]
+  }
+}

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 interface TrailSample {
   t: number;
@@ -11,7 +11,10 @@ const TRAIL_SECONDS = 6;
 /**
  * Accumulates a ring buffer of pitch samples from live updates, suitable for
  * feeding to ScrollingPitchCanvas. Call `push()` whenever a new pitch frame
- * arrives. `now` advances continuously so the canvas scrolls even when silent.
+ * arrives. `now` advances with each push so the canvas knows the current time.
+ *
+ * Scrolling animation is handled by ScrollingPitchCanvas itself via Skia
+ * clock + translate-group — this hook no longer needs a timer to advance `now`.
  */
 export function usePitchTrail(trailSeconds = TRAIL_SECONDS) {
   const bufRef = useRef<TrailSample[]>([]);
@@ -19,17 +22,10 @@ export function usePitchTrail(trailSeconds = TRAIL_SECONDS) {
   const [trail, setTrail] = useState<TrailSample[]>([]);
   const [now, setNow] = useState(0);
 
-  // advance `now` continuously so the canvas keeps scrolling
-  useEffect(() => {
-    const id = setInterval(() => {
-      setNow((Date.now() - startRef.current) / 1000);
-    }, 33);
-    return () => clearInterval(id);
-  }, []);
-
   const push = useCallback(
     (midi: number | null, cents: number | null = null) => {
       const t = (Date.now() - startRef.current) / 1000;
+      setNow(t);
       if (midi !== null) {
         bufRef.current.push({ t, midi, cents });
         const cutoff = t - trailSeconds;

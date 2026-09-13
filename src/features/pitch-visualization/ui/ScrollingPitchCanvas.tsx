@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Canvas, Circle, Group, Line, Path, Rect, Skia, vec } from '@shopify/react-native-skia';
+import { Canvas, Circle, Group, Line, Path, Rect, Skia, useClock, vec } from '@shopify/react-native-skia';
+import { useDerivedValue, useSharedValue } from 'react-native-reanimated';
 import { AppText } from '@/shared/ui';
 import { colorForCents, midiToName, NOTICEABLE_CENTS, PERFECT_CENTS, SLIGHT_CENTS } from '@/shared/lib/music';
 import { useStabilizedNote } from '../lib/useStabilizedNote';
@@ -80,20 +81,35 @@ export function ScrollingPitchCanvas({
     return dotX - (age / visibleSeconds) * W;
   };
 
-  const timeSnapshotRef = useRef({ currentTime, wallMs: Date.now() });
-  useEffect(() => {
-    timeSnapshotRef.current = { currentTime, wallMs: Date.now() };
-  }, [currentTime]);
+  // -- 60fps smooth scrolling via Skia clock + translate-group --
+  //
+  // Instead of a setInterval that forces React re-renders every 33ms, the
+  // Skia clock drives a Group translateX at 60fps in the Skia worklet thread.
+  // Paths are built at a "reference time" and the group slides them left as
+  // real time advances. React re-renders only happen when trail data or
+  // liveMidi actually change — not for scrolling.
+  const clock = useClock();
 
-  const [, setTick] = useState(0);
-  useEffect(() => {
-    const id = setInterval(() => setTick((t) => t + 1), 33);
-    return () => clearInterval(id);
-  }, []);
+  // Shared value: the clock value (ms since mount) when paths were last built
+  const pathClockMs = useSharedValue(0);
 
-  const snap = timeSnapshotRef.current;
-  const elapsed = (Date.now() - snap.wallMs) / 1000;
-  const renderTime = running ? snap.currentTime + elapsed : currentTime;
+  // pixels per millisecond of scrolling (0 when paused)
+  const pxPerMs = running && W > 0 ? W / (visibleSeconds * 1000) : 0;
+
+  // The "render time" used when building paths — same extrapolation as before,
+  // but computed once per React render (not per animation frame).
+  const renderTime = running && positionUpdatedAt > 0
+    ? currentTime + (Date.now() - positionUpdatedAt) / 1000
+    : currentTime;
+
+  // Scrolling transform: Skia evaluates this at 60fps via useDerivedValue.
+  // Between React renders, the group slides left at the correct rate.
+  // When running=false, pxPerMs=0 so the group stays still.
+  const scrollTransform = useDerivedValue(() => {
+    'worklet';
+    const dtMs = clock.value - pathClockMs.value;
+    return [{ translateX: -dtMs * pxPerMs }];
+  }, [pxPerMs]);
 
   const hLines = useMemo(() => {
     if (!contentHeight) return [];
@@ -107,22 +123,28 @@ export function ScrollingPitchCanvas({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contentHeight, yCenter, semiH]);
 
+  // Vertical grid lines — built at renderTime, scrolled by the group
   const vLines = useMemo(() => {
     if (!W || !semiH) return [];
     const intervalSec = Math.max(0.25, (semiH / W) * visibleSeconds);
     const out: number[] = [];
-    const leftTime = renderTime - visibleSeconds * (dotX / W);
+    // Extend range so lines are visible even after group translates left
+    const leftTime = renderTime - visibleSeconds * (dotX / W) - visibleSeconds * 0.5;
+    const rightTime = renderTime + visibleSeconds * 0.5;
     const firstT = Math.ceil(leftTime / intervalSec) * intervalSec;
-    for (let t = firstT; t <= renderTime + intervalSec; t += intervalSec) {
+    for (let t = firstT; t <= rightTime; t += intervalSec) {
       const x = xOfTime(t, renderTime);
-      if (x >= 0 && x <= W) out.push(x);
+      out.push(x);
     }
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [W, semiH, renderTime, visibleSeconds, dotX]);
 
+  // Target note bands — built at renderTime, scrolled by the group
   const targetRects = useMemo(() => {
     if (!targets || !W) return [];
+    // Extend visible range for scrolling headroom
+    const margin = visibleSeconds * 0.5;
     return targets
       .map((note) => {
         const noteStart = note.start / rate;
@@ -130,21 +152,23 @@ export function ScrollingPitchCanvas({
         const x0 = xOfTime(noteStart, renderTime);
         const x1 = xOfTime(noteEnd, renderTime);
         const y = yOfMidi(note.midi);
-        const clampedX0 = Math.max(0, x0);
-        const clampedX1 = Math.min(W, x1);
         return {
-          x: clampedX0,
-          width: clampedX1 - clampedX0,
+          x: x0,
+          width: x1 - x0,
           y: y - semiH / 2,
           height: semiH,
-          visible: clampedX1 > 0 && clampedX0 < W && clampedX1 > clampedX0,
+          visible: x1 > -margin * (W / visibleSeconds) && x0 < W + margin * (W / visibleSeconds) && x1 > x0,
         };
       })
       .filter((r) => r.visible);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [targets, renderTime, W, contentHeight, yCenter, semiH, rate]);
 
+  // Trail paths — built at renderTime, scrolled by the group.
+  // Capture the clock value so the scrollTransform starts from 0.
   const paths = useMemo(() => {
+    pathClockMs.value = clock.value;
+
     const p = {
       lime: Skia.Path.Make(),
       yellow: Skia.Path.Make(),
@@ -162,8 +186,9 @@ export function ScrollingPitchCanvas({
 
       const ax = xOfTime(a.t, renderTime);
       const bx = xOfTime(b.t, renderTime);
-      if (bx < 0 && ax < 0) continue;
-      if (ax > W && bx > W) continue;
+      // Extend culling range for scroll headroom
+      if (bx < -W * 0.5 && ax < -W * 0.5) continue;
+      if (ax > W * 1.5 && bx > W * 1.5) continue;
 
       const ay = yOfMidi(a.midi);
       const by = yOfMidi(b.midi);
@@ -206,45 +231,50 @@ export function ScrollingPitchCanvas({
       {size.height > 0 && (
         <>
           <Canvas style={StyleSheet.absoluteFill}>
-            {/* horizontal grid lines */}
+            {/* horizontal grid lines (pitch axis — static, no scrolling) */}
             {hLines.map((y, i) => (
               <Line key={i} p1={vec(0, y)} p2={vec(W, y)} color={GRID_COLOR} strokeWidth={0.5} />
             ))}
 
-            {/* vertical grid lines */}
-            {vLines.map((x, i) => (
-              <Line key={i} p1={vec(x, 0)} p2={vec(x, contentHeight)} color={GRID_COLOR} strokeWidth={0.5} />
-            ))}
+            {/* scrolling content: vLines, targets, trail — translated at 60fps */}
+            <Group clip={Skia.XYWHRect(0, 0, W, contentHeight)}>
+            <Group transform={scrollTransform}>
+              {/* vertical grid lines */}
+              {vLines.map((x, i) => (
+                <Line key={i} p1={vec(x, 0)} p2={vec(x, contentHeight)} color={GRID_COLOR} strokeWidth={0.5} />
+              ))}
 
-            {/* target note bands */}
-            {targetRects.map((r, i) => (
-              <Group key={i}>
-                <Rect x={r.x} y={r.y} width={r.width} height={r.height} color={LIME} opacity={0.06} />
-                <Rect
-                  x={r.x}
-                  y={r.y + r.height * 0.38}
-                  width={r.width}
-                  height={r.height * 0.24}
-                  color={LIME}
-                  opacity={0.14}
-                />
-              </Group>
-            ))}
+              {/* target note bands */}
+              {targetRects.map((r, i) => (
+                <Group key={i}>
+                  <Rect x={r.x} y={r.y} width={r.width} height={r.height} color={LIME} opacity={0.06} />
+                  <Rect
+                    x={r.x}
+                    y={r.y + r.height * 0.38}
+                    width={r.width}
+                    height={r.height * 0.24}
+                    color={LIME}
+                    opacity={0.14}
+                  />
+                </Group>
+              ))}
 
-            {/* sung trail */}
-            {trailColor ? (
-              <Path path={paths.single} color={trailColor} style="stroke" strokeWidth={3} strokeCap="round" strokeJoin="round" />
-            ) : (
-              <>
-                <Path path={paths.gray} color={GRAY} style="stroke" strokeWidth={2.5} strokeCap="round" strokeJoin="round" />
-                <Path path={paths.yellow} color={YELLOW} style="stroke" strokeWidth={3} strokeCap="round" strokeJoin="round" />
-                <Path path={paths.orange} color={ORANGE} style="stroke" strokeWidth={3} strokeCap="round" strokeJoin="round" />
-                <Path path={paths.red} color={RED} style="stroke" strokeWidth={3} strokeCap="round" strokeJoin="round" />
-                <Path path={paths.lime} color={LIME} style="stroke" strokeWidth={3} strokeCap="round" strokeJoin="round" />
-              </>
-            )}
+              {/* sung trail */}
+              {trailColor ? (
+                <Path path={paths.single} color={trailColor} style="stroke" strokeWidth={3} strokeCap="round" strokeJoin="round" />
+              ) : (
+                <>
+                  <Path path={paths.gray} color={GRAY} style="stroke" strokeWidth={2.5} strokeCap="round" strokeJoin="round" />
+                  <Path path={paths.yellow} color={YELLOW} style="stroke" strokeWidth={3} strokeCap="round" strokeJoin="round" />
+                  <Path path={paths.orange} color={ORANGE} style="stroke" strokeWidth={3} strokeCap="round" strokeJoin="round" />
+                  <Path path={paths.red} color={RED} style="stroke" strokeWidth={3} strokeCap="round" strokeJoin="round" />
+                  <Path path={paths.lime} color={LIME} style="stroke" strokeWidth={3} strokeCap="round" strokeJoin="round" />
+                </>
+              )}
+            </Group>
+            </Group>
 
-            {/* live head */}
+            {/* live head (fixed at right edge, not scrolling) */}
             {liveHead && (
               <>
                 <Circle cx={liveHead.x} cy={liveHead.y} r={14} color={liveHead.color} opacity={0.18} />

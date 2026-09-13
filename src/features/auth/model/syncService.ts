@@ -17,6 +17,30 @@ type Unsubscribe = () => void;
 
 let activeSubs: Unsubscribe[] = [];
 
+// ── Sync-ready signal ──────────────────────────────────────────────
+// Lets consumers (e.g. RootNavigator) wait for the initial server pull
+// before choosing a route — prevents showing onboarding to a returning
+// user whose profile hasn't loaded from Supabase yet.
+let syncReadyResolve: (() => void) | null = null;
+let syncReadyPromise: Promise<void> | null = null;
+
+/** Returns a promise that resolves once the initial pullFromServer completes. */
+export function waitForSyncReady(): Promise<void> {
+  return syncReadyPromise ?? Promise.resolve();
+}
+
+/** Prepare a fresh sync-ready gate. Call before pullFromServer(). */
+export function prepareSyncGate() {
+  syncReadyPromise = new Promise<void>((resolve) => {
+    syncReadyResolve = resolve;
+  });
+}
+
+function resolveSyncGate() {
+  syncReadyResolve?.();
+  syncReadyResolve = null;
+}
+
 function getUserId(): string | null {
   return useAuthStore.getState().user?.id ?? null;
 }
@@ -126,50 +150,57 @@ async function pushSession(session: { exerciseId: string; exerciseTitle: string;
 // ── Pull from server (on sign-in) ──────────────────────────────────
 export async function pullFromServer() {
   const userId = getUserId();
-  if (!userId) return;
-
-  // Vocal profile
-  const { data: vp } = await supabase
-    .from('vocal_profiles')
-    .select('*')
-    .eq('user_id', userId)
-    .single();
-
-  if (vp) {
-    useProfileStore.getState().setDetectedRange(
-      { lowMidi: vp.max_low_midi, highMidi: vp.max_high_midi },
-      vp.confidence,
-      vp.detected_at ? new Date(vp.detected_at).getTime() : undefined,
-    );
-    if (vp.comfort_low_midi != null && vp.comfort_high_midi != null) {
-      useProfileStore.getState().setComfortRange({
-        lowMidi: vp.comfort_low_midi,
-        highMidi: vp.comfort_high_midi,
-      });
-    }
-    if (vp.temp_adjustment) {
-      useProfileStore.getState().setTemporaryAdjustment(vp.temp_adjustment);
-    }
+  if (!userId) {
+    resolveSyncGate();
+    return;
   }
 
-  // Learning preferences
-  const { data: lp } = await supabase
-    .from('learning_preferences')
-    .select('*')
-    .eq('user_id', userId)
-    .single();
+  try {
+    // Vocal profile
+    const { data: vp } = await supabase
+      .from('vocal_profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
 
-  if (lp) {
-    usePreferencesStore.getState().setPreferences({
-      primaryGoal: lp.primary_goal,
-      secondaryGoal: lp.secondary_goal,
-      dailyMinutes: lp.daily_minutes,
-      experience: lp.experience,
-      musicReading: lp.music_reading,
-      preferredGenres: lp.preferred_genres ?? [],
-      coachStyle: lp.coach_style,
-      preferredDifficulty: lp.preferred_difficulty,
-    });
+    if (vp) {
+      useProfileStore.getState().setDetectedRange(
+        { lowMidi: vp.max_low_midi, highMidi: vp.max_high_midi },
+        vp.confidence,
+        vp.detected_at ? new Date(vp.detected_at).getTime() : undefined,
+      );
+      if (vp.comfort_low_midi != null && vp.comfort_high_midi != null) {
+        useProfileStore.getState().setComfortRange({
+          lowMidi: vp.comfort_low_midi,
+          highMidi: vp.comfort_high_midi,
+        });
+      }
+      if (vp.temp_adjustment) {
+        useProfileStore.getState().setTemporaryAdjustment(vp.temp_adjustment);
+      }
+    }
+
+    // Learning preferences
+    const { data: lp } = await supabase
+      .from('learning_preferences')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    if (lp) {
+      usePreferencesStore.getState().setPreferences({
+        primaryGoal: lp.primary_goal,
+        secondaryGoal: lp.secondary_goal,
+        dailyMinutes: lp.daily_minutes,
+        experience: lp.experience,
+        musicReading: lp.music_reading,
+        preferredGenres: lp.preferred_genres ?? [],
+        coachStyle: lp.coach_style,
+        preferredDifficulty: lp.preferred_difficulty,
+      });
+    }
+  } finally {
+    resolveSyncGate();
   }
 }
 

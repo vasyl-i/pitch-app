@@ -20,6 +20,7 @@ import { StaffPracticeScreen } from '@/screens/staff-practice';
 import { VocalRangeSettingsScreen, RedetectLowScreen, RedetectHighScreen, RedetectResultsScreen } from '@/screens/vocal-range';
 import { WelcomeScreen, WhyItMattersScreen, LowestNoteScreen, HighestNoteScreen, ResultsScreen, GoalsScreen } from '@/screens/onboarding';
 import { useProfileStore } from '@/entities/profile';
+import { waitForSyncReady } from '@/features/auth';
 import { useTheme } from '@/shared/theme';
 import type {
   ExercisesStackParamList,
@@ -176,9 +177,21 @@ export function RootNavigator() {
     return useProfileStore.persist.onFinishHydration(() => setHydrated(true));
   }, [hydrated]);
 
+  // After login, the server pull restores the user's profile (including
+  // hasOnboarded). Wait for it before choosing the initial route so a
+  // returning user doesn't flash through onboarding.
+  const [syncDone, setSyncDone] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    waitForSyncReady().then(() => {
+      if (!cancelled) setSyncDone(true);
+    });
+    return () => { cancelled = true; };
+  }, []);
+
   const hasOnboarded = useProfileStore((s) => s.hasOnboarded);
 
-  if (!hydrated) return <View style={{ flex: 1, backgroundColor: palette.background }} />;
+  if (!hydrated || !syncDone) return <View style={{ flex: 1, backgroundColor: palette.background }} />;
 
   return (
     <RootStack.Navigator

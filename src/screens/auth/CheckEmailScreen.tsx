@@ -11,7 +11,7 @@ const POLL_INTERVAL = 4000;
 export function CheckEmailScreen({ navigation, route }: AuthScreenProps<'CheckEmail'>) {
     const { palette, radii } = useTheme();
     const { email, password } = route.params;
-    const polling = useRef<ReturnType<typeof setInterval>>();
+    const polling = useRef<ReturnType<typeof setInterval>>(undefined);
     const mounted = useRef(true);
 
     useEffect(() => {

@@ -1,16 +1,15 @@
 /**
  * Microphone → pitch pipeline, framework-agnostic (no React imports).
  *
- * Wraps react-native-audio-api's AudioRecorder, decimates the signal 4x
- * before analysis (Hermes is too slow for full-rate YIN — measured in the
- * phase 2 spike), maintains a sliding analysis window, and emits one
- * PitchFrame per audio callback (~23ms).
+ * Wraps react-native-audio-api's AudioRecorder and delegates DSP to the
+ * native C core (modules/pitch-native): FIR decimation (44.1kHz → 11025Hz),
+ * sliding analysis window, and YIN pitch detection — all off the JS thread.
  *
  * Consumers throttle UI updates themselves; this emits at full cadence so a
  * future scoring feature can use every frame.
  */
 import { AudioManager, AudioRecorder } from 'react-native-audio-api';
-import { yinPitch } from './yin';
+import { NativePitchProcessor } from '../../../../modules/pitch-native/src';
 import { DIAGNOSTICS_AVAILABLE, recordFrame } from './diagnostics';
 
 export interface PitchFrame {
@@ -28,27 +27,6 @@ export type PitchEngineStatus = 'idle' | 'running' | 'interrupted';
 
 const SAMPLE_RATE = 44100;
 const HOP = 512; // frames per audio callback (~12ms — halves detection latency)
-const DECIMATE = 4; // analyze at 11.025kHz — 16x cheaper, fine for vocals
-const WINDOW = 512; // ~46ms of decimated signal
-
-// Anti-aliasing FIR for the 4x decimation (windowed sinc, Hamming, 24 taps,
-// cutoff at the decimated Nyquist). The old boxcar average leaked aliased
-// harmonics into the analysis band, degrading YIN on bright real mixes.
-const FIR_TAPS = (() => {
-  const N = 24;
-  const fc = 0.5 / DECIMATE; // normalized cutoff
-  const taps = new Float32Array(N);
-  let sum = 0;
-  for (let n = 0; n < N; n++) {
-    const k = n - (N - 1) / 2;
-    const sinc = k === 0 ? 2 * Math.PI * fc : Math.sin(2 * Math.PI * fc * k) / k;
-    const hamming = 0.54 - 0.46 * Math.cos((2 * Math.PI * n) / (N - 1));
-    taps[n] = sinc * hamming;
-    sum += taps[n];
-  }
-  for (let n = 0; n < N; n++) taps[n] /= sum; // unity DC gain
-  return taps;
-})();
 
 export class MicPermissionError extends Error {
   constructor(status: string) {
@@ -62,9 +40,6 @@ export interface PitchEngine {
   stop(): Promise<void>;
   readonly status: PitchEngineStatus;
 }
-
-/** raw sample magnitude above this is treated as clipped (distortion/scream) */
-const CLIP_THRESHOLD = 0.985;
 
 export interface PitchEngineOptions {
   /**
@@ -98,6 +73,7 @@ export function createPitchEngine(
   options: PitchEngineOptions = {}
 ): PitchEngine {
   let recorder: AudioRecorder | null = null;
+  let processor: NativePitchProcessor | null = null;
   let status: PitchEngineStatus = 'idle';
   let subscriptions: { remove(): void }[] = [];
   /**
@@ -106,11 +82,6 @@ export function createPitchEngine(
    * deactivate it — doing so deafens whichever recorder is live now.
    */
   let holdsSession = false;
-
-  const window = new Float32Array(WINDOW);
-  let filled = 0;
-  // raw-sample carry so the FIR has history across chunk boundaries
-  let carry = new Float32Array(0);
 
   async function start() {
     if (status === 'running') return;
@@ -151,8 +122,7 @@ export function createPitchEngine(
 
     recorder = new AudioRecorder();
     recorder.onError((event) => options.onError?.(event.message));
-    filled = 0;
-    carry = new Float32Array(0);
+    processor = new NativePitchProcessor();
 
     recorder.onAudioReady({ sampleRate: SAMPLE_RATE, bufferLength: HOP, channelCount: 1 }, (event) => {
       // `DIAGNOSTICS_AVAILABLE` folds to false in release, so the minifier
@@ -162,45 +132,12 @@ export function createPitchEngine(
       const chunk = event.buffer.getChannelData(0);
       const sr = event.buffer.sampleRate || SAMPLE_RATE;
 
-      let clipped = false;
-      for (let i = 0; i < chunk.length; i++) {
-        if (chunk[i] >= CLIP_THRESHOLD || chunk[i] <= -CLIP_THRESHOLD) {
-          clipped = true;
-          break;
-        }
-      }
+      // Convert Float32Array to number[] for the native bridge
+      const samples = Array.from(chunk);
+      const result = processor!.processFrame(samples, sr);
+      if (!result) return;
 
-      // prepend carried samples so the FIR window never starves at the seam
-      const raw = new Float32Array(carry.length + chunk.length);
-      raw.set(carry, 0);
-      raw.set(chunk, carry.length);
-
-      // filtered decimation: FIR lowpass evaluated at every DECIMATE-th sample
-      const nTaps = FIR_TAPS.length;
-      const decLen = Math.max(0, Math.floor((raw.length - nTaps) / DECIMATE));
-      const input = new Float32Array(decLen);
-      for (let i = 0; i < decLen; i++) {
-        let acc = 0;
-        const base = i * DECIMATE;
-        for (let k = 0; k < nTaps; k++) acc += FIR_TAPS[k] * raw[base + k];
-        input[i] = acc;
-      }
-      // keep the tail that the next chunk's first outputs will need
-      const consumed = decLen * DECIMATE;
-      carry = raw.slice(consumed);
-
-      // slide the analysis window left, append the new chunk at the end
-      if (input.length >= WINDOW) {
-        window.set(input.subarray(input.length - WINDOW));
-        filled = WINDOW;
-      } else {
-        window.copyWithin(0, input.length);
-        window.set(input, WINDOW - input.length);
-        filled = Math.min(WINDOW, filled + input.length);
-      }
-      if (filled < WINDOW) return;
-
-      const { frequency, rms, clarity } = yinPitch(window, sr / DECIMATE);
+      const { frequency, rms, clarity, clipped } = result;
 
       if (DIAGNOSTICS_AVAILABLE) {
         const now = Date.now();
@@ -212,10 +149,6 @@ export function createPitchEngine(
           rms,
           clipped,
           processingMs: now - startedAt,
-          // the audio clock counts from recording start and the wall clock
-          // from the epoch, so only the *delta* between successive frames is
-          // comparable; absolute latency needs a shared origin the recorder
-          // does not expose. Left null rather than reported wrongly.
           latencyMs: null,
         });
       }
@@ -235,6 +168,10 @@ export function createPitchEngine(
       recorder.clearOnError();
       await recorder.stop();
       recorder = null;
+    }
+    if (processor) {
+      processor.destroy();
+      processor = null;
     }
     // Only the engine that activated the session may deactivate it, and only
     // once. A stopped engine can be stopped again — the broker pre-empts an

@@ -11,6 +11,7 @@ import { useProgressStore } from '@/features/progress';
 import { useLearningStore, usePreferencesStore, useLessonSessionStore } from '@/features/learning';
 import { useInstrumentalStore } from '@/features/instrumental';
 import { useSubscriptionStore } from '@/features/subscription';
+import { prepareSyncGate } from './syncService';
 
 GoogleSignin.configure({
   webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
@@ -87,6 +88,8 @@ export const useAuthStore = create<AuthState>((set) => ({
         return;
       }
       hydrated = true;
+      // Returning user with MMKV data — no need to gate on server pull.
+      // The gate is only needed for fresh sign-ins (MMKV cleared by signOut).
       set({ session, user: session?.user ?? null, loading: false });
     };
 
@@ -101,6 +104,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       // After clearing a stale session, ignore the SIGNED_OUT echo
       if (clearedStale && !session) return;
       clearedStale = false;
+      // Only gate on fresh sign-in (no current user → new user), not token refreshes
+      const currentUser = useAuthStore.getState().user;
+      if (session?.user && !currentUser) prepareSyncGate();
       set({ session, user: session?.user ?? null, loading: false });
     });
 
