@@ -12,7 +12,6 @@ export function PremiumBadge({ label = 'Premium', locked = false }: { label?: st
         styles.badge,
         {
           backgroundColor: 'rgba(139, 124, 255, 0.16)',
-          shadowColor: palette.accentSecondary,
         },
       ]}
     >
@@ -33,10 +32,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
     alignSelf: 'flex-start',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.45,
-    shadowRadius: 7,
-    elevation: 4,
   },
   text: { fontSize: 11, fontWeight: '600' },
 });

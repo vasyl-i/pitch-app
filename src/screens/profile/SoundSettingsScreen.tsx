@@ -3,7 +3,7 @@
  */
 import { useCallback, useRef } from 'react';
 import { View } from 'react-native';
-import { useSoundStore, SOUND_TYPE_LABELS, type SoundType, createToneGroup, audioNow } from '@/shared/audio';
+import { useSoundStore, SOUND_TYPE_LABELS, preloadSamples, type SoundType, audioContext, createToneGroup, audioNow } from '@/shared/audio';
 import type { ToneGroup } from '@/shared/audio';
 import { AppText, BackButton, ChipGroup, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
@@ -24,10 +24,13 @@ const SOUND_OPTIONS = (Object.entries(SOUND_TYPE_LABELS) as [SoundType, string][
 /** Play a short C4 preview note using current sound prefs. */
 function usePreview() {
   const groupRef = useRef<ToneGroup | null>(null);
-  return useCallback(() => {
+  return useCallback(async () => {
     groupRef.current?.cancel();
+    // Resume the AudioContext if it was suspended after an exercise session
+    const ctx = audioContext();
+    if (ctx.state === 'suspended') await ctx.resume();
     const g = createToneGroup({ claimsSpeaker: false });
-    g.schedule({ midi: 60, at: audioNow(), duration: 0.6, volume: 1 });
+    g.schedule({ midi: 60, at: audioNow(), duration: 0.6, volume: 0.65 });
     groupRef.current = g;
   }, []);
 }
@@ -59,7 +62,7 @@ export function SoundSettingsScreen({ navigation }: ProfileScreenProps<'SoundSet
           title="Instrument sound"
           options={SOUND_OPTIONS}
           selected={[soundType]}
-          onSelect={(t) => { setSoundType(t); preview(); }}
+          onSelect={(t) => { setSoundType(t); preloadSamples(t).then(() => preview()); }}
         />
       </View>
     </Screen>

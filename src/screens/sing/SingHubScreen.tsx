@@ -101,7 +101,7 @@ export function SingHubScreen({ navigation }: SingScreenProps<'SingHub'>) {
   const heroTitle = adaptive && weeklyFocus ? FOCUS_TITLES[weeklyFocus.skill] : GENERIC_HERO_TITLE;
 
   return (
-    <Screen backdrop={<TodayBackground />}>
+    <Screen backdrop={<TodayBackground />} noBottomPadding>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: tabBarClearance }}>
         <AppText
           color={todayColor.ink}

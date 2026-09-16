@@ -36,6 +36,10 @@ interface EarTrainingState {
   roundResult: RoundScore | null;
   results: RoundScore[];
   summary: SessionSummary | null;
+  /** total prompt playback duration in ms (for progress ring UI) */
+  promptDurationMs: number | null;
+  /** wall-clock timestamp when prompt playback began */
+  promptStartedAt: number | null;
   /** friendly banner on the picker (mic denied, interruption, audio failure) */
   notice: string | null;
 
@@ -57,6 +61,8 @@ const initial = {
   roundResult: null,
   results: [] as RoundScore[],
   summary: null,
+  promptDurationMs: null,
+  promptStartedAt: null,
   notice: null,
 };
 

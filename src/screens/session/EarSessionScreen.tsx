@@ -88,6 +88,10 @@ export function EarSessionScreen({ navigation, route }: RootScreenProps<'EarSess
               ? {
                   primary: { title: 'Continue practice', onPress: () => advanceAfterStep(navigation) },
                   secondary: { title: 'Try this one again', onPress: () => session.retry() },
+                  tertiary: { title: 'Back to home', onPress: () => {
+                    useLessonSessionStore.getState().completeActive();
+                    navigation.navigate('Main', { screen: 'HomeTab', params: { screen: 'Today' } });
+                  }},
                 }
               : {
                   primary: { title: 'Go again', onPress: () => session.retry() },

@@ -170,9 +170,10 @@ export function useEarTrainingSession() {
   async function playPrompt(gen: number, round: EarRound) {
     listeningRef.current = false;
     capture.end();
-    setStore({ phase: 'playing', countdown: null, waitSecondsLeft: null, choices: null, live: { note: null, score: null, outcomes: null } });
+    setStore({ phase: 'playing', countdown: null, waitSecondsLeft: null, choices: null, live: { note: null, score: null, outcomes: null }, promptDurationMs: round.prompt.length * 1000, promptStartedAt: Date.now() });
     const handle = player.play(round.prompt);
     await handle.done;
+    setStore({ promptDurationMs: null, promptStartedAt: null });
     afterPrompt(gen, round);
   }
 

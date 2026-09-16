@@ -189,7 +189,8 @@ const MELODY_ACTIVITIES: Activity[] = melodyLibrary.map((e) => {
   };
 });
 
-export const CATALOG: Activity[] = [...EAR_ACTIVITIES, ...MELODY_ACTIVITIES];
+// TODO: re-enable melody (sing-with-accompaniment) exercises once the feature is ready
+export const CATALOG: Activity[] = [...EAR_ACTIVITIES /* , ...MELODY_ACTIVITIES */];
 
 /** everything a free user can actually open */
 export const FREE_CATALOG: Activity[] = CATALOG.filter((a) => a.tier === 'free');

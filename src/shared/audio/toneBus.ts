@@ -1,6 +1,6 @@
 /**
  * Shared audio output: one AudioContext for the whole app, plus a small
- * oscillator voice scheduler.
+ * sample-based voice scheduler.
  *
  * Before this existed, ear training and staff practice each built their own
  * AudioContext and their own copy of the same triangle-oscillator ADSR. Two
@@ -14,7 +14,6 @@
  * everyone else.
  */
 import { AudioContext } from 'react-native-audio-api';
-import { midiToFreq } from '@/shared/lib/music';
 import { trackSounding } from './referenceMonitor';
 import { getSoundPrefs } from './soundStore';
 import { schedulePianoNote, type PianoVoice } from './pianoSampler';
@@ -73,13 +72,11 @@ export interface ToneGroupOptions {
   claimsSpeaker?: boolean;
 }
 
-interface OscVoice { kind: 'osc'; osc: ReturnType<AudioContext['createOscillator']>; stopAt: number }
-interface SampleVoice { kind: 'sample'; voice: PianoVoice; stopAt: number }
-type Voice = OscVoice | SampleVoice;
+interface SampleVoice { voice: PianoVoice; stopAt: number }
 
 export function createToneGroup({ claimsSpeaker = true }: ToneGroupOptions = {}): ToneGroup {
   const ctx = audioContext();
-  let voices: Voice[] = [];
+  let voices: SampleVoice[] = [];
   // this group's contribution to the global "speaker is busy" horizon, which
   // is what keeps the mic pipeline from analysing our own output
   const sounding = claimsSpeaker ? trackSounding() : null;
@@ -93,27 +90,10 @@ export function createToneGroup({ claimsSpeaker = true }: ToneGroupOptions = {})
       const prefs = getSoundPrefs();
       const scaledVolume = volume * prefs.volume;
 
-      if (prefs.soundType === 'piano') {
-        const pv = schedulePianoNote(midi, at, duration, scaledVolume, attack, release);
-        if (pv) {
-          prune(ctx.currentTime);
-          voices.push({ kind: 'sample', voice: pv, stopAt: pv.stopAt });
-        }
-      } else {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = prefs.soundType;
-        osc.frequency.value = midiToFreq(midi);
-        gain.gain.setValueAtTime(0, at);
-        gain.gain.linearRampToValueAtTime(scaledVolume, at + attack);
-        gain.gain.setValueAtTime(scaledVolume, at + duration - release);
-        gain.gain.linearRampToValueAtTime(0, at + duration);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(at);
-        osc.stop(at + duration);
+      const pv = schedulePianoNote(midi, at, duration, scaledVolume, attack, release, prefs.soundType);
+      if (pv) {
         prune(ctx.currentTime);
-        voices.push({ kind: 'osc', osc, stopAt: at + duration });
+        voices.push({ voice: pv, stopAt: pv.stopAt });
       }
 
       // extend the speaker-busy horizon, converting the audio clock to wall
@@ -125,11 +105,7 @@ export function createToneGroup({ claimsSpeaker = true }: ToneGroupOptions = {})
       const now = ctx.currentTime;
       for (const v of voices) {
         try {
-          if (v.kind === 'osc') {
-            v.osc.stop(now);
-          } else {
-            v.voice.source.stop(now);
-          }
+          v.voice.source.stop(now);
         } catch {
           // voice had already ended
         }

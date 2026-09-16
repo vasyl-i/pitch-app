@@ -24,11 +24,13 @@ export function PhraseSummaryCard({
   comparison,
   primary,
   secondary,
+  tertiary,
 }: {
   summary: PhraseSummary;
   comparison?: AttemptComparison | null;
   primary: SummaryAction;
   secondary: SummaryAction;
+  tertiary?: SummaryAction;
 }) {
   const { palette, spacing } = useTheme();
   // single source of truth — the same helper decides the stars we persist
@@ -115,6 +117,7 @@ export function PhraseSummaryCard({
       <View style={{ gap: spacing.md, marginTop: spacing.lg }}>
         <Button title={primary.title} onPress={primary.onPress} />
         <Button title={secondary.title} variant="ghost" onPress={secondary.onPress} />
+        {tertiary && <Button title={tertiary.title} variant="ghost" onPress={tertiary.onPress} />}
       </View>
     </View>
   );

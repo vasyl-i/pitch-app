@@ -10,7 +10,7 @@ export { useSoundStore, SOUND_TYPE_LABELS } from './soundStore';
 export type { SoundType } from './soundStore';
 
 /** Piano sampler (Salamander Grand Piano). */
-export { preloadPianoSamples } from './pianoSampler';
+export { preloadPianoSamples, preloadSamples } from './pianoSampler';
 
 /** Haptic cues and UI sound effects. */
 export { hapticMicReady, hapticWarning, hapticTick, playTick } from './sfx';

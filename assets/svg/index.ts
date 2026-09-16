@@ -1,3 +1,4 @@
+import SuccessCat from "./SuccessCat";
 import WinkCat from "./WinkCat";
 
-export { WinkCat };
+export { SuccessCat, WinkCat };

@@ -8,6 +8,7 @@ import { ScrollingPitchCanvas } from '@/features/pitch-visualization';
 import { AppText, BackButton, Button, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
 import type { RootScreenProps } from '@/app/navigation/types';
+import { useLessonSessionStore } from '@/features/learning';
 import { activeStepLabel, advanceAfterStep } from '../session/lessonFlow';
 import { PhraseSummaryCard } from './PhraseSummaryCard';
 import { StageTransition } from './StageTransition';
@@ -189,7 +190,10 @@ function StaffSession({
           <View style={{ marginTop: spacing.lg }}>
             <Button title="Try again" onPress={() => restart()} />
             {guided ? (
-              <Button title="Skip this step" variant="ghost" onPress={() => advanceAfterStep(navigation)} />
+              <>
+                <Button title="Skip this step" variant="ghost" onPress={() => advanceAfterStep(navigation)} />
+                <Button title="Back to home" variant="ghost" onPress={() => { useLessonSessionStore.getState().completeActive(); navigation.navigate('Main', { screen: 'HomeTab', params: { screen: 'Today' } }); }} />
+              </>
             ) : (
               <Button title="Done" variant="ghost" onPress={() => navigation.goBack()} />
             )}
@@ -212,6 +216,11 @@ function StaffSession({
             guided
               ? { title: 'Sing it again', onPress: () => restart() }
               : { title: 'Done', onPress: () => navigation.goBack() }
+          }
+          tertiary={
+            guided
+              ? { title: 'Back to home', onPress: () => navigation.navigate('Main', { screen: 'HomeTab', params: { screen: 'Today' } }) }
+              : undefined
           }
         />
       ) : (

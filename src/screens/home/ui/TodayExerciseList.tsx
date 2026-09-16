@@ -47,10 +47,10 @@ export function TodayExerciseList({
       {/* Header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <AppText color={todayColor.ink} style={{ fontFamily: typography.family.medium, fontSize: 16 }}>
-          Today's exercises
+          Today's plan
         </AppText>
         <AppText color={todayColor.inkSecondary} style={{ fontFamily: typography.family.medium, fontSize: 14 }}>
-          {doneCount} of {steps.length}
+          {doneCount}/{steps.length}
         </AppText>
       </View>
 
@@ -75,7 +75,7 @@ export function TodayExerciseList({
       </View>
 
       {/* Exercise rows */}
-      <View style={{ marginTop: spacing.md, gap: spacing.sm }}>
+      <View style={{ marginTop: spacing.md }}>
         {!planReady && steps.length === 0 ? (
           <AppText
             color={todayColor.inkSecondary}
@@ -109,26 +109,6 @@ export function TodayExerciseList({
           })
         )}
       </View>
-
-      {/* Dot progress indicator */}
-      {steps.length > 0 && (
-        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: spacing.sm }}>
-          {steps.map((step, i) => {
-            const done = completedSlots.includes(step.slot);
-            return (
-              <View
-                key={step.slot}
-                style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: 3,
-                  backgroundColor: done ? todayColor.orange : todayColor.surfaceMuted,
-                }}
-              />
-            );
-          })}
-        </View>
-      )}
 
       {/* CTA */}
       <View style={{ marginTop: spacing.lg }}>

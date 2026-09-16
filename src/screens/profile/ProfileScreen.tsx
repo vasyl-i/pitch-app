@@ -11,8 +11,8 @@ import { GOAL_LABELS, usePreferencesStore } from '@/features/learning';
 import { usePremiumStatus } from '@/features/subscription';
 import { useSoundStore, SOUND_TYPE_LABELS } from '@/shared/audio';
 import { midiToName } from '@/shared/lib/music';
-import { AppText, Card, IconBubble, Screen } from '@/shared/ui';
-import { useTheme } from '@/shared/theme';
+import { AppText, Screen } from '@/shared/ui';
+import { typography, useTheme } from '@/shared/theme';
 import { useFloatingTabBarClearance } from '@/app/navigation/FloatingTabBar';
 import type { ProfileScreenProps } from '@/app/navigation/types';
 
@@ -62,18 +62,20 @@ export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>)
     : 'Your personal AI vocal coach — feedback, weak-spot drills & more';
 
   return (
-    <Screen>
+    <Screen noHorizontalPadding noBottomPadding>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: tabBarClearance }}>
-        <AppText variant="title" style={{ fontSize: 40 }}>
+        <View style={{ paddingHorizontal: spacing.lg }}>
+        <AppText color={palette.textPrimary}
+                 style={[styles.heading, { fontFamily: typography.family.bold }]}>
           Account
         </AppText>
+        </View>
 
-        <View style={{ gap: spacing.sm, marginTop: spacing.lg }}>
+        <View style={{ marginTop: spacing.lg }}>
           <Row
             icon={premium.isPremium ? 'sparkles' : 'star'}
             title={premium.isPremium ? 'Premium' : 'Upgrade to Premium'}
             subtitle={premiumSubtitle}
-            highlight={!premium.isPremium}
             onPress={() =>
               premium.isPremium
                 ? navigation.navigate('ManageSubscription')
@@ -117,15 +119,17 @@ export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>)
             title="Practice library"
             subtitle="Explore any exercise freely, outside your daily practice"
             onPress={() => navigation.navigate('PracticeLibrary')}
+            last
           />
         </View>
 
-        <View style={{ gap: spacing.sm, marginTop: spacing.xl }}>
+        <View style={{ marginTop: spacing.xl }}>
           <Row
             icon="log-out"
             title="Log out"
             subtitle={guest ? 'You are using the app as a guest' : 'Sign out of your account'}
             onPress={handleLogout}
+            last={!!guest}
           />
           {!guest && (
             <Row
@@ -133,6 +137,7 @@ export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>)
               title="Delete account"
               subtitle="Permanently remove your account and all data"
               destructive
+              last
               onPress={handleDeleteAccount}
             />
           )}
@@ -151,24 +156,26 @@ function Row({
   title,
   subtitle,
   onPress,
-  highlight = false,
   destructive = false,
+  last = false,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   title: string;
   subtitle: string;
   onPress: () => void;
-  /** accent border for the upgrade CTA */
-  highlight?: boolean;
   /** red text for dangerous actions */
   destructive?: boolean;
+  /** suppress bottom border on last item in a group */
+  last?: boolean;
 }) {
   const { palette } = useTheme();
   return (
     <Pressable accessibilityRole="button" onPress={onPress}>
       {({ pressed }) => (
-        <Card variant={highlight ? 'highlighted' : 'default'} style={[styles.row, pressed && { opacity: 0.85 }]}>
-          <IconBubble name={icon} size={40} iconSize={18} />
+        <View style={[styles.row, !last && styles.border, pressed && { opacity: 0.7 }]}>
+          <View style={styles.iconContainer}>
+            <Ionicons name={icon} size={18} color="#FFFFFF" />
+          </View>
           <View style={{ flex: 1 }}>
             <AppText variant="label" style={{ fontSize: 16 }} color={destructive ? palette.danger : undefined}>
               {title}
@@ -178,7 +185,7 @@ function Row({
             </AppText>
           </View>
           <Ionicons name="chevron-forward" size={18} color={palette.textFaint} />
-        </Card>
+        </View>
       )}
     </Pressable>
   );
@@ -186,4 +193,17 @@ function Row({
 
 const styles = StyleSheet.create({
   row: { padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  border: { borderBottomWidth: 1, borderBottomColor: 'rgba(255, 255, 255, 0.08)' },
+  heading: {
+    fontSize: 24,
+    lineHeight: 28,
+  },
+  iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    backgroundColor: '#1E1D1F',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

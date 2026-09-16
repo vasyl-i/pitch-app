@@ -20,8 +20,8 @@ export function TodayBackground() {
     { xt: -0.15, yt: -0.22, r: 260, color: todayColor.indigo, opacity: 0.62 },
     { xt: 0.5, yt: -0.3, r: 230, color: todayColor.lavender, opacity: 0.45 },
     { xt: 1.12, yt: -0.16, r: 260, color: todayColor.blue, opacity: 0.5 },
-    { xt: 1.1, yt: 0.34, r: 180, color: todayColor.coral, opacity: 0.16 },
-    { xt: -0.1, yt: 0.4, r: 180, color: todayColor.peach, opacity: 0.12 },
+    { xt: 1.1, yt: 0.34, r: 280, color: todayColor.indigo, opacity: 0.1 },
+    { xt: -0.1, yt: 0.4, r: 280, color: todayColor.lavender, opacity: 0.1 },
   ];
 
   return (

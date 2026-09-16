@@ -99,10 +99,6 @@ export function EmailEntryScreen({ navigation }: AuthScreenProps<'EmailEntry'>) 
                         {
                             borderRadius: radii.pill,
                             backgroundColor: palette.buttonPrimaryBg,
-                            shadowColor: palette.accent,
-                            shadowOffset: { width: 0, height: 6 },
-                            shadowOpacity: valid && !loading ? 0.4 : 0,
-                            shadowRadius: 18,
                         },
                         (pressed || !valid || loading) && { opacity: (!valid || loading) ? 0.3 : 0.8 },
                     ]}

@@ -254,6 +254,45 @@ export async function pullFromServer() {
       useLearningStore.setState({ weekSnapshots: merged.slice(0, 52) });
     }
 
+    // Practice sessions (merge server sessions into local MMKV store)
+    const { data: serverSessions } = await supabase
+      .from('sessions')
+      .select('exercise_id, exercise_title, score, stars, avg_cents, stability, rhythm, duration_sec, notes, notes_by_midi, intervals, created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(500);
+
+    if (serverSessions && serverSessions.length > 0) {
+      const localSessions = useProgressStore.getState().sessions;
+      const localTimestamps = new Set(localSessions.map((s) => s.at));
+      const newSessions: import('@/features/progress').SessionRecord[] = [];
+      for (const row of serverSessions) {
+        const at = new Date(row.created_at).getTime();
+        if (!localTimestamps.has(at)) {
+          newSessions.push({
+            exerciseId: row.exercise_id,
+            exerciseTitle: row.exercise_title ?? '',
+            at,
+            score: row.score ?? 0,
+            stars: row.stars ?? 0,
+            avgCents: row.avg_cents ?? 0,
+            stability: row.stability ?? 0,
+            rhythm: row.rhythm ?? 0,
+            durationSec: row.duration_sec ?? undefined,
+            notes: row.notes ?? {},
+            notesByMidi: row.notes_by_midi ?? undefined,
+            intervals: row.intervals ?? undefined,
+          });
+        }
+      }
+      if (newSessions.length > 0) {
+        const merged = [...localSessions, ...newSessions]
+          .sort((a, b) => b.at - a.at)
+          .slice(0, 500);
+        useProgressStore.setState({ sessions: merged });
+      }
+    }
+
     // Daily plan progress (restore today's completedSlots from server)
     const localSession = useLessonSessionStore.getState();
     const todayDayKey = localSession.dayKey;

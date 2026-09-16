@@ -29,11 +29,6 @@ export function Button({ title, variant = 'primary', disabled, style, ...rest }:
   const variants: Record<Variant, ViewStyle> = {
     primary: {
       backgroundColor: palette.buttonPrimaryBg,
-      shadowColor: palette.accent,
-      shadowOffset: { width: 0, height: 6 },
-      shadowOpacity: disabled ? 0 : 0.4,
-      shadowRadius: 18,
-      elevation: disabled ? 0 : 8,
     },
     ghost: {},
   };

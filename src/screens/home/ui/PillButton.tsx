@@ -52,11 +52,6 @@ export function PillButton({ title, variant = 'dark', disabled, style, ...rest }
             base,
             {
               backgroundColor: todayColor.orange,
-              shadowColor: todayColor.orange,
-              shadowOffset: { width: 0, height: 8 },
-              shadowOpacity: disabled ? 0 : 0.4,
-              shadowRadius: 20,
-              elevation: disabled ? 0 : 4,
             },
           ]}
         >

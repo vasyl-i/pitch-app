@@ -25,6 +25,7 @@ interface SessionControls {
 export interface ResultsActions {
   primary: { title: string; onPress: () => void };
   secondary: { title: string; onPress: () => void };
+  tertiary?: { title: string; onPress: () => void };
 }
 
 const STATUS_GLYPH: Record<OutcomeStatus, string> = {
@@ -195,6 +196,9 @@ export function SessionResults({ session, actions }: { session: SessionControls;
       <View style={{ gap: spacing.md, marginTop: spacing.md }}>
         <Button title={actions.primary.title} onPress={actions.primary.onPress} />
         <Button title={actions.secondary.title} variant="ghost" onPress={actions.secondary.onPress} />
+        {actions.tertiary && (
+          <Button title={actions.tertiary.title} variant="ghost" onPress={actions.tertiary.onPress} />
+        )}
       </View>
     </>
   );

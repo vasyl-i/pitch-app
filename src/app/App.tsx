@@ -12,7 +12,7 @@ import { startLearningTracker } from '@/features/learning';
 import { AuthGate, useAuthStore, startSync, stopSync, pullFromServer } from '@/features/auth';
 import { ThemeProvider, theme } from '@/shared/theme';
 import { supabase } from '@/shared/lib/supabase';
-import { preloadPianoSamples } from '@/shared/audio';
+import { preloadSamples, useSoundStore } from '@/shared/audio';
 import { RootNavigator } from './navigation/RootNavigator';
 import { AuthNavigator } from './navigation/AuthNavigator';
 
@@ -89,10 +89,11 @@ export default function App() {
     startLearningTracker();
   }, []);
 
-  // decode piano samples in the background so first note plays instantly
+  // decode samples for the selected instrument so first note plays instantly
+  const soundType = useSoundStore((s) => s.soundType);
   useEffect(() => {
-    preloadPianoSamples();
-  }, []);
+    preloadSamples(soundType);
+  }, [soundType]);
 
   // resolve Apple sign-in availability once so SignInScreen renders complete
   useEffect(() => {

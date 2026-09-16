@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { Image } from 'react-native';
 import { FloatingTabBar } from './FloatingTabBar';
 import { TodayScreen } from '@/screens/home';
 import { SingHubScreen, InstrumentalUploadScreen, InstrumentalAnalyzingScreen, InstrumentalSingScreen } from '@/screens/sing';
@@ -133,6 +133,7 @@ function MainTabs() {
       screenOptions={{
         headerShown: false,
         sceneStyle: { backgroundColor: palette.background },
+        tabBarStyle: { position: 'absolute', height: 0, borderTopWidth: 0, elevation: 0 },
       }}
     >
       <Tab.Screen
@@ -140,7 +141,7 @@ function MainTabs() {
         component={HomeNavigator}
         options={{
           title: 'Home',
-          tabBarIcon: ({ color, size }) => <Feather name="home" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Image source={require('../../../assets/bottom-bar/home.png')} style={{ width: size, height: size, tintColor: color }} />,
         }}
       />
       {/*<Tab.Screen*/}
@@ -148,7 +149,7 @@ function MainTabs() {
       {/*  component={SingNavigator}*/}
       {/*  options={{*/}
       {/*    title: 'Sing',*/}
-      {/*    tabBarIcon: ({ color, size }) => <Feather name="music" size={size} color={color} />,*/}
+      {/*    tabBarIcon: ({ color, size }) => <Ionicons name="musical-notes-outline" size={size} color={color} />,*/}
       {/*  }}*/}
       {/*/>*/}
       <Tab.Screen
@@ -156,8 +157,7 @@ function MainTabs() {
         component={ExercisesNavigator}
         options={{
           title: 'Exercises',
-          // no ear glyph in Feather — Ionicons carries this one icon
-          tabBarIcon: ({ color, size }) => <Ionicons name="ear-outline" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Image source={require('../../../assets/bottom-bar/ear.png')} style={{ width: size, height: size, tintColor: color }} />,
         }}
       />
       <Tab.Screen
@@ -165,7 +165,7 @@ function MainTabs() {
         component={ProgressNavigator}
         options={{
           title: 'Progress',
-          tabBarIcon: ({ color, size }) => <Ionicons name="stats-chart-outline" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Image source={require('../../../assets/bottom-bar/Chart.png')} style={{ width: size, height: size, tintColor: color }} />,
         }}
       />
       <Tab.Screen
@@ -173,7 +173,7 @@ function MainTabs() {
         component={AccountNavigator}
         options={{
           title: 'Account',
-          tabBarIcon: ({ color, size }) => <Feather name="user" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Image source={require('../../../assets/bottom-bar/gear.png')} style={{ width: size, height: size, tintColor: color }} />,
         }}
       />
     </Tab.Navigator>

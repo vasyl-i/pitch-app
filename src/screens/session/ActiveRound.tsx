@@ -3,14 +3,16 @@
  * preparing → playing → (waiting) → (countdown) → listening → evaluating
  * → round-result. One layout for all eight exercises.
  */
-import { StyleSheet, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
+import Svg, { Circle } from 'react-native-svg';
 import {
   exerciseById,
   useEarTrainingStore,
   type NoteOutcome,
 } from '@/features/ear-training';
 import { colorForCents } from '@/shared/lib/music';
-import { useTheme } from '@/shared/theme';
+import { palette as themePalette, useTheme } from '@/shared/theme';
 import { AppText, Button } from '@/shared/ui';
 
 interface SessionControls {
@@ -48,6 +50,8 @@ export function ActiveRound({ session }: { session: SessionControls }) {
   const choices = useEarTrainingStore((s) => s.choices);
   const live = useEarTrainingStore((s) => s.live);
   const roundResult = useEarTrainingStore((s) => s.roundResult);
+  const promptDurationMs = useEarTrainingStore((s) => s.promptDurationMs);
+  const promptStartedAt = useEarTrainingStore((s) => s.promptStartedAt);
 
   const title = exerciseId ? (exerciseById(exerciseId)?.title ?? '') : '';
   const isChoice = choices !== null;
@@ -103,13 +107,25 @@ export function ActiveRound({ session }: { session: SessionControls }) {
 
       <View style={styles.center}>
         <View style={styles.headlineBlock}>
-          <AppText
-            variant="display"
-            color={headlineColor}
-            style={{ fontSize: phase === 'listening' && isChoice ? 30 : 44, textAlign: 'center' }}
-          >
-            {headline}
-          </AppText>
+          {phase === 'playing' && promptDurationMs && promptStartedAt ? (
+            <PromptCountdown durationMs={promptDurationMs} startedAt={promptStartedAt}>
+              <AppText
+                variant="display"
+                color={headlineColor}
+                style={{ fontSize: 44, textAlign: 'center' }}
+              >
+                {headline}
+              </AppText>
+            </PromptCountdown>
+          ) : (
+            <AppText
+              variant="display"
+              color={headlineColor}
+              style={{ fontSize: phase === 'listening' && isChoice ? 30 : 44, textAlign: 'center' }}
+            >
+              {headline}
+            </AppText>
+          )}
         </View>
         <AppText variant="body" style={{ textAlign: 'center', marginTop: spacing.sm }}>
           {support}
@@ -147,11 +163,78 @@ export function ActiveRound({ session }: { session: SessionControls }) {
   );
 }
 
+const RING_PADDING = 32;
+const RING_STROKE = 3;
+
+function PromptCountdown({
+  durationMs,
+  startedAt,
+  children,
+}: {
+  durationMs: number;
+  startedAt: number;
+  children: React.ReactNode;
+}) {
+  const { width } = useWindowDimensions();
+  const size = width - RING_PADDING * 2;
+  const radius = (size - RING_STROKE) / 2;
+  const circumference = 2 * Math.PI * radius;
+
+  const [progress, setProgress] = useState(0);
+  const rafRef = useRef<number | null>(null);
+
+  const tick = useCallback(() => {
+    const elapsed = Date.now() - startedAt;
+    const p = Math.min(elapsed / durationMs, 1);
+    setProgress(p);
+    if (p < 1) {
+      rafRef.current = requestAnimationFrame(tick);
+    }
+  }, [durationMs, startedAt]);
+
+  useEffect(() => {
+    rafRef.current = requestAnimationFrame(tick);
+    return () => {
+      if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
+    };
+  }, [tick]);
+
+  const strokeDashoffset = circumference * (1 - progress);
+
+  return (
+    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+      <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke="rgba(255, 255, 255, 0.1)"
+          strokeWidth={RING_STROKE}
+          fill="none"
+        />
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke={themePalette.accent}
+          strokeWidth={RING_STROKE}
+          fill="none"
+          strokeLinecap="round"
+          strokeDasharray={`${circumference}`}
+          strokeDashoffset={strokeDashoffset}
+          rotation={-90}
+          origin={`${size / 2}, ${size / 2}`}
+        />
+      </Svg>
+      {children}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   center: { flex: 1, justifyContent: 'center' },
-  /** tall enough for the largest fontSize (44) + breathing room */
-  headlineBlock: { height: 60, justifyContent: 'center', alignItems: 'center' },
+  headlineBlock: { justifyContent: 'center', alignItems: 'center' },
   /** reserve space for score caption + outcome dots so they don't push layout */
   auxBlock: { minHeight: 64, justifyContent: 'center' },
   row: { flexDirection: 'row' },

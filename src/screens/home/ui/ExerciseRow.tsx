@@ -3,27 +3,18 @@
  * title, difficulty, and status/accuracy on the right. Card-style with
  * translucent surface background.
  */
-import { Pressable, View } from 'react-native';
+import { Image, Pressable, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Svg, { Circle } from 'react-native-svg';
 import type { GuidedStep } from '@/features/learning';
 import { SLOT_LABELS } from '@/features/learning';
 import type { TodayExerciseStat } from '@/features/progress';
 import { AppText } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
 import { todayColor } from '../todayPalette';
-import { exerciseIcon } from './exerciseIcons';
+import { EXERCISE_CAT_ICONS, DEFAULT_CAT_ICON, EXERCISE_DESCRIPTIONS } from './exerciseIcons';
 
 type StepStatus = 'completed' | 'in-progress' | 'ready' | 'upcoming';
-
-const ACC_RED = '#EE6B5B';
-const ACC_ORANGE = '#F0A840';
-const ACC_GREEN = '#7AD45E';
-
-function accuracyColor(score: number): string {
-  if (score < 50) return ACC_RED;
-  if (score < 75) return ACC_ORANGE;
-  return ACC_GREEN;
-}
 
 export function ExerciseRow({
   step,
@@ -42,9 +33,9 @@ export function ExerciseRow({
 }) {
   const { typography, spacing, radii } = useTheme();
   const done = status === 'completed';
-  const icon = exerciseIcon(step.activityId, step.kind, index);
-
-  const rowOpacity = status === 'upcoming' ? 0.5 : 1;
+  const catIcon = EXERCISE_CAT_ICONS[step.activityId] ?? DEFAULT_CAT_ICON;
+  const inset = catIcon.inset ?? 0;
+  const imgSize = 56 - inset * 2;
 
   return (
     <Pressable
@@ -52,33 +43,22 @@ export function ExerciseRow({
       style={({ pressed }) => ({
         flexDirection: 'row',
         alignItems: 'center',
-        padding: spacing.md,
-        borderRadius: radii.lg,
-        backgroundColor: pressed ? 'rgba(255,255,255,0.08)' : todayColor.surface,
-        opacity: rowOpacity,
+        paddingVertical: spacing.sm,
+        opacity: pressed ? 0.7 : 1,
       })}
     >
-      {/* Icon square — always shows the exercise icon */}
-      <View
-        style={{
-          width: 48,
-          height: 48,
-          borderRadius: 12,
-          backgroundColor: icon.tint,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Ionicons name={icon.name} size={22} color={icon.glyph} />
+      {/* Icon square */}
+      <View style={{ width: 56, height: 56, borderRadius: 14, backgroundColor: '#1E1D1F', alignItems: 'center', justifyContent: 'flex-end', overflow: 'hidden', opacity: done ? 0.4 : 1 }}>
+        <Image source={catIcon.source} style={{ width: imgSize, height: imgSize }} resizeMode="contain" />
       </View>
 
       {/* Title + meta */}
-      <View style={{ flex: 1, marginLeft: spacing.md, marginRight: spacing.sm }}>
+      <View style={{ flex: 1, marginLeft: spacing.md, marginRight: spacing.sm, opacity: done ? 0.4 : 1 }}>
         <AppText
-          color={done ? todayColor.inkSecondary : todayColor.ink}
+          color={todayColor.ink}
           style={{
-            fontFamily: typography.family.medium,
-            fontSize: 15,
+            fontFamily: typography.family.bold,
+            fontSize: 18,
             lineHeight: 20,
           }}
           numberOfLines={1}
@@ -87,38 +67,66 @@ export function ExerciseRow({
         </AppText>
         <AppText
           color={todayColor.inkFaint}
-          style={{ fontFamily: typography.family.regular, fontSize: 12, lineHeight: 16, marginTop: 3 }}
+          style={{ fontFamily: typography.family.regular, fontSize: 14, lineHeight: 16, marginTop: 6 }}
           numberOfLines={1}
         >
-          {SLOT_LABELS[step.slot]}{step.difficultyId ? ` · ${step.difficultyId}` : ''} · {done ? `${step.totalRounds}/${step.totalRounds} rounds` : partialRounds ? `${partialRounds}/${step.totalRounds} rounds` : `${step.totalRounds} rounds`} · {step.estMinutes} min
+          {EXERCISE_DESCRIPTIONS[step.activityId] ?? `${SLOT_LABELS[step.slot]} · ${step.estMinutes} min`}
         </AppText>
       </View>
 
-      {/* Right: checkmark, accuracy, or ready dot */}
-      <View style={{ alignItems: 'flex-end', minWidth: 48 }}>
-        {done ? (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            {stat && (
-              <AppText
-                color={accuracyColor(stat.avgScore)}
-                style={{ fontFamily: typography.family.bold, fontSize: 13, lineHeight: 18 }}
-              >
-                Acc. {stat.avgScore}%
-              </AppText>
-            )}
-            <Ionicons name="checkmark-circle" size={22} color={todayColor.orange} />
-          </View>
-        ) : status === 'ready' || status === 'in-progress' ? (
-          <View
-            style={{
-              width: 8,
-              height: 8,
-              borderRadius: 4,
-              backgroundColor: todayColor.orange,
-            }}
-          />
-        ) : null}
-      </View>
+      {/* Right: progress circle */}
+      <ProgressCircle
+        completedRounds={done ? step.totalRounds : (partialRounds ?? 0)}
+        totalRounds={step.totalRounds}
+        done={done}
+      />
     </Pressable>
+  );
+}
+
+const CIRCLE_SIZE = 18;
+const STROKE_WIDTH = 1;
+const RADIUS = (CIRCLE_SIZE - STROKE_WIDTH) / 2;
+const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+
+function ProgressCircle({ completedRounds, totalRounds, done }: { completedRounds: number; totalRounds: number; done: boolean }) {
+  const progress = totalRounds > 0 ? completedRounds / totalRounds : 0;
+  const strokeDashoffset = CIRCUMFERENCE * (1 - progress);
+
+  return (
+    <View style={{ width: CIRCLE_SIZE, height: CIRCLE_SIZE, alignItems: 'center', justifyContent: 'center' }}>
+      <Svg width={CIRCLE_SIZE} height={CIRCLE_SIZE}>
+        {/* Track */}
+        <Circle
+          cx={CIRCLE_SIZE / 2}
+          cy={CIRCLE_SIZE / 2}
+          r={RADIUS}
+          stroke={todayColor.inkSecondary}
+          strokeWidth={STROKE_WIDTH}
+          fill="none"
+        />
+        {/* Progress arc */}
+        {progress > 0 && (
+          <Circle
+            cx={CIRCLE_SIZE / 2}
+            cy={CIRCLE_SIZE / 2}
+            r={RADIUS}
+            stroke={todayColor.orange}
+            strokeWidth={STROKE_WIDTH}
+            fill="none"
+            strokeLinecap="round"
+            strokeDasharray={`${CIRCUMFERENCE}`}
+            strokeDashoffset={strokeDashoffset}
+            rotation={-90}
+            origin={`${CIRCLE_SIZE / 2}, ${CIRCLE_SIZE / 2}`}
+          />
+        )}
+      </Svg>
+      {done && (
+        <View style={{ position: 'absolute' }}>
+          <Ionicons name="checkmark" size={10} color={todayColor.orange} />
+        </View>
+      )}
+    </View>
   );
 }
