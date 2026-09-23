@@ -85,8 +85,8 @@ export function TodayScreen({ navigation }: HomeScreenProps<'Today'>) {
     );
 
     return (
-        <Screen backdrop={<TodayBackground/>} noHorizontalPadding noBottomPadding>
-            <View style={{ paddingHorizontal: spacing.lg }}>
+        <Screen noHorizontalPadding noBottomPadding>
+            <View style={{ paddingHorizontal: spacing.lg, height: "100%" }}>
                 <ScrollView showsVerticalScrollIndicator={false}
                             contentContainerStyle={{ paddingBottom: tabBarClearance }}>
                     <AppText

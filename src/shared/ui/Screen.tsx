@@ -47,7 +47,7 @@ export function Screen({ children, style, backdrop, overlay, dismissKeyboard, av
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
-  safe: { flex: 1 },
-  content: { flex: 1 },
+  root: { height: "100%", width: "100%" },
+  safe: { height: "100%", width: "100%" },
+  content: { height: "100%", width: "100%" },
 });

@@ -10,7 +10,7 @@ import { ExercisesHubScreen } from '@/screens/exercises';
 import { NotificationsScreen } from '@/screens/notifications';
 import { ProgressScreen, WeeklyReviewScreen, PerfectExercisesScreen } from '@/screens/progress';
 import { JourneyScreen, JourneyAreaScreen } from '@/screens/journey';
-import { ProfileScreen, LearningPreferencesScreen, ExerciseSettingsScreen, SoundSettingsScreen } from '@/screens/profile';
+import { ProfileScreen, LearningPreferencesScreen, ExerciseSettingsScreen, SoundSettingsScreen, ReminderSettingsScreen } from '@/screens/profile';
 import { PracticeLibraryScreen } from '@/screens/library';
 import { EarSessionScreen, PracticeCompleteScreen } from '@/screens/session';
 import { PaywallScreen } from '@/screens/paywall';
@@ -18,7 +18,7 @@ import { WeakSpotsScreen } from '@/screens/weak-spots';
 import { ManageSubscriptionScreen } from '@/screens/subscription';
 import { StaffPracticeScreen } from '@/screens/staff-practice';
 import { VocalRangeSettingsScreen, RedetectLowScreen, RedetectHighScreen, RedetectResultsScreen } from '@/screens/vocal-range';
-import { WelcomeScreen, WhyItMattersScreen, LowestNoteScreen, HighestNoteScreen, ResultsScreen, GoalsScreen } from '@/screens/onboarding';
+import { WelcomeScreen, LowestNoteScreen, HighestNoteScreen, ResultsScreen, GoalsScreen, ReminderOnboardingScreen } from '@/screens/onboarding';
 import { useProfileStore } from '@/entities/profile';
 import { waitForSyncReady } from '@/features/auth';
 import { useTheme } from '@/shared/theme';
@@ -110,16 +110,16 @@ function AccountNavigator() {
   );
 }
 
-/** First-launch flow: welcome, why it matters, guided low/high detection, results, goals. */
-function OnboardingNavigator() {
+/** First-launch flow: welcome → voice detection → results → goals → reminder. */
+function OnboardingNavigator({ initialRoute = 'Welcome' }: { initialRoute?: keyof OnboardingStackParamList }) {
   return (
-    <OnboardingStack.Navigator screenOptions={useStackScreenOptions()}>
+    <OnboardingStack.Navigator initialRouteName={initialRoute} screenOptions={useStackScreenOptions()}>
       <OnboardingStack.Screen name="Welcome" component={WelcomeScreen} />
-      <OnboardingStack.Screen name="Why" component={WhyItMattersScreen} />
       <OnboardingStack.Screen name="Lowest" component={LowestNoteScreen} />
       <OnboardingStack.Screen name="Highest" component={HighestNoteScreen} />
       <OnboardingStack.Screen name="Results" component={ResultsScreen} />
       <OnboardingStack.Screen name="Goals" component={GoalsScreen} />
+      <OnboardingStack.Screen name="Reminder" component={ReminderOnboardingScreen} />
     </OnboardingStack.Navigator>
   );
 }
@@ -208,19 +208,28 @@ export function RootNavigator() {
     return () => { cancelled = true; };
   }, []);
 
-  const hasOnboarded = useProfileStore((s) => s.hasOnboarded);
+  const onboardingStep = useProfileStore((s) => s.onboardingStep);
 
   if (!hydrated || !syncDone) return <View style={{ flex: 1, backgroundColor: palette.background }} />;
 
+  const isOnboarded = onboardingStep === 'complete';
+  // Resume at the right step if the user killed the app mid-onboarding
+  const onboardingInitialRoute =
+    onboardingStep === 'goals-complete' ? 'Reminder'
+    : onboardingStep === 'range-complete' ? 'Goals'
+    : 'Welcome';
+
   return (
     <RootStack.Navigator
-      initialRouteName={hasOnboarded ? 'Main' : 'Onboarding'}
+      initialRouteName={isOnboarded ? 'Main' : 'Onboarding'}
       screenOptions={{
         headerShown: false,
         contentStyle: { backgroundColor: palette.background },
       }}
     >
-      <RootStack.Screen name="Onboarding" component={OnboardingNavigator} />
+      <RootStack.Screen name="Onboarding">
+        {() => <OnboardingNavigator initialRoute={onboardingInitialRoute} />}
+      </RootStack.Screen>
       <RootStack.Screen name="Main" component={MainTabs} />
       {/* full-screen practice: no tab bar, no mid-session wandering */}
       <RootStack.Screen name="EarSession" component={EarSessionScreen} />
@@ -232,6 +241,7 @@ export function RootNavigator() {
       {/* modal: the paywall is always an interruption of something else, and
           must be dismissible without losing the user's place */}
       <RootStack.Screen name="Paywall" component={PaywallScreen} options={{ presentation: 'modal' }} />
+      <RootStack.Screen name="ReminderSettings" component={ReminderSettingsScreen} />
     </RootStack.Navigator>
   );
 }

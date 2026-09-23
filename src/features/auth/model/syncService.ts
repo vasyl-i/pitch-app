@@ -89,6 +89,8 @@ async function pushLearningPreferences() {
     preferred_genres: prefs.preferredGenres,
     coach_style: prefs.coachStyle,
     preferred_difficulty: prefs.preferredDifficulty,
+    reminder_hour: prefs.reminderHour,
+    reminder_minute: prefs.reminderMinute ?? 0,
     exercise_balance: prefs.exerciseBalance ?? 0.5,
     disabled_exercises: prefs.disabledExercises ?? [],
     skip_redo_warning: prefs.skipRedoWarning ?? false,
@@ -217,6 +219,12 @@ export async function pullFromServer() {
       .eq('user_id', userId)
       .single();
 
+    // If both vocal profile and preferences exist on server, the user
+    // has fully completed onboarding — mark it so they skip the flow.
+    if (vp && lp) {
+      useProfileStore.getState().completeOnboarding();
+    }
+
     if (lp) {
       usePreferencesStore.getState().setPreferences({
         primaryGoal: lp.primary_goal,
@@ -226,6 +234,8 @@ export async function pullFromServer() {
         musicReading: lp.music_reading,
         preferredGenres: lp.preferred_genres ?? [],
         coachStyle: lp.coach_style,
+        reminderHour: lp.reminder_hour ?? null,
+        reminderMinute: lp.reminder_minute ?? 0,
         preferredDifficulty: lp.preferred_difficulty,
         exerciseBalance: lp.exercise_balance ?? 0.5,
         disabledExercises: lp.disabled_exercises ?? [],

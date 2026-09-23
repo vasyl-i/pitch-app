@@ -4,12 +4,10 @@
  * translucent surface background.
  */
 import { Image, Pressable, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import Svg, { Circle } from 'react-native-svg';
 import type { GuidedStep } from '@/features/learning';
 import { SLOT_LABELS } from '@/features/learning';
 import type { TodayExerciseStat } from '@/features/progress';
-import { AppText } from '@/shared/ui';
+import { AppText, ProgressCircle } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
 import { todayColor } from '../todayPalette';
 import { EXERCISE_CAT_ICONS, DEFAULT_CAT_ICON, EXERCISE_DESCRIPTIONS } from './exerciseIcons';
@@ -79,54 +77,9 @@ export function ExerciseRow({
         completedRounds={done ? step.totalRounds : (partialRounds ?? 0)}
         totalRounds={step.totalRounds}
         done={done}
+        trackColor={todayColor.inkSecondary}
+        progressColor={todayColor.orange}
       />
     </Pressable>
-  );
-}
-
-const CIRCLE_SIZE = 18;
-const STROKE_WIDTH = 1;
-const RADIUS = (CIRCLE_SIZE - STROKE_WIDTH) / 2;
-const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
-
-function ProgressCircle({ completedRounds, totalRounds, done }: { completedRounds: number; totalRounds: number; done: boolean }) {
-  const progress = totalRounds > 0 ? completedRounds / totalRounds : 0;
-  const strokeDashoffset = CIRCUMFERENCE * (1 - progress);
-
-  return (
-    <View style={{ width: CIRCLE_SIZE, height: CIRCLE_SIZE, alignItems: 'center', justifyContent: 'center' }}>
-      <Svg width={CIRCLE_SIZE} height={CIRCLE_SIZE}>
-        {/* Track */}
-        <Circle
-          cx={CIRCLE_SIZE / 2}
-          cy={CIRCLE_SIZE / 2}
-          r={RADIUS}
-          stroke={todayColor.inkSecondary}
-          strokeWidth={STROKE_WIDTH}
-          fill="none"
-        />
-        {/* Progress arc */}
-        {progress > 0 && (
-          <Circle
-            cx={CIRCLE_SIZE / 2}
-            cy={CIRCLE_SIZE / 2}
-            r={RADIUS}
-            stroke={todayColor.orange}
-            strokeWidth={STROKE_WIDTH}
-            fill="none"
-            strokeLinecap="round"
-            strokeDasharray={`${CIRCUMFERENCE}`}
-            strokeDashoffset={strokeDashoffset}
-            rotation={-90}
-            origin={`${CIRCLE_SIZE / 2}, ${CIRCLE_SIZE / 2}`}
-          />
-        )}
-      </Svg>
-      {done && (
-        <View style={{ position: 'absolute' }}>
-          <Ionicons name="checkmark" size={10} color={todayColor.orange} />
-        </View>
-      )}
-    </View>
   );
 }

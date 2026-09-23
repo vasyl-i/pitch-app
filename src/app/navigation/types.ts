@@ -45,14 +45,16 @@ export type ProfileStackParamList = {
   RedetectResults: { low: DetectionResult; high: DetectionResult };
 };
 
-/** First-launch onboarding: welcome, why it matters, detection, results, learning goals. */
+/** First-launch onboarding: welcome → voice detection → results → goals → reminder. */
 export type OnboardingStackParamList = {
   Welcome: undefined;
+  /** Educational interstitial — not currently wired into the flow */
   Why: undefined;
   Lowest: undefined;
   Highest: { low: DetectionResult };
   Results: { low: DetectionResult; high: DetectionResult };
   Goals: undefined;
+  Reminder: undefined;
 };
 
 export type MainTabParamList = {
@@ -90,6 +92,8 @@ export type RootStackParamList = {
    * every entry point is required to say where it came from.
    */
   Paywall: { source: PaywallSource; feature?: PremiumFeature };
+  /** Full-screen reminder settings — above tabs so no tab bar shows */
+  ReminderSettings: undefined;
 };
 
 /** Auth screens shown before the user is signed in. */

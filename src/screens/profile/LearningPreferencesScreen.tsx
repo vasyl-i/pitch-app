@@ -47,9 +47,9 @@ const COACH: Option<LearningPreferences['coachStyle']>[] = [
 
 const REMINDER: Option<number | null>[] = [
   { value: null, label: 'Off' },
-  { value: 8, label: 'Morning' },
-  { value: 14, label: 'Afternoon' },
-  { value: 19, label: 'Evening' },
+  { value: 8, label: 'Morning (8:00)' },
+  { value: 14, label: 'Afternoon (2:00)' },
+  { value: 19, label: 'Evening (7:00)' },
 ];
 
 const DIFFICULTY: Option<LearningPreferences['preferredDifficulty']>[] = [

@@ -3,7 +3,7 @@
  * preferences, the practice library, and (moved here from their former
  * top-level tabs) Progress and Journey.
  */
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useProfileStore, voiceType } from '@/entities/profile';
 import { useAuthStore } from '@/features/auth';
@@ -15,6 +15,14 @@ import { AppText, Screen } from '@/shared/ui';
 import { typography, useTheme } from '@/shared/theme';
 import { useFloatingTabBarClearance } from '@/app/navigation/FloatingTabBar';
 import type { ProfileScreenProps } from '@/app/navigation/types';
+
+function reminderSubtitle(hour: number | null, minute: number): string {
+  if (hour == null) return 'Off — tap to set a daily reminder';
+  const period = hour < 12 ? 'AM' : 'PM';
+  const h = hour % 12 || 12;
+  const m = minute.toString().padStart(2, '0');
+  return `Daily at ${h}:${m} ${period}`;
+}
 
 export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>) {
   const { palette, spacing } = useTheme();
@@ -115,10 +123,32 @@ export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>)
             onPress={() => navigation.navigate('ExerciseSettings')}
           />
           <Row
+            icon="notifications"
+            title="Practice reminder"
+            subtitle={reminderSubtitle(prefs?.reminderHour ?? null, prefs?.reminderMinute ?? 0)}
+            onPress={() => navigation.navigate('ReminderSettings')}
+          />
+          <Row
             icon="albums"
             title="Practice library"
             subtitle="Explore any exercise freely, outside your daily practice"
             onPress={() => navigation.navigate('PracticeLibrary')}
+            last
+          />
+        </View>
+
+        <View style={{ marginTop: spacing.xl }}>
+          <Row
+            icon="document-text"
+            title="Privacy policy"
+            subtitle="How we handle your data"
+            onPress={() => Linking.openURL('https://pitchgym.anyabedrytska.com/privacy-policy.html')}
+          />
+          <Row
+            icon="shield-checkmark"
+            title="Terms of service"
+            subtitle="Rules for using the app"
+            onPress={() => Linking.openURL('https://pitchgym.anyabedrytska.com/terms-of-service.html')}
             last
           />
         </View>

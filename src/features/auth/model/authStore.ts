@@ -12,6 +12,8 @@ import { useLearningStore, usePreferencesStore, useLessonSessionStore } from '@/
 import { useInstrumentalStore } from '@/features/instrumental';
 import { useSubscriptionStore } from '@/features/subscription';
 import { prepareSyncGate } from './syncService';
+import { unregisterPushToken } from '@/shared/lib/notifications';
+import { logOutRevenueCat } from '@/features/subscription';
 
 GoogleSignin.configure({
   webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
@@ -67,7 +69,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     // profile data exists in MMKV but a Keychain session is found, sign out
     // to clear the stale session so the user sees the sign-in screen.
     const stored = mmkv.getString('pitch-coach-profile');
-    const hasProfile = !!stored && stored.includes('"hasOnboarded":true');
+    const hasProfile = !!stored && (stored.includes('"hasOnboarded":true') || stored.includes('"onboardingStep":"complete"') || stored.includes('"onboardingStep":"range-complete"') || stored.includes('"onboardingStep":"goals-complete"'));
 
     // Track whether we cleared a stale session so the auth listener doesn't
     // immediately restore it from the SIGNED_OUT event's null → SIGNED_IN echo.
@@ -210,6 +212,9 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   signOut: async () => {
+    const userId = useAuthStore.getState().user?.id;
+    if (userId) await unregisterPushToken(userId);
+    await logOutRevenueCat().catch(() => {});
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
     try {
@@ -222,6 +227,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   deleteAccount: async () => {
+    const userId = useAuthStore.getState().user?.id;
+    if (userId) await unregisterPushToken(userId);
     const { error } = await supabase.rpc('delete_own_account');
     if (error) throw error;
     // Auth row is gone server-side; clear local state

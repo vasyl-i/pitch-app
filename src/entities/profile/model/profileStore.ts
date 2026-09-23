@@ -16,6 +16,8 @@ import { mmkvStorage } from '@/shared/lib/storage';
 import type { PitchRange } from '@/shared/lib/music';
 import { deriveComfortRange } from '../lib/comfort';
 
+export type OnboardingStep = 'not-started' | 'range-complete' | 'goals-complete' | 'complete';
+
 /** A user-initiated, non-persistent-feeling narrowing for an off day. */
 export interface TemporaryAdjustment {
   /** semitones inset from each end of the comfort range */
@@ -48,6 +50,8 @@ function computeTrainingRange(comfort: PitchRange, adjustment: TemporaryAdjustme
 interface ProfileState {
   profile: VocalProfile | null;
   hasOnboarded: boolean;
+  /** granular onboarding progress — survives app kills between steps */
+  onboardingStep: OnboardingStep;
   /** user preference: transpose exercises into range (default on) */
   autoTranspose: boolean;
 
@@ -60,6 +64,9 @@ interface ProfileState {
   setTemporaryAdjustment: (adjustment: TemporaryAdjustment | null) => void;
   clearProfile: () => void;
   setAutoTranspose: (v: boolean) => void;
+  /** advance onboarding to a specific step without marking fully complete */
+  advanceOnboarding: (step: OnboardingStep) => void;
+  /** mark onboarding as fully done (reminder set/skipped) */
   completeOnboarding: () => void;
 }
 
@@ -68,6 +75,7 @@ export const useProfileStore = create<ProfileState>()(
     (set, get) => ({
       profile: null,
       hasOnboarded: false,
+      onboardingStep: 'not-started' as OnboardingStep,
       autoTranspose: true,
 
       setDetectedRange: (maximumRange, confidence, detectedAt = Date.now()) => {
@@ -81,7 +89,7 @@ export const useProfileStore = create<ProfileState>()(
             confidence,
             temporaryAdjustment: null,
           },
-          hasOnboarded: true,
+          onboardingStep: 'range-complete',
         });
       },
 
@@ -128,21 +136,33 @@ export const useProfileStore = create<ProfileState>()(
         });
       },
 
-      clearProfile: () => set({ profile: null, hasOnboarded: false }),
+      clearProfile: () => set({ profile: null, hasOnboarded: false, onboardingStep: 'not-started' }),
       setAutoTranspose: (autoTranspose) => set({ autoTranspose }),
-      completeOnboarding: () => set({ hasOnboarded: true }),
+      advanceOnboarding: (step) => set({ onboardingStep: step }),
+      completeOnboarding: () => set({ hasOnboarded: true, onboardingStep: 'complete' }),
     }),
     {
       name: 'pitch-coach-profile',
       storage: createJSONStorage(() => mmkvStorage),
-      version: 1,
+      version: 2,
       migrate: (persisted: unknown, version) => {
-        if (version >= 1) return persisted as ProfileState;
+        if (version >= 2) return persisted as ProfileState;
+
+        if (version === 1) {
+          // v1 → v2: add onboardingStep derived from hasOnboarded
+          const old = persisted as Omit<ProfileState, 'onboardingStep'> & { hasOnboarded: boolean };
+          return {
+            ...old,
+            onboardingStep: old.hasOnboarded ? 'complete' : (old.profile ? 'range-complete' : 'not-started'),
+          } as ProfileState;
+        }
+
         // v0 shape: { range: { lowMidi, highMidi, measuredAt } | null, autoTranspose }
         const old = persisted as { range?: PitchRange & { measuredAt: number }; autoTranspose?: boolean } | null;
         const oldRange = old?.range;
         const maximumRange: PitchRange | null = oldRange ? { lowMidi: oldRange.lowMidi, highMidi: oldRange.highMidi } : null;
         const comfortRange = maximumRange ? deriveComfortRange(maximumRange) : null;
+        const hasRange = Boolean(oldRange);
         return {
           profile:
             maximumRange && comfortRange
@@ -157,7 +177,8 @@ export const useProfileStore = create<ProfileState>()(
               : null,
           // an existing user who already measured a range has effectively
           // onboarded; don't force them through the new flow retroactively
-          hasOnboarded: Boolean(oldRange),
+          hasOnboarded: hasRange,
+          onboardingStep: hasRange ? 'complete' : 'not-started',
           autoTranspose: old?.autoTranspose ?? true,
         } satisfies Partial<ProfileState> as ProfileState;
       },

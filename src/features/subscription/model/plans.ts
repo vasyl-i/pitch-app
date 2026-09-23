@@ -13,18 +13,18 @@ import type { Plan, PlanId } from './types';
 
 export const MONTHLY_PLAN: Plan = {
   id: 'monthly',
-  productId: 'com.pitchcoach.premium.monthly',
+  productId: 'monthly_799',
   name: 'Monthly',
-  priceCents: 499,
+  priceCents: 799,
   currency: 'USD',
   periodMonths: 1,
-  trialDays: 0,
+  trialDays: 7,
   recommended: false,
 };
 
 export const YEARLY_PLAN: Plan = {
   id: 'yearly',
-  productId: 'com.pitchcoach.premium.yearly',
+  productId: 'yearly_4999',
   name: 'Yearly',
   priceCents: 4999,
   currency: 'USD',
@@ -35,8 +35,13 @@ export const YEARLY_PLAN: Plan = {
 
 export const PLANS: readonly Plan[] = [MONTHLY_PLAN, YEARLY_PLAN];
 
+const PLAN_MAP: Record<PlanId, Plan> = {
+  monthly: MONTHLY_PLAN,
+  yearly: YEARLY_PLAN,
+};
+
 export function planById(id: PlanId): Plan {
-  return id === 'monthly' ? MONTHLY_PLAN : YEARLY_PLAN;
+  return PLAN_MAP[id] ?? YEARLY_PLAN;
 }
 
 /** the plan the paywall opens on */
@@ -52,7 +57,7 @@ export function formatPrice(cents: number, currency: Plan['currency'] = 'USD'): 
   return `${symbol}${(cents / 100).toFixed(2)}`;
 }
 
-/** "$4.99/month" · "$49.99/year" */
+/** "$7.99/month" · "$49.99/year" */
 export function formatPlanPrice(plan: Plan): string {
   return `${formatPrice(plan.priceCents, plan.currency)}/${plan.periodMonths === 12 ? 'year' : 'month'}`;
 }

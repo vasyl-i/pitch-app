@@ -22,6 +22,7 @@ export const DEFAULT_PREFERENCES: Omit<LearningPreferences, 'updatedAt'> = {
   preferredGenres: [],
   coachStyle: 'encouraging',
   reminderHour: null,
+  reminderMinute: 0,
   preferredDifficulty: 'adaptive',
 };
 

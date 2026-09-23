@@ -8,15 +8,28 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import { useFonts } from 'expo-font';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { startLearningTracker } from '@/features/learning';
+import Toast from 'react-native-toast-message';
+import { startLearningTracker, usePreferencesStore } from '@/features/learning';
 import { AuthGate, useAuthStore, startSync, stopSync, pullFromServer } from '@/features/auth';
+import { setupNotificationHandler, syncReminder, registerPushToken } from '@/shared/lib/notifications';
+import {
+  initRevenueCat,
+  identifyRevenueCatUser,
+  logOutRevenueCat,
+  fetchSubscriptionState,
+  onSubscriptionChange,
+  useSubscriptionStore,
+} from '@/features/subscription';
 import { ThemeProvider, theme } from '@/shared/theme';
+import { toastConfig } from '@/shared/ui';
 import { supabase } from '@/shared/lib/supabase';
 import { preloadSamples, useSoundStore } from '@/shared/audio';
 import { RootNavigator } from './navigation/RootNavigator';
 import { AuthNavigator } from './navigation/AuthNavigator';
 
 SplashScreen.preventAutoHideAsync();
+setupNotificationHandler();
+initRevenueCat('appl_kFBGeARTxhvdqgULiBoIIAvmvUF');
 
 /**
  * Handle Supabase auth deep links (email confirmation, magic links).
@@ -62,8 +75,38 @@ function SyncManager() {
     if (!user) return;
     pullFromServer();
     startSync();
-    return () => stopSync();
+    registerPushToken(user.id);
+
+    // Identify user with RevenueCat and sync subscription state
+    identifyRevenueCatUser(user.id)
+      .then(() => fetchSubscriptionState())
+      .then((state) => useSubscriptionStore.getState().syncSubscription(state))
+      .catch(() => {
+        // RevenueCat init failure is non-critical — local state persists
+      });
+
+    // Listen for real-time subscription changes (renewals, expirations)
+    const unsubRC = onSubscriptionChange((state) => {
+      useSubscriptionStore.getState().syncSubscription(state);
+    });
+
+    return () => {
+      stopSync();
+      unsubRC();
+    };
   }, [user]);
+
+  return null;
+}
+
+/** Keeps the scheduled local notification in sync with the reminder preference. */
+function ReminderSync() {
+  const reminderHour = usePreferencesStore((s) => s.preferences?.reminderHour ?? null);
+  const reminderMinute = usePreferencesStore((s) => s.preferences?.reminderMinute ?? 0);
+
+  useEffect(() => {
+    syncReminder(reminderHour, reminderMinute);
+  }, [reminderHour, reminderMinute]);
 
   return null;
 }
@@ -128,10 +171,12 @@ export default function App() {
           <NavigationContainer theme={navigationTheme}>
             <AuthGate fallback={<AuthNavigator />}>
               <SyncManager />
+              <ReminderSync />
               <RootNavigator />
             </AuthGate>
             <StatusBar style="light" />
           </NavigationContainer>
+          <Toast config={toastConfig} />
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

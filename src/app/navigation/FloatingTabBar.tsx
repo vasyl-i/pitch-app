@@ -8,7 +8,7 @@ import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 const BAR_HEIGHT = 80;
 const BAR_RADIUS = 160;
 const BAR_MARGIN = 24;
-const BAR_BOTTOM_GAP = 12;
+const BAR_BOTTOM_GAP = 0;
 const CIRCLE = 48;
 const TAB_PADDING = 16;
 
@@ -99,30 +99,39 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
         </>
     );
 
-    const baseStyle = {
+    const wrapperStyle = {
         position: 'absolute' as const,
         left: BAR_MARGIN,
         right: BAR_MARGIN,
         bottom: insets.bottom + BAR_BOTTOM_GAP,
-        height: BAR_HEIGHT,
+        alignItems: 'center' as const,
+    };
+
+    const barStyle = {
+        width: '100%' as const,
         maxWidth: 380,
+        height: BAR_HEIGHT,
         borderRadius: BAR_RADIUS,
     };
 
     if (USE_LIQUID_GLASS) {
         return (
-            <GlassView onLayout={onLayout} glassEffectStyle="clear" style={baseStyle}>
-                {content}
-            </GlassView>
+            <View style={wrapperStyle}>
+                <GlassView onLayout={onLayout} glassEffectStyle="clear" style={barStyle}>
+                    {content}
+                </GlassView>
+            </View>
         );
     }
 
     return (
-        <View onLayout={onLayout} style={{ ...baseStyle, borderWidth: 1, borderColor: BORDER_COLOR }}>
-            <View style={[StyleSheet.absoluteFill, { borderRadius: BAR_RADIUS, overflow: 'hidden' }]}>
-                <BlurView intensity={40} tint="systemMaterialDark" style={StyleSheet.absoluteFill} />
+        <View style={wrapperStyle}>
+            <View onLayout={onLayout} style={{ ...barStyle, borderWidth: 1, borderColor: BORDER_COLOR }}>
+                <View style={[StyleSheet.absoluteFill, { borderRadius: BAR_RADIUS, overflow: 'hidden' }]}>
+                    <BlurView intensity={40} tint="systemMaterialDark" style={StyleSheet.absoluteFill} />
+                </View>
+                {content}
             </View>
-            {content}
         </View>
     );
 }

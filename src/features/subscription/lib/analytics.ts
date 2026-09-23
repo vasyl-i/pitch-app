@@ -25,6 +25,7 @@ export type PaywallSource =
   | 'progress-mastery'
   | 'profile'
   | 'instrumental-upload'
+  | 'onboarding'
   | 'unknown';
 
 export type MonetizationEvent =

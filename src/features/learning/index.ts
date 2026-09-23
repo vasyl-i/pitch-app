@@ -9,6 +9,7 @@
 export type {
   Activity,
   DailyLesson,
+  ImprovementGoal,
   Insight,
   LearningGoal,
   LearningPreferences,
@@ -23,7 +24,7 @@ export type {
   Trend,
   WeeklyReport,
 } from './model/types';
-export { ALL_SKILLS, GOAL_LABELS, SKILL_LABELS, SLOT_LABELS } from './model/types';
+export { ALL_SKILLS, GOAL_LABELS, IMPROVEMENT_GOAL_LABELS, SKILL_LABELS, SLOT_LABELS } from './model/types';
 
 export { useLearningStore, emptySkills } from './model/learningStore';
 export { usePreferencesStore, DEFAULT_PREFERENCES, GENRE_OPTIONS } from './model/preferencesStore';

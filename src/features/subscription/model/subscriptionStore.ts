@@ -4,13 +4,12 @@
  * The store owns *what the billing system believes* and nothing else. It does
  * not decide what a user may see — that is `resolveEntitlements`, and screens
  * reach it through `useEntitlement`, never through `status` here.
- *
- * Swapping the mock for StoreKit is a one-line change to `adapter` below.
  */
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { mmkvStorage } from '@/shared/lib/storage';
-import { MockBillingAdapter, type BillingAdapter, type PurchaseOutcome } from '../lib/billing';
+import { type BillingAdapter, type PurchaseOutcome } from '../lib/billing';
+import { RevenueCatAdapter } from '../lib/revenueCatAdapter';
 import { isTrialEligible } from '../lib/entitlements';
 import { freeSubscription, type PlanId, type SubscriptionState } from './types';
 
@@ -25,26 +24,17 @@ interface SubscriptionStoreState {
   restore(): Promise<PurchaseOutcome>;
   /** turn off auto-renew, keeping access until the period ends */
   cancelAutoRenew(): void;
+  /** update subscription state from external source (e.g. RevenueCat listener) */
+  syncSubscription(next: SubscriptionState): void;
   /** dev/QA affordance — never reachable from a shipping build's UI */
   debugSetSubscription(next: SubscriptionState): void;
   reset(): void;
 }
 
 /**
- * The live billing implementation.
- *
- * To ship real billing: implement `BillingAdapter` over StoreKit 2 (or
- * RevenueCat) and assign it here. Everything downstream — paywall, gates,
- * entitlements, persistence — already speaks this interface.
+ * The live billing implementation — RevenueCat.
  */
-const adapter: BillingAdapter = new MockBillingAdapter({
-  trialEligible: () => isTrialEligible(useSubscriptionStore.getState().subscription),
-  restorable: () => {
-    const { subscription } = useSubscriptionStore.getState();
-    // a mock "restore" can only find what this device already knew about
-    return subscription.firstSubscribedAt === null ? null : subscription;
-  },
-});
+const adapter: BillingAdapter = new RevenueCatAdapter();
 
 export const billingAdapter = adapter;
 
@@ -92,6 +82,8 @@ export const useSubscriptionStore = create<SubscriptionStoreState>()(
       },
 
       cancelAutoRenew: () => set({ subscription: { ...get().subscription, willRenew: false } }),
+
+      syncSubscription: (next) => set({ subscription: next }),
 
       debugSetSubscription: (next) => set({ subscription: next, error: null, pending: false }),
 

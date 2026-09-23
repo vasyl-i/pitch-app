@@ -208,7 +208,17 @@ export function InstrumentalSingScreen({ navigation, route }: RootScreenProps<'I
     setPlaying(true);
   };
 
-  useEffect(() => stopPlayback, []);
+  // Clean up audio on unmount (user navigates away mid-playback)
+  useEffect(() => {
+    return () => {
+      try {
+        sourceRef.current?.stop();
+      } catch {
+        // source may already be stopped
+      }
+      sourceRef.current = null;
+    };
+  }, []);
 
   if (!track || !track.key) {
     return (

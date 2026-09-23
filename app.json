@@ -17,6 +17,7 @@
       "appleTeamId": "4F6C4GS493",
       "supportsTablet": false,
       "bundleIdentifier": "app.anya.eargym",
+      "googleServicesFile": "./assets/GoogleService-Info.plist",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -66,7 +67,9 @@
         }
       ],
       "./plugins/with-liquid-glass-icon-fix",
-      "./plugins/with-splash-cover"
+      "./plugins/with-splash-cover",
+      "expo-notifications",
+      "@react-native-community/datetimepicker"
     ]
   }
 }

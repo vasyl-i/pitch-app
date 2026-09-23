@@ -46,6 +46,15 @@ export type { AccessTier, Entitlements } from './lib/entitlements';
 export { MockBillingAdapter, subscriptionFromPurchase } from './lib/billing';
 export type { BillingAdapter, PurchaseOutcome } from './lib/billing';
 
+export {
+  RevenueCatAdapter,
+  initRevenueCat,
+  identifyRevenueCatUser,
+  logOutRevenueCat,
+  fetchSubscriptionState,
+  onSubscriptionChange,
+} from './lib/revenueCatAdapter';
+
 export { setMonetizationSink, trackMonetization } from './lib/analytics';
 export type { MonetizationEvent, MonetizationSink, PaywallSource } from './lib/analytics';
 

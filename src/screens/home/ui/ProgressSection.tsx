@@ -22,7 +22,7 @@ export function ProgressSection({ accuracy, streak, practiceTime }: Props) {
       <View style={[styles.row, { marginTop: spacing.md }]}>
         <Stat value={accuracy > 0 ? `${accuracy}%` : '—'} label="Accuracy" />
         <Stat value={streak > 0 ? `${streak}d` : '—'} label="In a row" divider />
-        <Stat value={practiceTime || '—'} label="Practice time" divider />
+        <Stat value={practiceTime && practiceTime !== '0m' ? practiceTime : '—'} label="Practice time" divider />
       </View>
     </View>
   );

@@ -108,6 +108,15 @@ export type PreferredDifficulty = 'adaptive' | 'easy' | 'normal' | 'challenge';
 export type CoachStyle = 'encouraging' | 'direct' | 'technical';
 export type DailyMinutes = 5 | 10 | 15 | 20 | 30;
 
+/** Goals selected during the simplified onboarding flow. */
+export type ImprovementGoal = 'sing-in-tune' | 'hit-notes' | 'feel-confident';
+
+export const IMPROVEMENT_GOAL_LABELS: Record<ImprovementGoal, string> = {
+  'sing-in-tune': 'Sing more in tune',
+  'hit-notes': 'Hit notes more accurately',
+  'feel-confident': 'Feel more confident singing',
+};
+
 export interface LearningPreferences {
   primaryGoal: LearningGoal;
   secondaryGoal: LearningGoal | null;
@@ -118,6 +127,8 @@ export interface LearningPreferences {
   coachStyle: CoachStyle;
   /** local hour 0–23 the user wants a practice reminder, null = none */
   reminderHour: number | null;
+  /** minute 0–59 within the reminder hour, default 0 */
+  reminderMinute: number;
   preferredDifficulty: PreferredDifficulty;
   /** 0–1 weighting toward ear training vs melody practice; 0.5 = balanced */
   exerciseBalance?: number;
@@ -125,6 +136,8 @@ export interface LearningPreferences {
   disabledExercises?: string[];
   /** suppress the "this will clear results" warning when re-doing a completed exercise */
   skipRedoWarning?: boolean;
+  /** improvement goals selected during onboarding */
+  improvementGoals?: ImprovementGoal[];
   updatedAt: number;
 }
 

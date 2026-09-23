@@ -4,3 +4,4 @@ export { LowestNoteScreen } from './LowestNoteScreen';
 export { HighestNoteScreen } from './HighestNoteScreen';
 export { ResultsScreen } from './ResultsScreen';
 export { GoalsScreen } from './GoalsScreen';
+export { ReminderOnboardingScreen } from './ReminderOnboardingScreen';

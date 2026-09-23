@@ -1,153 +1,148 @@
 /**
- * The learning-profile questions at the end of first-launch onboarding: goal,
- * experience, daily time and reminder time — enough for the lesson generator
- * to personalize day one. Everything else (genres, coach style…) lives in the
- * preferences screen under Account, and all of it is editable any time.
+ * Onboarding step 2: pick which areas the user wants to improve.
+ * Multi-select, skip-able. Choices influence daily/weekly exercise mix
+ * via `improvementGoals` in learning preferences.
  */
-import { useMemo } from 'react';
-import { ScrollView, View } from 'react-native';
+import { useState } from 'react';
+import { Image, type ImageSourcePropType, Pressable, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import {
-  DEFAULT_PREFERENCES,
-  GOAL_LABELS,
-  usePreferencesStore,
-  type LearningGoal,
-  type LearningPreferences,
-} from '@/features/learning';
-import { useProfileStore, rangeSemitones, voiceType } from '@/entities/profile';
-import { AppText, BackButton, Button, ChipGroup, Screen } from '@/shared/ui';
+import { IMPROVEMENT_GOAL_LABELS, type ImprovementGoal, usePreferencesStore, } from '@/features/learning';
+import { useProfileStore } from '@/entities/profile';
+import { AppText, Button, ProgressCircle, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
 import type { OnboardingScreenProps } from '@/app/navigation/types';
 
-const GOAL_OPTIONS = (Object.entries(GOAL_LABELS) as [LearningGoal, string][]).map(([value, label]) => ({ value, label }));
-
-const MINUTES = ([5, 10, 15, 20, 30] as const).map((m) => ({ value: m, label: `${m} min` }));
-
-const REMINDERS: { value: number | null; label: string }[] = [
-  { value: 8, label: 'Morning' },
-  { value: 14, label: 'Afternoon' },
-  { value: 19, label: 'Evening' },
-  { value: null, label: 'No reminder' },
+const GOAL_OPTIONS: { id: ImprovementGoal; icon: ImageSourcePropType }[] = [
+    { id: 'sing-in-tune', icon: require('../../../assets/onboarding/tune.png') },
+    { id: 'hit-notes', icon: require('../../../assets/onboarding/note.png') },
+    { id: 'feel-confident', icon: require('../../../assets/onboarding/perfomance.png') },
 ];
 
-const EXPERIENCE: { value: LearningPreferences['experience']; label: string }[] = [
-  { value: 'complete-beginner', label: 'Complete beginner' },
-  { value: 'beginner', label: 'Beginner' },
-  { value: 'intermediate', label: 'Intermediate' },
-  { value: 'advanced', label: 'Advanced' },
-  { value: 'professional', label: 'Professional' },
-];
-
-/** Build a short recommendation based on the singer's detected range. */
-function buildRecommendation(profile: ReturnType<typeof useProfileStore.getState>['profile']): {
-  goal: LearningGoal;
-  text: string;
-} | null {
-  if (!profile) return null;
-  const span = rangeSemitones(profile.maximumRange);
-  const type = voiceType(profile.maximumRange);
-
-  // Narrow range (less than an octave) → suggest expanding it
-  if (span < 12) {
-    return {
-      goal: 'expand-range',
-      text: `Your detected range is about ${span} semitones (${type}). Expanding it will open up more songs for you.`,
-    };
-  }
-  // Decent range but new singer → pitch accuracy is the foundation
-  if (span < 18) {
-    return {
-      goal: 'sing-in-tune',
-      text: `Nice ${type} range! Building pitch accuracy first will make the most of it.`,
-    };
-  }
-  // Wide range → vocal control to use it well
-  return {
-    goal: 'vocal-control',
-    text: `Great ${type} range — ${span} semitones! Vocal control will help you use it to its full potential.`,
-  };
+/** Map onboarding improvement goals to the primary learning goal for the lesson generator. */
+function derivePrimaryGoal(goals: ImprovementGoal[]): 'sing-in-tune' | 'train-ear' | 'vocal-control' {
+    if (goals.includes('sing-in-tune')) return 'sing-in-tune';
+    if (goals.includes('hit-notes')) return 'train-ear';
+    return 'vocal-control';
 }
 
 export function GoalsScreen({ navigation }: OnboardingScreenProps<'Goals'>) {
-  const { palette, spacing, radii } = useTheme();
-  const prefs = usePreferencesStore((s) => s.preferences) ?? { ...DEFAULT_PREFERENCES, updatedAt: 0 };
-  const setPreferences = usePreferencesStore((s) => s.setPreferences);
-  const profile = useProfileStore((s) => s.profile);
-  const recommendation = useMemo(() => buildRecommendation(profile), [profile]);
+    const { palette, spacing, radii, typography } = useTheme();
+    const insets = useSafeAreaInsets();
+    const setPreferences = usePreferencesStore((s) => s.setPreferences);
+    const advanceOnboarding = useProfileStore((s) => s.advanceOnboarding);
+    const [selected, setSelected] = useState<ImprovementGoal[]>([]);
 
-  const finish = () => {
-    // ensure preferences exist even if every default was kept
-    setPreferences({});
-    navigation.replace('Main', { screen: 'HomeTab', params: { screen: 'Today' } });
-  };
+    const toggle = (id: ImprovementGoal) => {
+        setSelected((prev) =>
+            prev.includes(id) ? prev.filter((g) => g !== id) : [...prev, id],
+        );
+    };
 
-  return (
-    <Screen>
-      <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: spacing.xl }} showsVerticalScrollIndicator={false}>
-        <BackButton onPress={() => navigation.goBack()} />
+    const finish = () => {
+        if (selected.length > 0) {
+            setPreferences({
+                improvementGoals: selected,
+                primaryGoal: derivePrimaryGoal(selected),
+            });
+        }
+        advanceOnboarding('goals-complete');
+        navigation.navigate('Reminder');
+    };
 
-        <AppText variant="title" style={{ fontSize: 28, marginTop: spacing.lg }}>
-          What are you working toward?
-        </AppText>
-        <AppText variant="body" style={{ marginTop: spacing.sm }}>
-          Your daily lessons are built around this. You can change it any time.
-        </AppText>
+    const skip = () => {
+        advanceOnboarding('goals-complete');
+        navigation.navigate('Reminder');
+    };
 
-        {recommendation && (
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'flex-start',
-              gap: spacing.sm,
-              marginTop: spacing.lg,
-              padding: spacing.md,
-              borderRadius: radii.md,
-              backgroundColor: 'rgba(200, 218, 89, 0.10)',
-            }}
-          >
-            <Ionicons name="sparkles" size={18} color={palette.accent} style={{ marginTop: 2 }} />
-            <View style={{ flex: 1 }}>
-              <AppText variant="caption" color={palette.accent}>
-                Based on your voice
-              </AppText>
-              <AppText variant="body" style={{ fontSize: 14, marginTop: 2 }}>
-                {recommendation.text}
-              </AppText>
+    return (
+        <Screen>
+            <View style={[styles.root, {
+                paddingBottom: insets.bottom + spacing.lg
+            }]}>
+                <View  />
+                <View>
+                    <AppText
+                        variant="title"
+                        style={{
+                            fontSize: 30,
+                            textAlign: 'center',
+                            fontFamily: typography.family.bold,
+                            // marginTop: 60
+                        }}
+                    >
+                        What would you{'\n'}like to improve?
+                    </AppText>
+                    <AppText
+                        variant="body"
+                        color={palette.textPrimary}
+                        style={{ textAlign: 'center', marginTop: spacing.sm }}
+                    >
+                        Choose all that apply
+                    </AppText>
+
+                    <View style={{ marginTop: spacing.xxl, gap: spacing.md }}>
+                        {GOAL_OPTIONS.map((opt) => {
+                            const isSelected = selected.includes(opt.id);
+                            return (
+                                <Pressable
+                                    key={opt.id}
+                                    onPress={() => toggle(opt.id)}
+                                    style={[
+                                        styles.option,
+                                        {
+                                            backgroundColor: palette.surface,
+                                            borderRadius: radii.md,
+                                            // borderWidth: 1.5,
+                                            // borderColor: isSelected ? palette.accentSecondary : 'transparent',
+                                        },
+                                    ]}
+                                >
+                                    <Image source={opt.icon} style={{ width: 52, height: 52 }} resizeMode="contain"/>
+                                    <AppText variant="body" style={{
+                                        flex: 1,
+                                        fontFamily: typography.family.medium,
+                                        color: palette.textPrimary
+                                    }}>
+                                        {IMPROVEMENT_GOAL_LABELS[opt.id]}
+                                    </AppText>
+                                    {isSelected && (
+                                        <ProgressCircle totalRounds={1} completedRounds={1} done={true} size={16} strokeWidth={0.5}/>
+                                    )}
+                                </Pressable>
+                            );
+                        })}
+                    </View>
+                </View>
+
+                <View>
+                    <Pressable onPress={skip} style={{ alignSelf: 'center', marginBottom: spacing.md }}>
+                        <AppText variant="body" color={palette.textPrimary}>
+                            Skip
+                        </AppText>
+                    </Pressable>
+                    <Button
+                        title="Continue"
+                        onPress={finish}
+                        disabled={selected.length === 0}
+                        style={{ backgroundColor: '#ffffff' }}
+                    />
+                </View>
             </View>
-          </View>
-        )}
-
-        <ChipGroup
-          title="Main goal"
-          options={GOAL_OPTIONS}
-          selected={[prefs.primaryGoal]}
-          onSelect={(v) => setPreferences({ primaryGoal: v })}
-        />
-        <ChipGroup
-          title="Experience"
-          options={EXPERIENCE}
-          selected={[prefs.experience]}
-          onSelect={(v) => setPreferences({ experience: v })}
-        />
-        <ChipGroup
-          title="Time per day"
-          options={MINUTES}
-          selected={[prefs.dailyMinutes]}
-          onSelect={(v) => setPreferences({ dailyMinutes: v })}
-        />
-        <ChipGroup
-          title="Practice reminder"
-          options={REMINDERS}
-          selected={[prefs.reminderHour]}
-          onSelect={(v) => setPreferences({ reminderHour: v })}
-        />
-
-        <View style={{ flex: 1 }} />
-
-        <View style={{ marginTop: spacing.xl }}>
-          <Button title="Start learning" onPress={finish} />
-        </View>
-      </ScrollView>
-    </Screen>
-  );
+        </Screen>
+    );
 }
+
+const styles = StyleSheet.create({
+    root: {
+        flex: 1,
+        justifyContent: "space-between",
+    },
+    option: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 10,
+        paddingHorizontal: 24,
+        gap: 12,
+    },
+});

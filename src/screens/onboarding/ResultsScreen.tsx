@@ -1,14 +1,16 @@
 import { ScrollView, View } from 'react-native';
 import { AppText, BackButton, Button, Screen } from '@/shared/ui';
-import { useTheme } from '@/shared/theme';
+import { spacing, useTheme } from '@/shared/theme';
 import { useProfileStore } from '@/entities/profile';
 import { ResultsCard } from '@/features/vocal-range';
 import type { OnboardingScreenProps } from '@/app/navigation/types';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /** The end of first-launch onboarding: celebratory-but-professional summary, then into the app. */
 export function ResultsScreen({ navigation, route }: OnboardingScreenProps<'Results'>) {
   const { low, high } = route.params;
   const { spacing } = useTheme();
+  const insets = useSafeAreaInsets();
   const setDetectedRange = useProfileStore((s) => s.setDetectedRange);
 
   // navigating (not replacing) so the back gesture from Goals still works;
@@ -21,8 +23,9 @@ export function ResultsScreen({ navigation, route }: OnboardingScreenProps<'Resu
   };
 
   return (
-    <Screen>
+    <Screen noBottomPadding>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
+        <View style={{ flex: 1, paddingBottom: insets.bottom + spacing.lg }}>
         <BackButton onPress={() => navigation.goBack()} />
 
         <AppText variant="title" style={{ fontSize: 28, textAlign: 'center', marginTop: spacing.lg }}>
@@ -41,6 +44,7 @@ export function ResultsScreen({ navigation, route }: OnboardingScreenProps<'Resu
         <View style={{ gap: spacing.md }}>
           <Button title="Save & continue" onPress={save} />
           <Button title="Start over" variant="ghost" onPress={() => navigation.navigate('Lowest')} />
+        </View>
         </View>
       </ScrollView>
     </Screen>
