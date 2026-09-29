@@ -31,18 +31,9 @@ export type ProgressStackParamList = {
   JourneyArea: { category: SkillCategory };
 };
 
-/** The Account tab: your voice, your goals, the free-practice library, and settings. */
+/** The Account tab: just the top-level list; sub-screens live in the root stack. */
 export type ProfileStackParamList = {
   ProfileHome: undefined;
-  LearningPreferences: undefined;
-  ExerciseSettings: undefined;
-  SoundSettings: undefined;
-  ManageSubscription: undefined;
-  PracticeLibrary: undefined;
-  VocalRangeSettings: undefined;
-  RedetectLow: undefined;
-  RedetectHigh: { low: DetectionResult };
-  RedetectResults: { low: DetectionResult; high: DetectionResult };
 };
 
 /** First-launch onboarding: welcome → voice detection → results → goals → reminder. */
@@ -54,7 +45,9 @@ export type OnboardingStackParamList = {
   Highest: { low: DetectionResult };
   Results: { low: DetectionResult; high: DetectionResult };
   Goals: undefined;
+  PracticeRhythm: undefined;
   Reminder: undefined;
+  RangeStart: undefined;
 };
 
 export type MainTabParamList = {
@@ -94,6 +87,16 @@ export type RootStackParamList = {
   Paywall: { source: PaywallSource; feature?: PremiumFeature };
   /** Full-screen reminder settings — above tabs so no tab bar shows */
   ReminderSettings: undefined;
+  LearningPreferences: undefined;
+  ExerciseSettings: undefined;
+  WeeklyPlan: undefined;
+  ExercisePicker: { dayIndex: number };
+  SoundSettings: undefined;
+  ManageSubscription: undefined;
+  VocalRangeSettings: undefined;
+  RedetectLow: undefined;
+  RedetectHigh: { low: DetectionResult };
+  RedetectResults: { low: DetectionResult; high: DetectionResult };
 };
 
 /** Auth screens shown before the user is signed in. */

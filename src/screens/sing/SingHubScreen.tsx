@@ -128,7 +128,7 @@ export function SingHubScreen({ navigation }: SingScreenProps<'SingHub'>) {
               icon="flag"
               title="Set your goal"
               subtitle="Tell us what you're working toward — your daily practice is built around it."
-              onPress={() => navigation.navigate('AccountTab', { screen: 'LearningPreferences' })}
+              onPress={() => navigation.navigate('LearningPreferences')}
             />
           </View>
         )}
@@ -142,7 +142,7 @@ export function SingHubScreen({ navigation }: SingScreenProps<'SingHub'>) {
             doneCount={doneCount}
             onPrimaryAction={() => continuePractice(navigation)}
             onStepPress={(step) => beginStep(step, navigation)}
-            onViewAll={() => navigation.navigate('AccountTab', { screen: 'PracticeLibrary' })}
+            onViewAll={() => navigation.navigate('ExercisesTab', { screen: 'ExercisesHub' })}
           />
         </View>
 
@@ -213,7 +213,7 @@ export function SingHubScreen({ navigation }: SingScreenProps<'SingHub'>) {
           <View style={{ marginTop: spacing.md }}>
             <PillButton
               title="Sing something for fun"
-              onPress={() => navigation.navigate('AccountTab', { screen: 'PracticeLibrary' })}
+              onPress={() => navigation.navigate('ExercisesTab', { screen: 'ExercisesHub' })}
             />
           </View>
         )}

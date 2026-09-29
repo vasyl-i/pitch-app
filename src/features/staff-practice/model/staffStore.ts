@@ -96,8 +96,8 @@ interface StaffState extends PlaybackState, PitchState {
   setError: (message: string) => void;
   /** playback pipeline only */
   setPlayback: (p: PlaybackState) => void;
-  /** microphone pipeline only */
-  setPitch: (p: PitchState) => void;
+  /** microphone pipeline only — trail is optional so it can update at a lower rate */
+  setPitch: (p: Omit<PitchState, 'trail'> & { trail?: SungSample[] }) => void;
   addResult: (result: NoteResult) => void;
   setAccompaniedSummary: (summary: PhraseSummary) => void;
   setSummary: (summary: PhraseSummary, comparison: AttemptComparison | null) => void;
@@ -139,7 +139,7 @@ export const useStaffStore = create<StaffState>((set) => ({
   setOutputIsolated: (outputIsolated) => set({ outputIsolated }),
   setError: (errorMessage) => set({ status: 'error', errorMessage }),
   setPlayback: (p) => set(p),
-  setPitch: (p) => set(p),
+  setPitch: (p) => set(p.trail !== undefined ? p : { liveMidi: p.liveMidi, liveCents: p.liveCents, liveRms: p.liveRms }),
   addResult: (result) =>
     set((s) => ({
       noteResults: { ...s.noteResults, [result.noteIndex]: result },

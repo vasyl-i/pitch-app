@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { AppText, Button, Card } from '@/shared/ui';
+import { AppText, Button } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
 import { ConfidenceMeter, ScrollingPitchCanvas, usePitchTrail, useStabilizedNote } from '@/features/pitch-visualization';
 import { midiToName } from '@/shared/lib/music';
@@ -37,7 +37,7 @@ export function DetectionFlow({
   onCaptured: (result: DetectionResult) => void;
   onBack: () => void;
 }) {
-  const { palette, spacing, radii, gradient } = useTheme();
+  const { palette, spacing, radii, gradient, typography } = useTheme();
   const {
     status,
     errorMessage,
@@ -72,10 +72,13 @@ export function DetectionFlow({
 
   return (
     <View style={{ flex: 1 }}>
-      <AppText variant="title" style={{ fontSize: 24 }}>
+      <AppText
+        variant="title"
+        style={{ fontSize: 28, fontFamily: typography.family.bold, textAlign: "center" }}
+      >
         {TITLE[direction]}
       </AppText>
-      <AppText variant="body" style={{ marginTop: spacing.sm }}>
+      <AppText variant="body" color={palette.textSecondary} style={{ marginTop: spacing.sm, lineHeight: 22 , textAlign: "center"}}>
         {INSTRUCTION[direction]}
       </AppText>
 
@@ -90,26 +93,29 @@ export function DetectionFlow({
         </View>
       ) : (
         <>
-          <Card style={{ ...styles.card, marginTop: spacing.lg }}>
-            <AppText variant="title" color={shownNote !== null ? confidenceColor : palette.textFaint} style={styles.noteName}>
-              {shownNote === null ? ' ' : midiToName(shownNote)}
-            </AppText>
-            <View style={styles.canvasWrap}>
-              <ScrollingPitchCanvas
-                trail={trail}
-                liveMidi={currentMidi}
-                liveCents={null}
-                targetMidi={null}
-                currentTime={now}
-                trailColor={confidenceColor}
-              />
-            </View>
-            <AppText variant="caption" style={{ marginTop: spacing.xs, textAlign: 'center' }}>
-              {currentFrequency !== null ? `${Math.round(currentFrequency)} Hz` : ' '}
-            </AppText>
-          </Card>
 
-          <View style={{ marginTop: spacing.sm }}>
+            <View style={styles.capturedBlock}>
+              <AppText variant="caption" color={palette.textFaint}>Captured</AppText>
+              <AppText
+                variant="title"
+                style={{ fontSize: 40, fontFamily: typography.family.bold, marginTop: 2 }}
+              >
+                {bestMidi !== null ? midiToName(bestMidi) : " "}
+              </AppText>
+            </View>
+
+          <View style={[styles.canvasWrap, { marginTop: bestMidi !== null ? spacing.md : spacing.xl }]}>
+            <ScrollingPitchCanvas
+              trail={trail}
+              liveMidi={currentMidi}
+              liveCents={null}
+              targetMidi={null}
+              currentTime={now}
+              trailColor={confidenceColor}
+            />
+          </View>
+
+          <View style={{ marginTop: spacing.xxl * 2 }}>
             <ConfidenceMeter confidence={liveConfidence} />
           </View>
           <View style={[styles.holdTrack, { backgroundColor: palette.borderSubtle, borderRadius: radii.pill, marginTop: spacing.sm }]}>
@@ -118,31 +124,27 @@ export function DetectionFlow({
             </View>
           </View>
 
-          <AppText variant="body" color={palette.textSecondary} style={{ marginTop: spacing.lg, textAlign: 'center' }}>
-            {message}
-          </AppText>
+          {lowConfidence && (
+            <AppText variant="caption" color={palette.warning} style={{ marginTop: spacing.sm, textAlign: 'center' }}>
+              That reading isn't very confident — consider trying again.
+            </AppText>
+          )}
 
           <View style={styles.spacer} />
-
-          {bestMidi !== null && (
-            <Card style={styles.bestRow}>
-              <AppText variant="caption">Captured</AppText>
-              <AppText variant="label" style={{ fontSize: 20, marginTop: 2 }}>
-                {midiToName(bestMidi)}
-              </AppText>
-              {lowConfidence && (
-                <AppText variant="caption" color={palette.warning} style={{ marginTop: 4, textAlign: 'center' }}>
-                  That reading isn’t very confident — consider trying again.
-                </AppText>
-              )}
-            </Card>
-          )}
 
           <View style={{ gap: spacing.md, marginTop: spacing.md }}>
             {bestMidi !== null ? (
               <>
-                <Button title="Continue" onPress={() => onCaptured({ midi: bestMidi, confidence: bestConfidence })} />
-                <Button title="Try again" variant="ghost" onPress={() => { retry(); resetTrail(); }} />
+                <Button
+                  title="Try again"
+                  variant="ghost"
+                  onPress={() => { retry(); resetTrail(); }}
+                />
+                <Button
+                  title="Continue"
+                  onPress={() => onCaptured({ midi: bestMidi, confidence: bestConfidence })}
+                  style={{ backgroundColor: '#ffffff' }}
+                />
               </>
             ) : (
               <Button title="Back" variant="ghost" onPress={onBack} />
@@ -156,11 +158,9 @@ export function DetectionFlow({
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  card: { padding: 20 },
-  canvasWrap: { height: 160, marginBottom: 8 },
-  noteName: { fontSize: 28, textAlign: 'center', fontVariant: ['tabular-nums'], marginBottom: 8 },
+  capturedBlock: { alignItems: 'center', marginTop: 24 },
+  canvasWrap: { height: 180 },
   holdTrack: { height: 6, overflow: 'hidden' },
   holdFill: { height: '100%' },
   spacer: { flex: 1 },
-  bestRow: { padding: 14, alignItems: 'center' },
 });

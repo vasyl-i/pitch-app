@@ -9,6 +9,7 @@
 export type {
   Activity,
   DailyLesson,
+  DailyMinutes,
   ImprovementGoal,
   Insight,
   LearningGoal,
@@ -22,6 +23,9 @@ export type {
   SkillId,
   SkillState,
   Trend,
+  WeekdayIndex,
+  WeeklyExerciseEntry,
+  WeeklyPlan,
   WeeklyReport,
 } from './model/types';
 export { ALL_SKILLS, GOAL_LABELS, IMPROVEMENT_GOAL_LABELS, SKILL_LABELS, SLOT_LABELS } from './model/types';
@@ -62,3 +66,13 @@ export {
 } from './lib/journey';
 export type { JourneyArea, JourneyMilestone, MilestoneState } from './lib/journey';
 export { GOAL_SKILLS } from './lib/skillMap';
+export {
+  MIN_DAILY_MINUTES,
+  WEEKDAY_LABELS,
+  dayTotalMinutes,
+  canRemoveExercise,
+  resolveEntries,
+  jsDateToWeekdayIndex,
+  generateDefaultWeeklyPlan,
+  weeklyPlanFromSteps,
+} from './lib/weeklyPlan';

@@ -122,6 +122,7 @@ function StaffSession({
   }, [loop, status, restart]);
 
   const showSummary = status === 'finished' && summary && !loop;
+  const showOverlay = status === 'error' || status === 'no-input' || status === 'transition' || showSummary;
 
   // What the singer should be doing right now, as a title/subtitle pair above
   // the staff. Each stage names itself, so it is never ambiguous whether the
@@ -156,14 +157,14 @@ function StaffSession({
   })();
 
   return (
-    <Screen overlay={<MicGlow />}>
+    <Screen overlay={status === 'accompanied' || status === 'running' ? <MicGlow /> : undefined}>
       <View style={styles.header}>
         <BackButton onPress={() => navigation.goBack()} />
         <View style={{ flex: 1 }}>
           <AppText variant="label">{exercise.title}</AppText>
           <AppText variant="caption">
             {guided
-              ? (activeStepLabel() ?? 'Today’s practice')
+              ? (activeStepLabel() ?? "Today's practice")
               : shift !== 0
                 ? `${exercise.key} · ${shift > 0 ? '+' : ''}${shift} for your range`
                 : exercise.source}
@@ -171,23 +172,64 @@ function StaffSession({
         </View>
       </View>
 
-      {status === 'error' ? (
-        <View style={styles.center}>
+      {/* Canvas stays mounted across all stages so the Skia clock and layout
+          are always warm — remounting causes a layout + offset-init delay that
+          desyncs audio from the playhead. Overlay cards cover it when needed. */}
+      <View style={{ flex: 1, opacity: canvasRunning ? 1 : 0 }} pointerEvents={showOverlay ? 'none' : 'auto'}>
+        <View style={{ marginTop: spacing.md, opacity: showOverlay ? 0 : 1 }}>
+          <LiveReadout showHz={showHz} />
+        </View>
+
+        <View style={[styles.promptBlock, { marginTop: spacing.lg, opacity: showOverlay ? 0 : 1 }]}>
+          <AppText variant="label" style={styles.promptText}>
+            {promptTitle}
+          </AppText>
+          <AppText variant="caption" style={styles.promptText}>
+            {promptSubtitle}
+          </AppText>
+        </View>
+
+        <View style={{ flex: 1, marginVertical: spacing.md }}>
+          <ScrollingPitchCanvas
+            trail={trail}
+            liveMidi={liveMidi}
+            liveCents={liveCents}
+            targetMidi={currentTargetMidi}
+            currentTime={position}
+            positionUpdatedAt={positionUpdatedAt}
+            running={canvasRunning}
+            targets={exercise.notes}
+            rate={rate}
+            showPlayhead
+            showNoteLabels
+          />
+        </View>
+
+        {!showOverlay && (
+          <>
+            <PianoKeyboard lowMidi={lowMidi} highMidi={highMidi} />
+            <Button title="Restart" variant="ghost" onPress={() => restart()} style={{ marginTop: spacing.md }} />
+          </>
+        )}
+      </View>
+
+      {/* Overlay cards — rendered on top of the always-mounted canvas */}
+      {status === 'error' && (
+        <View style={styles.overlay}>
           <AppText variant="body" color={palette.danger} style={{ textAlign: 'center' }}>
             {errorMessage}
           </AppText>
         </View>
-      ) : status === 'no-input' ? (
-        // a silent run ends here rather than in a summary — there is no
-        // performance to score, so nothing is graded and nothing is recorded
-        <View style={styles.center}>
+      )}
+      {status === 'no-input' && (
+        <View style={styles.overlay}>
           <AppText variant="body" style={{ textAlign: 'center' }}>
-            We didn’t hear any singing.
+            We didn't hear any singing.
           </AppText>
           <AppText variant="caption" color={palette.textSecondary} style={{ textAlign: 'center', marginTop: 8 }}>
-            Check your mic, then give it a try — you’ll hear the melody, sing it with the guide, then on your own.
+            Check your mic, then give it a try — you'll hear the melody, sing it with the guide, then on your own.
           </AppText>
-          <View style={{ marginTop: spacing.lg }}>
+          <View style={{ marginTop: spacing.lg, gap: spacing.md }}>
             <Button title="Try again" onPress={() => restart()} />
             {guided ? (
               <>
@@ -199,63 +241,34 @@ function StaffSession({
             )}
           </View>
         </View>
-      ) : status === 'transition' ? (
-        // a beat of praise between the assisted and unaided attempts. No
-        // interaction: the run continues on its own timer.
-        <StageTransition />
-      ) : showSummary ? (
-        <PhraseSummaryCard
-          summary={summary}
-          comparison={comparison}
-          primary={
-            guided
-              ? { title: 'Continue practice', onPress: () => advanceAfterStep(navigation) }
-              : { title: 'Sing again', onPress: () => restart() }
-          }
-          secondary={
-            guided
-              ? { title: 'Sing it again', onPress: () => restart() }
-              : { title: 'Done', onPress: () => navigation.goBack() }
-          }
-          tertiary={
-            guided
-              ? { title: 'Back to home', onPress: () => navigation.navigate('Main', { screen: 'HomeTab', params: { screen: 'Today' } }) }
-              : undefined
-          }
-        />
-      ) : (
-        <>
-          <View style={{ marginTop: spacing.md }}>
-            <LiveReadout showHz={showHz} />
-          </View>
-
-          <View style={[styles.promptBlock, { marginTop: spacing.lg }]}>
-            <AppText variant="label" style={styles.promptText}>
-              {promptTitle}
-            </AppText>
-            <AppText variant="caption" style={styles.promptText}>
-              {promptSubtitle}
-            </AppText>
-          </View>
-
-          <View style={{ flex: 1, marginVertical: spacing.md }}>
-            <ScrollingPitchCanvas
-              trail={trail}
-              liveMidi={liveMidi}
-              liveCents={liveCents}
-              targetMidi={currentTargetMidi}
-              currentTime={position}
-              positionUpdatedAt={positionUpdatedAt}
-              running={canvasRunning}
-              targets={exercise.notes}
-              rate={rate}
-            />
-          </View>
-
-          <PianoKeyboard lowMidi={lowMidi} highMidi={highMidi} />
-
-          <Button title="Restart" variant="ghost" onPress={() => restart()} style={{ marginTop: spacing.md }} />
-        </>
+      )}
+      {status === 'transition' && (
+        <View style={styles.overlay}>
+          <StageTransition />
+        </View>
+      )}
+      {showSummary && (
+        <View style={styles.overlay}>
+          <PhraseSummaryCard
+            summary={summary}
+            comparison={comparison}
+            primary={
+              guided
+                ? { title: 'Continue practice', onPress: () => advanceAfterStep(navigation) }
+                : { title: 'Sing again', onPress: () => restart() }
+            }
+            secondary={
+              guided
+                ? { title: 'Sing it again', onPress: () => restart() }
+                : { title: 'Done', onPress: () => navigation.goBack() }
+            }
+            tertiary={
+              guided
+                ? { title: 'Back to home', onPress: () => navigation.navigate('Main', { screen: 'HomeTab', params: { screen: 'Today' } }) }
+                : undefined
+            }
+          />
+        </View>
       )}
     </Screen>
   );
@@ -264,6 +277,7 @@ function StaffSession({
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   center: { flex: 1, justifyContent: 'center' },
+  overlay: { ...(StyleSheet.absoluteFill as object), flex: 1, justifyContent: 'center', paddingHorizontal: 24, backgroundColor: 'rgba(8, 7, 12, 0.92)' },
   // fixed height so the staff below doesn't shift as the copy changes
   promptBlock: { height: 44, alignItems: 'center', justifyContent: 'center' },
   promptText: { textAlign: 'center' },

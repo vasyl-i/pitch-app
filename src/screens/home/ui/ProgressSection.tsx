@@ -40,7 +40,7 @@ function Stat({ value, label, divider = false }: { value: string; label: string;
     >
       <View>
         <AppText
-          color={todayColor.inkSecondary}
+          color={todayColor.inkFaint}
           style={{ fontFamily: typography.family.regular, fontSize: 12, lineHeight: 18 }}
           numberOfLines={1}
         >

@@ -11,6 +11,7 @@ import { Platform } from 'react-native';
 import { supabase } from './supabase';
 
 const REMINDER_ID = 'practice-reminder';
+const TRIAL_REMINDER_ID = 'trial-ending-reminder';
 
 /** Request notification permissions. Returns true if granted. */
 export async function requestNotificationPermissions(): Promise<boolean> {
@@ -105,6 +106,43 @@ export async function unregisterPushToken(userId: string): Promise<void> {
   } catch {
     // Best-effort cleanup
   }
+}
+
+/**
+ * Schedule a one-time push notification for the day before a trial ends,
+ * reminding the user that billing starts tomorrow. Silently no-ops if
+ * the trial end date is in the past or permissions aren't granted.
+ */
+export async function scheduleTrialEndingReminder(trialEndsAt: number): Promise<void> {
+  await cancelTrialEndingReminder();
+
+  // Fire at 10:00 AM the day before the trial ends
+  const fireAt = new Date(trialEndsAt);
+  fireAt.setDate(fireAt.getDate() - 1);
+  fireAt.setHours(10, 0, 0, 0);
+
+  if (fireAt.getTime() <= Date.now()) return;
+
+  const granted = await requestNotificationPermissions();
+  if (!granted) return;
+
+  await Notifications.scheduleNotificationAsync({
+    identifier: TRIAL_REMINDER_ID,
+    content: {
+      title: 'Your free trial ends tomorrow',
+      body: 'Just a heads-up — your subscription will start tomorrow. You can manage it anytime in settings.',
+      sound: true,
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.DATE,
+      date: fireAt,
+    },
+  });
+}
+
+/** Cancel any previously scheduled trial-ending reminder. */
+export async function cancelTrialEndingReminder(): Promise<void> {
+  await Notifications.cancelScheduledNotificationAsync(TRIAL_REMINDER_ID);
 }
 
 /** Configure how notifications are presented when the app is in the foreground. */

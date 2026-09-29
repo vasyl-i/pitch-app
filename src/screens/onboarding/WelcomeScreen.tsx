@@ -17,7 +17,7 @@ export function WelcomeScreen({ navigation }: OnboardingScreenProps<'Welcome'>) 
             <View style={styles.root}>
                 {/* Cat pinned to the bottom */}
                 <View style={styles.imageContainer}>
-                    <Image source={WELCOME_IMAGE} style={styles.image} resizeMode="contain"/>
+                    <Image source={WELCOME_IMAGE} style={styles.image} resizeMode="cover"/>
                 </View>
 
                 {/* Text + button overlaying the bottom of the cat */}
@@ -47,7 +47,7 @@ export function WelcomeScreen({ navigation }: OnboardingScreenProps<'Welcome'>) 
                     }}>
                         <Button
                             title="Get started"
-                            onPress={() => navigation.navigate('Lowest')}
+                            onPress={() => navigation.navigate('Goals')}
                             style={{ marginTop: spacing.xl, backgroundColor: '#ffffff' }}
                         />
                     </View>

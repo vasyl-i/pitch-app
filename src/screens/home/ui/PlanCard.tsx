@@ -225,7 +225,7 @@ function StepCard({
         <AppText
           style={{ marginTop: 0, fontFamily: typography.family.regular, fontSize: 16, color: secondaryColor }}
         >
-          {SLOT_LABELS[step.slot]}
+          {SLOT_LABELS[step.slot] ?? 'Practice'}
         </AppText>
 
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.md }}>

@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { Image, type ImageSourcePropType, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { IMPROVEMENT_GOAL_LABELS, type ImprovementGoal, usePreferencesStore, } from '@/features/learning';
+import { IMPROVEMENT_GOAL_LABELS, type ImprovementGoal, usePreferencesStore } from '@/features/learning';
 import { useProfileStore } from '@/entities/profile';
 import { AppText, Button, ProgressCircle, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
@@ -47,16 +47,16 @@ export function GoalsScreen({ navigation }: OnboardingScreenProps<'Goals'>) {
             });
         }
         advanceOnboarding('goals-complete');
-        navigation.navigate('Reminder');
+        navigation.navigate('RangeStart');
     };
 
     const skip = () => {
         advanceOnboarding('goals-complete');
-        navigation.navigate('Reminder');
+        navigation.navigate('PracticeRhythm');
     };
 
     return (
-        <Screen>
+        <Screen noBottomPadding>
             <View style={[styles.root, {
                 paddingBottom: insets.bottom + spacing.lg
             }]}>

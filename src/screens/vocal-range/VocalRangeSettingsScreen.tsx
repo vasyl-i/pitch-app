@@ -7,7 +7,7 @@ import { RangeBar } from '@/features/vocal-range';
 import { midiToName } from '@/shared/lib/music';
 import { AppText, BackButton, Button, Card, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
-import type { ProfileScreenProps } from '@/app/navigation/types';
+import type { RootScreenProps } from '@/app/navigation/types';
 
 type EditingEdge = 'low' | 'high' | null;
 
@@ -16,7 +16,7 @@ type EditingEdge = 'low' | 'high' | null;
  * edit either edge on a piano keyboard, re-run detection, reset to the last
  * detected values, or temporarily shrink the range for an off day.
  */
-export function VocalRangeSettingsScreen({ navigation }: ProfileScreenProps<'VocalRangeSettings'>) {
+export function VocalRangeSettingsScreen({ navigation }: RootScreenProps<'VocalRangeSettings'>) {
   const { palette, spacing } = useTheme();
   const profile = useProfileStore((s) => s.profile);
   const setComfortRange = useProfileStore((s) => s.setComfortRange);
@@ -26,7 +26,7 @@ export function VocalRangeSettingsScreen({ navigation }: ProfileScreenProps<'Voc
 
   if (!profile) {
     return (
-      <Screen>
+      <Screen noBottomPadding>
         <View style={styles.header}>
           <BackButton onPress={() => navigation.goBack()} />
           <AppText variant="label">Vocal range</AppText>
@@ -54,7 +54,7 @@ export function VocalRangeSettingsScreen({ navigation }: ProfileScreenProps<'Voc
   };
 
   return (
-    <Screen>
+    <Screen noBottomPadding>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: spacing.xl }}>
         <View style={styles.header}>
           <BackButton onPress={() => navigation.goBack()} />
@@ -80,26 +80,26 @@ export function VocalRangeSettingsScreen({ navigation }: ProfileScreenProps<'Voc
           )}
         </Card>
 
-        <AppText variant="caption" style={{ marginTop: spacing.xl }}>
-          {editing ? `Tap the ${editing === 'low' ? 'lowest' : 'highest'} note you want to use` : 'Edit manually'}
-        </AppText>
-        <View style={{ marginTop: spacing.md }}>
-          <PitchKeyboard
-            lowMidi={keyboardLow}
-            highMidi={keyboardHigh}
-            liveMidi={null}
-            targetMidi={editing === 'low' ? profile.comfortRange.lowMidi : editing === 'high' ? profile.comfortRange.highMidi : null}
-            onPressKey={editing ? pickNote : undefined}
-          />
-        </View>
-        <View style={[styles.editRow, { marginTop: spacing.sm }]}>
-          <EditToggle label="Edit lowest" active={editing === 'low'} onPress={() => setEditing(editing === 'low' ? null : 'low')} />
-          <EditToggle label="Edit highest" active={editing === 'high'} onPress={() => setEditing(editing === 'high' ? null : 'high')} />
-        </View>
+        {/*<AppText variant="caption" style={{ marginTop: spacing.xl }}>*/}
+        {/*  {editing ? `Tap the ${editing === 'low' ? 'lowest' : 'highest'} note you want to use` : 'Edit manually'}*/}
+        {/*</AppText>*/}
+        {/*<View style={{ marginTop: spacing.md }}>*/}
+        {/*  <PitchKeyboard*/}
+        {/*    lowMidi={keyboardLow}*/}
+        {/*    highMidi={keyboardHigh}*/}
+        {/*    liveMidi={null}*/}
+        {/*    targetMidi={editing === 'low' ? profile.comfortRange.lowMidi : editing === 'high' ? profile.comfortRange.highMidi : null}*/}
+        {/*    onPressKey={editing ? pickNote : undefined}*/}
+        {/*  />*/}
+        {/*</View>*/}
+        {/*<View style={[styles.editRow, { marginTop: spacing.sm }]}>*/}
+        {/*  <EditToggle label="Edit lowest" active={editing === 'low'} onPress={() => setEditing(editing === 'low' ? null : 'low')} />*/}
+        {/*  <EditToggle label="Edit highest" active={editing === 'high'} onPress={() => setEditing(editing === 'high' ? null : 'high')} />*/}
+        {/*</View>*/}
 
         <View style={{ gap: spacing.md, marginTop: spacing.xl }}>
           <Button title="Run detection again" onPress={() => navigation.navigate('RedetectLow')} />
-          <Button title="Reset to detected values" variant="ghost" onPress={resetToDetected} />
+          {/*<Button title="Reset to detected values" variant="ghost" onPress={resetToDetected} />*/}
         </View>
 
         <AppText variant="caption" style={{ marginTop: spacing.xl }}>

@@ -12,7 +12,7 @@ import {
 } from '@/features/learning';
 import { AppText, BackButton, ChipGroup, Screen, type ChipOption } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
-import type { ProfileScreenProps } from '@/app/navigation/types';
+import type { RootScreenProps } from '@/app/navigation/types';
 
 const BALANCE_OPTIONS: ChipOption<number>[] = [
   { value: 0.2, label: 'More ear training' },
@@ -32,7 +32,7 @@ const melodyActivities = CATALOG.filter((a) => a.kind === 'melody');
 
 export function ExerciseSettingsScreen({
   navigation,
-}: ProfileScreenProps<'ExerciseSettings'>) {
+}: RootScreenProps<'ExerciseSettings'>) {
   const { palette, spacing } = useTheme();
   const prefs =
     usePreferencesStore((s) => s.preferences) ?? {
@@ -55,8 +55,10 @@ export function ExerciseSettingsScreen({
   };
 
   return (
-    <Screen>
+    <Screen noBottomPadding>
+      <View style={{ paddingBottom: 16 }}>
       <BackButton onPress={() => navigation.goBack()} />
+      </View>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: spacing.xxl }}

@@ -48,7 +48,8 @@ import {
   type NoteResult,
   type PhraseSummary,
 } from '@/entities/exercise';
-import { createThrottle, createVoiceGate } from '@/features/pitch-detection';
+import { createThrottle } from '@/features/pitch-detection';
+import { NativeVoiceGate } from '../../../../modules/pitch-native/src';
 import { freqToMidi } from '@/shared/lib/music';
 import { centsToGlowTier, micActive, micGlowTier, micRms } from '@/shared/lib/micRmsBus';
 import type { MelodyPlayer } from '../lib/melodyPlayer';
@@ -68,13 +69,6 @@ export const TRANSITION_MS = 1600;
  * never produce a score or a recorded session.
  */
 export const SILENCE_TIMEOUT_MS = 20000;
-/**
- * Consecutive voiced frames required before the phrase clock starts (~35ms at
- * the engine's hop). A door slam or a cough can produce one voiced-looking
- * frame; it cannot produce three pitch-continuous ones. The delay is well
- * inside the 100ms of each note's attack that grading discards anyway.
- */
-const ONSET_FRAMES = 3;
 
 export interface RunFrame {
   frequency: number | null;
@@ -93,8 +87,8 @@ export interface RunStore {
     activeNote: number;
     currentTargetMidi: number | null;
   }): void;
-  /** written only by microphone frames */
-  setPitch(patch: { liveMidi: number | null; liveCents: number | null; trail: SungSample[]; liveRms: number }): void;
+  /** written only by microphone frames — trail is optional so it can update at a lower rate */
+  setPitch(patch: { liveMidi: number | null; liveCents: number | null; liveRms: number; trail?: SungSample[] }): void;
   addResult(result: NoteResult): void;
   setAccompaniedSummary(summary: PhraseSummary): void;
   setSummary(summary: PhraseSummary, comparison: AttemptComparison | null): void;
@@ -143,8 +137,11 @@ export function createRunController({
   // independent tallies so the comparison comes from identical maths
   const accompaniedEvaluator = createPhraseEvaluator(exercise.notes);
   const soloEvaluator = createPhraseEvaluator(exercise.notes);
-  const gate = createVoiceGate();
+  const gate = new NativeVoiceGate();
   const shouldUpdateUi = createThrottle(UI_UPDATE_MS);
+  /** Trail store updates at a lower rate — path rebuilds are expensive. */
+  const TRAIL_STORE_MS = 100;
+  const shouldUpdateTrail = createThrottle(TRAIL_STORE_MS);
   const trail: SungSample[] = [];
 
   let disposed = false;
@@ -152,10 +149,10 @@ export function createRunController({
   let stageTimer: ReturnType<typeof setTimeout> | null = null;
   let silenceTimer: ReturnType<typeof setTimeout> | null = null;
   let tickTimer: ReturnType<typeof setTimeout> | null = null;
-  /** run of consecutive voiced frames, used only to detect the vocal onset */
-  let voicedRun = 0;
   /** did stage 2 ever hear a real voice? a silent room is not a performance */
   let heardVoiceInAccompanied = false;
+  /** count of voiced frames in the solo pass — a handful of noise frames don't count */
+  let soloVoicedFrames = 0;
   let accompaniedSummary: PhraseSummary | null = null;
 
   const clearTimers = () => {
@@ -189,25 +186,35 @@ export function createRunController({
    * broker is gating, so the animation cannot be a side effect of mic frames —
    * it gets a ticker of its own. Recursive `setTimeout` rather than
    * `setInterval` so a test's fake timers can step it.
+   *
+   * During accompanied/solo the mic pipeline also drives store writes at
+   * ~30fps, so the tick backs off to ~10fps — just enough to keep activeNote
+   * and the prompt text current without doubling the render budget.
    */
+  const TICK_SLOW_MS = 100;
   const tick = () => {
+    const interval = stage === 'listen' ? UI_UPDATE_MS : TICK_SLOW_MS;
     tickTimer = setTimeout(() => {
       tickTimer = null;
       if (disposed) return;
       const player = clock();
-      if (!player?.playing || (stage !== 'listen' && stage !== 'accompanied')) return;
+      if (!player?.playing || (stage !== 'listen' && stage !== 'accompanied' && stage !== 'solo')) return;
       publishPlayback(player.currentTime(), now());
       tick();
-    }, UI_UPDATE_MS);
+    }, interval);
   };
 
   const startPlaybackStage = (next: 'listen' | 'accompanied', status: StaffStatus, player: MelodyPlayer) => {
     stage = next;
     store.clearStageFeedback();
-    store.setStatus(status);
     trail.length = 0;
     player.start();
+    // Position must be written BEFORE status: when status flips to 'listen' or
+    // 'accompanied' the canvas becomes visible (canvasRunning) and initialises
+    // its scroll offset from position. If status fires first, the canvas sees
+    // position=0 (from clearStageFeedback) and flashes notes at the playhead.
     publishPlayback(-player.leadIn, now());
+    store.setStatus(status);
     tick();
   };
 
@@ -225,23 +232,25 @@ export function createRunController({
   const beginSoloStage = () => {
     stage = 'solo';
     store.clearStageFeedback();
-    store.setStatus('listening');
     trail.length = 0;
-    voicedRun = 0;
+
+    // Start the timeline immediately so the playhead scrolls and the singer
+    // can see when the first note arrives — same UX as the accompanied stage.
+    solo.start();
+    // Position before status — see comment in startPlaybackStage.
+    publishPlayback(-solo.leadIn, now());
+    store.setStatus('running');
+    tick();
     silenceTimer = setTimeout(() => {
       silenceTimer = null;
-      if (disposed || solo.playing) return;
-      stage = 'idle';
-      store.setStatus('no-input');
+      if (disposed || !solo.playing) return;
+      // Check if anyone actually sang during the solo
+      if (trail.length === 0) {
+        solo.stop();
+        stage = 'idle';
+        store.setStatus('no-input');
+      }
     }, SILENCE_TIMEOUT_MS);
-  };
-
-  /** the singer's first note in the solo stage starts its clock */
-  const beginSoloSinging = () => {
-    if (silenceTimer) clearTimeout(silenceTimer);
-    silenceTimer = null;
-    solo.start();
-    store.setStatus('running');
   };
 
   /**
@@ -255,6 +264,7 @@ export function createRunController({
     t: number,
     voicedMidi: number | null,
     ui: boolean,
+    trailDue: boolean,
     rms: number,
   ) => {
     for (const result of evaluator.collectCompleted(t - GRADE_LAG_SEC)) {
@@ -267,7 +277,7 @@ export function createRunController({
     if (voicedMidi === null) {
       micRms.value = rms;
       micGlowTier.value = 0;
-      if (ui) store.setPitch({ liveMidi: null, liveCents: null, trail: [...trail], liveRms: rms });
+      if (ui) store.setPitch({ liveMidi: null, liveCents: null, liveRms: rms, ...(trailDue && { trail: [...trail] }) });
       return;
     }
 
@@ -283,7 +293,7 @@ export function createRunController({
     while (trail.length && trail[0].t < t - TRAIL_SECONDS) trail.shift();
     micRms.value = rms;
     micGlowTier.value = centsToGlowTier(cents);
-    if (ui) store.setPitch({ liveMidi: voicedMidi, liveCents: cents, trail: [...trail], liveRms: rms });
+    if (ui) store.setPitch({ liveMidi: voicedMidi, liveCents: cents, liveRms: rms, ...(trailDue && { trail: [...trail] }) });
   };
 
   return {
@@ -301,11 +311,12 @@ export function createRunController({
       soloEvaluator.reset();
       accompaniedSummary = null;
       heardVoiceInAccompanied = false;
+      soloVoicedFrames = 0;
       trail.length = 0;
       // the gate deliberately keeps its learned noise floor across a restart —
       // the room hasn't changed, and relearning it wastes the quiet beat the
       // stage gaps give us
-      voicedRun = 0;
+  
       store.reset();
       startPlaybackStage('listen', 'listen', demo);
     },
@@ -345,6 +356,18 @@ export function createRunController({
       if (disposed || stage !== 'solo') return;
       stage = 'idle';
       solo.stop();
+      if (silenceTimer) clearTimeout(silenceTimer);
+      silenceTimer = null;
+
+      // A few stray mic frames (ambient noise leaking through the voice gate)
+      // are not a performance. Require a minimum number of voiced frames before
+      // producing a summary — otherwise show the "didn't hear singing" screen.
+      const MIN_VOICED_FRAMES = 10;
+      if (soloVoicedFrames < MIN_VOICED_FRAMES) {
+        store.setStatus('no-input');
+        return;
+      }
+
       const soloSummary = soloEvaluator.summary();
       store.setSummary(soloSummary, accompaniedSummary ? compareAttempts(accompaniedSummary, soloSummary) : null);
     },
@@ -358,6 +381,7 @@ export function createRunController({
       // learn the room from all of them, including the quiet stage gaps.
       const isVoice = gate.accept(frame.rms, rawMidi, at);
       const ui = shouldUpdateUi(at);
+      const trailDue = shouldUpdateTrail(at);
 
       // stage 1 is a demonstration: the microphone is ignored completely, and
       // no verdict, pitch or score may come out of it
@@ -371,29 +395,22 @@ export function createRunController({
         // starting it, so there is no onset gate
         if (!accompaniment.playing) return;
         if (voicedMidi !== null) heardVoiceInAccompanied = true;
-        gradeFrame(accompaniedEvaluator, accompaniment.currentTime(), voicedMidi, ui, frame.rms);
+        gradeFrame(accompaniedEvaluator, accompaniment.currentTime(), voicedMidi, ui, trailDue, frame.rms);
         return;
       }
 
-      if (!solo.playing) {
-        // still waiting for a real vocal onset: the phrase stays put, so
-        // nothing advances, highlights or scores until someone actually sings
-        voicedRun = voicedMidi === null ? 0 : voicedRun + 1;
-        if (voicedRun < ONSET_FRAMES) return;
-        beginSoloSinging();
-      }
+      if (!solo.playing) return;
+      if (voicedMidi !== null) soloVoicedFrames++;
 
       const t = solo.currentTime();
-      // the unaided pass has no reference timeline, so the singer's own clock
-      // is what moves the playhead
-      if (ui) publishPlayback(t, at);
-      gradeFrame(soloEvaluator, t, voicedMidi, ui, frame.rms);
+      gradeFrame(soloEvaluator, t, voicedMidi, ui, trailDue, frame.rms);
     },
 
     dispose() {
       disposed = true;
       stage = 'idle';
       clearTimers();
+      gate.destroy();
     },
   };
 }

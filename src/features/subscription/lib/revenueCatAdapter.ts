@@ -21,7 +21,8 @@ const ENTITLEMENT_ID = 'premium';
  * Falls back to 'yearly' for unknown products — safer than crashing.
  */
 function productToPlanId(productId: string): PlanId {
-  if (productId.includes('monthly_799')) return 'monthly';
+  if (productId.includes('weekly_299')) return 'weekly';
+  if (productId.includes('monthly_499')) return 'monthly';
   return 'yearly';
 }
 

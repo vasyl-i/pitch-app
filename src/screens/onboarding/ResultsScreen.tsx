@@ -18,8 +18,7 @@ export function ResultsScreen({ navigation, route }: OnboardingScreenProps<'Resu
   const save = () => {
     const confidence = (low.confidence + high.confidence) / 2;
     setDetectedRange({ lowMidi: low.midi, highMidi: high.midi }, confidence);
-    // learning-profile questions come last, once the range is safely saved
-    navigation.navigate('Goals');
+    navigation.navigate('PracticeRhythm');
   };
 
   return (
@@ -43,7 +42,7 @@ export function ResultsScreen({ navigation, route }: OnboardingScreenProps<'Resu
 
         <View style={{ gap: spacing.md }}>
           <Button title="Save & continue" onPress={save} />
-          <Button title="Start over" variant="ghost" onPress={() => navigation.navigate('Lowest')} />
+          <Button title="Start over" variant="ghost" onPress={() => navigation.navigate('Reminder')} />
         </View>
         </View>
       </ScrollView>

@@ -12,7 +12,7 @@ export function HighestNoteScreen({ navigation, route }: OnboardingScreenProps<'
 
     return (
         <Screen noBottomPadding>
-            <View style={{ flexDirection: 'row', marginBottom: 8 }}>
+            <View style={{ flexDirection: 'row', marginBottom: 16 }}>
                 <BackButton onPress={() => navigation.goBack()}/>
             </View>
             <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>

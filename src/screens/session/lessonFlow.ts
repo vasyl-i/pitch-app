@@ -13,8 +13,10 @@ import {
   useLessonSessionStore,
   usePreferencesStore,
   SLOT_LABELS,
+  resolveEntries,
+  jsDateToWeekdayIndex,
 } from '@/features/learning';
-import type { GuidedStep } from '@/features/learning';
+import type { GuidedStep, LessonStep, WeeklyExerciseEntry } from '@/features/learning';
 import { currentStreak, localDayKey, noteHeatmap, useProgressStore } from '@/features/progress';
 import { resolveEntitlements, useSubscriptionStore } from '@/features/subscription';
 
@@ -34,9 +36,17 @@ function adaptiveUnlocked(): boolean {
  * Keying on the date alone would leave someone who just paid staring at the
  * same fixed plan until tomorrow — the worst possible first minute of a
  * subscription. Lapsing regenerates for the same reason.
+ *
+ * The weekly plan hash is included so that editing the weekly plan in
+ * Account → Weekly plan immediately refreshes Today's plan on Home.
  */
 export function planKey(now = new Date()): string {
-  return `${todayKey(now)}:${adaptiveUnlocked() ? 'adaptive' : 'fixed'}`;
+  const prefs = usePreferencesStore.getState().preferences;
+  const weekday = jsDateToWeekdayIndex(now);
+  const dayEntries = prefs?.weeklyPlan?.[weekday];
+  const wpHash = dayEntries ? dayEntries.map((e) => e.activityId).join(',') : '';
+  const ts = prefs?.updatedAt ?? 0;
+  return `${todayKey(now)}:${adaptiveUnlocked() ? 'adaptive' : 'fixed'}:${wpHash}:${ts}`;
 }
 
 /**
@@ -47,10 +57,18 @@ export function planKey(now = new Date()): string {
  * downstream — the snapshot store, the guided flow, Home — is identical
  * either way.
  */
+
 function generateToday() {
   const sessions = useProgressStore.getState().sessions;
   const learning = useLearningStore.getState();
   const prefs = usePreferencesStore.getState().preferences;
+
+  // Check for a custom weekly plan for today
+  const weekday = jsDateToWeekdayIndex(new Date());
+  const customEntries = prefs?.weeklyPlan?.[weekday];
+  if (customEntries && customEntries.length > 0) {
+    return lessonFromWeeklyPlan(todayKey(), customEntries);
+  }
 
   if (!adaptiveUnlocked()) {
     return generateFixedLesson({ dayKey: todayKey(), dailyMinutes: prefs?.dailyMinutes });
@@ -75,6 +93,24 @@ function generateToday() {
     minutesPracticedToday: minutesToday,
     catalog,
   });
+}
+
+/** Build a DailyLesson from custom weekly plan entries. */
+function lessonFromWeeklyPlan(dayKey: string, entries: WeeklyExerciseEntry[]) {
+  const resolved = resolveEntries(entries);
+  const steps: LessonStep[] = resolved.map(({ entry, activity }, i) => ({
+    slot: `step-${i}`,
+    activity,
+    difficultyId: entry.difficultyId,
+    reason: 'From your weekly plan',
+    estMinutes: activity.minutes,
+  }));
+  return {
+    dayKey,
+    focus: null,
+    steps,
+    estMinutes: steps.reduce((sum, s) => sum + s.estMinutes, 0),
+  };
 }
 
 /**
@@ -164,5 +200,5 @@ export function activeStepLabel(): string | null {
   if (!activeSlot) return null;
   const index = steps.findIndex((s) => s.slot === activeSlot);
   if (index < 0) return null;
-  return `Step ${index + 1} of ${steps.length} · ${SLOT_LABELS[activeSlot]}`;
+  return `Step ${index + 1} of ${steps.length} · ${SLOT_LABELS[activeSlot] ?? 'Practice'}`;
 }

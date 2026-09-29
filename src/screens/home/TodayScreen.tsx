@@ -3,16 +3,16 @@
  * and the primary entry point into daily practice.
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import {
     currentStreak,
     formatPracticeTime,
     todayExerciseStats,
-    totalPracticeSeconds,
     useProgressStore,
 } from '@/features/progress';
 import { useLessonSessionStore, usePreferencesStore } from '@/features/learning';
-import { useEntitlement } from '@/features/subscription';
+import { useEntitlement, usePremiumStatus } from '@/features/subscription';
 import { AppText, Screen } from '@/shared/ui';
 import { palette, useTheme } from '@/shared/theme';
 import { useFloatingTabBarClearance } from '@/app/navigation/FloatingTabBar';
@@ -28,8 +28,10 @@ export function TodayScreen({ navigation }: HomeScreenProps<'Today'>) {
     const { spacing, typography } = useTheme();
     const tabBarClearance = useFloatingTabBarClearance(spacing.xl);
     const sessions = useProgressStore((s) => s.sessions);
+    const totalPracticeSec = useProgressStore((s) => s.totalPracticeSec);
     const prefs = usePreferencesStore((s) => s.preferences);
     const adaptive = useEntitlement('adaptive-lessons');
+    const { trialDaysLeft } = usePremiumStatus();
     const steps = useLessonSessionStore((s) => s.steps);
     const completedSlots = useLessonSessionStore((s) => s.completedSlots);
 
@@ -40,13 +42,13 @@ export function TodayScreen({ navigation }: HomeScreenProps<'Today'>) {
 
     const overall = useMemo(
         () => ({
-            time: formatPracticeTime(totalPracticeSeconds(sessions)),
+            time: formatPracticeTime(totalPracticeSec),
             streak: currentStreak(sessions),
             accuracy: sessions.length > 0
                 ? Math.round(sessions.reduce((sum, s) => sum + s.score, 0) / sessions.length)
                 : 0,
         }),
-        [sessions],
+        [sessions, totalPracticeSec],
     );
     const todayStats = useMemo(() => todayExerciseStats(sessions), [sessions]);
 
@@ -89,12 +91,29 @@ export function TodayScreen({ navigation }: HomeScreenProps<'Today'>) {
             <View style={{ paddingHorizontal: spacing.lg, height: "100%" }}>
                 <ScrollView showsVerticalScrollIndicator={false}
                             contentContainerStyle={{ paddingBottom: tabBarClearance }}>
-                    <AppText
-                        color={palette.textPrimary}
-                        style={[styles.heading, { fontFamily: typography.family.bold }]}
-                    >
-                        Let’s practice 🎧️️
-                    </AppText>
+                    <View style={styles.headingRow}>
+                        <AppText
+                            color={palette.textPrimary}
+                            style={[styles.heading, { fontFamily: typography.family.bold, flex: 1 }]}
+                        >
+                            Let’s practice 🎧️️
+                        </AppText>
+                        {trialDaysLeft !== null && trialDaysLeft <= 1 && (
+                            <Pressable
+                                onPress={() => navigation.navigate('ManageSubscription' as never)}
+                                style={styles.trialBanner}
+                            >
+                                <Ionicons name="alert-circle" size={13} color="#F0943A" />
+                                <AppText
+                                    variant="caption"
+                                    color="#F0943A"
+                                    style={{ fontSize: 11, fontFamily: typography.family.medium }}
+                                >
+                                    Trial ends tomorrow
+                                </AppText>
+                            </Pressable>
+                        )}
+                    </View>
 
                     <MainBanner/>
 
@@ -123,9 +142,23 @@ export function TodayScreen({ navigation }: HomeScreenProps<'Today'>) {
 }
 
 const styles = StyleSheet.create({
+    headingRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
     heading: {
         fontSize: 24,
         lineHeight: 28,
+    },
+    trialBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 999,
+        backgroundColor: 'rgba(240, 148, 58, 0.14)',
     },
     exerciseList: {
         marginTop: 24,

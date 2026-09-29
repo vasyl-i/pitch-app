@@ -46,8 +46,14 @@ test('a yearly purchase grants a 7-day trial that converts to paid', () => {
   assert.equal(isPremium(sub, T0 + 8 * DAY), true);
 });
 
-test('a monthly purchase has no trial', () => {
+test('a monthly purchase with trial eligible gets a trial', () => {
   const sub = subscriptionFromPurchase('monthly', { now: T0, trialEligible: true });
+  assert.equal(sub.status, 'trialing');
+  assert.equal(trialDaysRemaining(sub, T0), 7);
+});
+
+test('a monthly purchase without trial eligibility goes straight to active', () => {
+  const sub = subscriptionFromPurchase('monthly', { now: T0, trialEligible: false });
   assert.equal(sub.status, 'active');
   assert.equal(sub.trialEndsAt, null);
   assert.equal(trialDaysRemaining(sub, T0), null);

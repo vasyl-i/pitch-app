@@ -11,7 +11,7 @@ export function LowestNoteScreen({ navigation }: OnboardingScreenProps<'Lowest'>
 
     return (
         <Screen noBottomPadding>
-                <View style={{ flexDirection: 'row', marginBottom: 8 }}>
+                <View style={{ flexDirection: 'row', marginBottom: 16 }}>
                     <BackButton onPress={() => navigation.goBack()}/>
                 </View>
                 {/* scrolls rather than clips — the captured-note panel + Continue/Try again

@@ -1,10 +1,13 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AppText } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
 import { noteName } from '@/shared/lib/staff';
 import { useStabilizedNote } from '../lib/useStabilizedNote';
+
+const MIN_BLACK_WIDTH = 14;
+const MAX_BLACK_WIDTH = 28;
 
 const NATURAL_PCS = [0, 2, 4, 5, 7, 9, 11];
 const BLACK_PCS = [1, 3, 6, 8, 10];
@@ -33,6 +36,10 @@ export function PitchKeyboard({
   onPressKey?: (midi: number) => void;
 }) {
   const { palette, radii, gradient } = useTheme();
+  const [containerWidth, setContainerWidth] = useState(0);
+  const handleLayout = useCallback((e: { nativeEvent: { layout: { width: number } } }) => {
+    setContainerWidth(e.nativeEvent.layout.width);
+  }, []);
 
   const { whites, blacks } = useMemo(() => {
     const start = lowMidi - (((lowMidi % 12) + 12) % 12); // floor to C
@@ -47,9 +54,16 @@ export function PitchKeyboard({
   // presentation only — the highlighted key holds through small excursions
   const sungMidi = useStabilizedNote(liveMidi);
 
+  // Compute clamped black key width from measured container
+  const whiteKeyGap = 2;
+  const whiteKeyWidth = containerWidth > 0
+    ? (containerWidth - (whites.length - 1) * whiteKeyGap) / whites.length
+    : 0;
+  const blackWidth = Math.min(MAX_BLACK_WIDTH, Math.max(MIN_BLACK_WIDTH, whiteKeyWidth * 0.6));
+
   return (
     <View style={styles.wrap}>
-      <View style={styles.keys}>
+      <View style={styles.keys} onLayout={handleLayout}>
         {whites.map((m) => {
           const isTarget = targetMidi != null && m === targetMidi;
           const isSung = sungMidi === m;
@@ -76,11 +90,13 @@ export function PitchKeyboard({
           );
         })}
         {/* black keys overlaid between their left white neighbor and the next */}
-        {blacks.map((m) => {
+        {containerWidth > 0 && blacks.map((m) => {
           const leftWhiteIdx = whites.filter((w) => w < m).length - 1;
           if (leftWhiteIdx < 0 || leftWhiteIdx >= whites.length - 1) return null;
           const isTarget = targetMidi != null && m === targetMidi;
           const isSung = sungMidi === m;
+          // Center between the right edge of left white key and left edge of next
+          const leftPx = (leftWhiteIdx + 1) * (whiteKeyWidth + whiteKeyGap) - whiteKeyGap / 2;
           return (
             <Pressable
               key={m}
@@ -89,9 +105,10 @@ export function PitchKeyboard({
               style={[
                 styles.black,
                 {
-                  left: `${((leftWhiteIdx + 1) / whites.length) * 100}%`,
+                  left: leftPx - blackWidth / 2,
+                  width: blackWidth,
                   backgroundColor: isTarget ? undefined : '#0b0c0e',
-                  borderRadius: 3,
+                  borderRadius: radii.sm,
                   overflow: 'hidden',
                 },
                 isSung && !isTarget && { borderColor: palette.textPrimary, borderWidth: 1.5 },
@@ -113,5 +130,5 @@ const styles = StyleSheet.create({
   keys: { flex: 1, flexDirection: 'row', gap: 2, position: 'relative' },
   white: { flex: 1, justifyContent: 'flex-end', alignItems: 'center', paddingBottom: 3, borderWidth: 1, backgroundColor: 'rgba(255,255,255,0.06)' },
   cLabel: { fontSize: 9 },
-  black: { position: 'absolute', top: 0, width: '9%', height: '62%', marginLeft: '-4.5%' },
+  black: { position: 'absolute', top: 4, height: '56%' },
 });

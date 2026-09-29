@@ -1,5 +1,5 @@
 import { PropsWithChildren, useEffect, useState } from 'react';
-import { Linking, StyleSheet, View } from 'react-native';
+import { Image, Linking, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { hapticWarning } from '@/shared/audio';
@@ -7,6 +7,8 @@ import { AppText, Button } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
 import { useMicCalibration } from '../lib/calibration';
 import { AudioManager } from 'react-native-audio-api';
+
+const NOTE_ICON = require('../../../../assets/onboarding/note.png');
 
 const COPY: Record<string, { title: string; body: string }> = {
   checking: { title: 'Checking your microphone…', body: 'One moment.' },
@@ -56,18 +58,23 @@ export function MicCalibrationGate({ children }: PropsWithChildren) {
 
   const copy = COPY[status] ?? COPY.checking;
   const warning = status === 'too-noisy' || status === 'too-quiet' || status === 'error';
+  const isHumming = status === 'listen-level';
 
   return (
     <View style={styles.center}>
-      <Ionicons name={warning ? 'warning-outline' : 'mic-outline'} size={36} color={warning ? palette.warning : palette.accent} />
-      <AppText variant="title" style={{ marginTop: spacing.lg, textAlign: 'center', fontSize: 22 }}>
+      {isHumming ? (
+        <Image source={NOTE_ICON} style={styles.noteIcon} resizeMode="contain" />
+      ) : (
+        <Ionicons name={warning ? 'warning-outline' : 'mic-outline'} size={36} color={warning ? palette.warning : palette.accent} />
+      )}
+      <AppText variant="title" style={{ marginTop: spacing.xl, textAlign: 'center', fontSize: 22 }}>
         {copy.title}
       </AppText>
       <AppText variant="body" style={{ marginTop: spacing.sm, textAlign: 'center' }}>
         {copy.body}
       </AppText>
 
-      {status === 'listen-level' && (
+      {isHumming && (
         <View style={[styles.meterTrack, { backgroundColor: palette.borderSubtle, borderRadius: radii.pill, marginTop: spacing.xl }]}>
           <View style={[styles.meterFill, { width: `${Math.round(level * 100)}%`, borderRadius: radii.pill, overflow: 'hidden' }]}>
             <LinearGradient colors={gradient.accent} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />
@@ -86,6 +93,7 @@ export function MicCalibrationGate({ children }: PropsWithChildren) {
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
+  noteIcon: { width: 64, height: 64 },
   meterTrack: { width: '100%', height: 10, overflow: 'hidden' },
   meterFill: { height: '100%' },
 });

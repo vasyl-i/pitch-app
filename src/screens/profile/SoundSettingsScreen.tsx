@@ -7,7 +7,7 @@ import { useSoundStore, SOUND_TYPE_LABELS, preloadSamples, type SoundType, audio
 import type { ToneGroup } from '@/shared/audio';
 import { AppText, BackButton, ChipGroup, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
-import type { ProfileScreenProps } from '@/app/navigation/types';
+import type { RootScreenProps } from '@/app/navigation/types';
 
 const VOLUME_OPTIONS = [
   { value: 0.25, label: 'Quiet' },
@@ -35,7 +35,7 @@ function usePreview() {
   }, []);
 }
 
-export function SoundSettingsScreen({ navigation }: ProfileScreenProps<'SoundSettings'>) {
+export function SoundSettingsScreen({ navigation }: RootScreenProps<'SoundSettings'>) {
   const { spacing } = useTheme();
   const volume = useSoundStore((s) => s.volume);
   const soundType = useSoundStore((s) => s.soundType);

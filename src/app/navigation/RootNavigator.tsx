@@ -10,15 +10,14 @@ import { ExercisesHubScreen } from '@/screens/exercises';
 import { NotificationsScreen } from '@/screens/notifications';
 import { ProgressScreen, WeeklyReviewScreen, PerfectExercisesScreen } from '@/screens/progress';
 import { JourneyScreen, JourneyAreaScreen } from '@/screens/journey';
-import { ProfileScreen, LearningPreferencesScreen, ExerciseSettingsScreen, SoundSettingsScreen, ReminderSettingsScreen } from '@/screens/profile';
-import { PracticeLibraryScreen } from '@/screens/library';
+import { ProfileScreen, LearningPreferencesScreen, ExerciseSettingsScreen, WeeklyPlanScreen, ExercisePickerScreen, SoundSettingsScreen, ReminderSettingsScreen } from '@/screens/profile';
 import { EarSessionScreen, PracticeCompleteScreen } from '@/screens/session';
 import { PaywallScreen } from '@/screens/paywall';
 import { WeakSpotsScreen } from '@/screens/weak-spots';
 import { ManageSubscriptionScreen } from '@/screens/subscription';
 import { StaffPracticeScreen } from '@/screens/staff-practice';
 import { VocalRangeSettingsScreen, RedetectLowScreen, RedetectHighScreen, RedetectResultsScreen } from '@/screens/vocal-range';
-import { WelcomeScreen, LowestNoteScreen, HighestNoteScreen, ResultsScreen, GoalsScreen, ReminderOnboardingScreen } from '@/screens/onboarding';
+import { WelcomeScreen, LowestNoteScreen, HighestNoteScreen, ResultsScreen, GoalsScreen, PracticeRhythmScreen, ReminderOnboardingScreen } from '@/screens/onboarding';
 import { useProfileStore } from '@/entities/profile';
 import { waitForSyncReady } from '@/features/auth';
 import { useTheme } from '@/shared/theme';
@@ -32,6 +31,7 @@ import type {
   RootStackParamList,
   SingStackParamList,
 } from './types';
+import { VocalRangeStartScreen } from '@/screens/onboarding/VocalRangeStartScreen';
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -92,20 +92,11 @@ function ProgressNavigator() {
   );
 }
 
-/** Account: your voice, your goal, the library, and settings. */
+/** Account: just the top-level list; sub-screens live in the root stack. */
 function AccountNavigator() {
   return (
     <ProfileStack.Navigator screenOptions={useStackScreenOptions()}>
       <ProfileStack.Screen name="ProfileHome" component={ProfileScreen} />
-      <ProfileStack.Screen name="LearningPreferences" component={LearningPreferencesScreen} />
-      <ProfileStack.Screen name="ExerciseSettings" component={ExerciseSettingsScreen} />
-      <ProfileStack.Screen name="SoundSettings" component={SoundSettingsScreen} />
-      <ProfileStack.Screen name="ManageSubscription" component={ManageSubscriptionScreen} />
-      <ProfileStack.Screen name="PracticeLibrary" component={PracticeLibraryScreen} />
-      <ProfileStack.Screen name="VocalRangeSettings" component={VocalRangeSettingsScreen} />
-      <ProfileStack.Screen name="RedetectLow" component={RedetectLowScreen} />
-      <ProfileStack.Screen name="RedetectHigh" component={RedetectHighScreen} />
-      <ProfileStack.Screen name="RedetectResults" component={RedetectResultsScreen} />
     </ProfileStack.Navigator>
   );
 }
@@ -115,10 +106,12 @@ function OnboardingNavigator({ initialRoute = 'Welcome' }: { initialRoute?: keyo
   return (
     <OnboardingStack.Navigator initialRouteName={initialRoute} screenOptions={useStackScreenOptions()}>
       <OnboardingStack.Screen name="Welcome" component={WelcomeScreen} />
+      <OnboardingStack.Screen name="RangeStart" component={VocalRangeStartScreen} />
       <OnboardingStack.Screen name="Lowest" component={LowestNoteScreen} />
       <OnboardingStack.Screen name="Highest" component={HighestNoteScreen} />
       <OnboardingStack.Screen name="Results" component={ResultsScreen} />
       <OnboardingStack.Screen name="Goals" component={GoalsScreen} />
+      <OnboardingStack.Screen name="PracticeRhythm" component={PracticeRhythmScreen} />
       <OnboardingStack.Screen name="Reminder" component={ReminderOnboardingScreen} />
     </OnboardingStack.Navigator>
   );
@@ -215,7 +208,7 @@ export function RootNavigator() {
   const isOnboarded = onboardingStep === 'complete';
   // Resume at the right step if the user killed the app mid-onboarding
   const onboardingInitialRoute =
-    onboardingStep === 'goals-complete' ? 'Reminder'
+    onboardingStep === 'goals-complete' ? 'PracticeRhythm'
     : onboardingStep === 'range-complete' ? 'Goals'
     : 'Welcome';
 
@@ -242,6 +235,16 @@ export function RootNavigator() {
           must be dismissible without losing the user's place */}
       <RootStack.Screen name="Paywall" component={PaywallScreen} options={{ presentation: 'modal' }} />
       <RootStack.Screen name="ReminderSettings" component={ReminderSettingsScreen} />
+      <RootStack.Screen name="LearningPreferences" component={LearningPreferencesScreen} />
+      <RootStack.Screen name="ExerciseSettings" component={ExerciseSettingsScreen} />
+      <RootStack.Screen name="WeeklyPlan" component={WeeklyPlanScreen} />
+      <RootStack.Screen name="ExercisePicker" component={ExercisePickerScreen} />
+      <RootStack.Screen name="SoundSettings" component={SoundSettingsScreen} />
+      <RootStack.Screen name="ManageSubscription" component={ManageSubscriptionScreen} />
+      <RootStack.Screen name="VocalRangeSettings" component={VocalRangeSettingsScreen} />
+      <RootStack.Screen name="RedetectLow" component={RedetectLowScreen} />
+      <RootStack.Screen name="RedetectHigh" component={RedetectHighScreen} />
+      <RootStack.Screen name="RedetectResults" component={RedetectResultsScreen} />
     </RootStack.Navigator>
   );
 }

@@ -45,7 +45,7 @@ export const EXERCISE_CATEGORIES: readonly ExerciseCategoryMeta[] = [
     id: 'warmup',
     label: 'Scales, arpeggios & warm-ups',
     tagline: 'Major and minor scales, triads, and gentle range openers.',
-    tier: 'free',
+    tier: 'premium',
     order: 10,
   },
   {

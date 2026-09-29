@@ -68,7 +68,7 @@ export function ExerciseRow({
           style={{ fontFamily: typography.family.regular, fontSize: 14, lineHeight: 16, marginTop: 6 }}
           numberOfLines={1}
         >
-          {EXERCISE_DESCRIPTIONS[step.activityId] ?? `${SLOT_LABELS[step.slot]} · ${step.estMinutes} min`}
+          {EXERCISE_DESCRIPTIONS[step.activityId] ?? `${SLOT_LABELS[step.slot] ?? 'Practice'} · ${step.estMinutes} min`}
         </AppText>
       </View>
 

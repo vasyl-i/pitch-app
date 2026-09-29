@@ -62,7 +62,6 @@ export function useStaffSession(exercise: Exercise, rate = 1): StaffSessionContr
     const solo = createMelodyPlayer(exercise.notes, () => controller.phraseFinished(), {
       rate,
       silent: true,
-      leadIn: 0,
     });
 
     const controller = createRunController({

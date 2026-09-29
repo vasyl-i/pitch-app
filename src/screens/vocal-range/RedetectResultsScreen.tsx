@@ -4,10 +4,10 @@ import { AppText, BackButton, Button, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
 import { useProfileStore } from '@/entities/profile';
 import { ResultsCard } from '@/features/vocal-range';
-import type { ProfileScreenProps } from '@/app/navigation/types';
+import type { RootScreenProps } from '@/app/navigation/types';
 
 /** Same results presentation as onboarding, but returns to Settings instead of into the app. */
-export function RedetectResultsScreen({ navigation, route }: ProfileScreenProps<'RedetectResults'>) {
+export function RedetectResultsScreen({ navigation, route }: RootScreenProps<'RedetectResults'>) {
   const { low, high } = route.params;
   const { spacing } = useTheme();
   const setDetectedRange = useProfileStore((s) => s.setDetectedRange);

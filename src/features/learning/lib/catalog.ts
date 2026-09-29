@@ -13,7 +13,6 @@
  * (Relative imports rather than the `@/` alias so the whole lib layer runs
  * under plain `node --test`.)
  */
-import { categoryTier } from '../../../entities/exercise/categories';
 import type { ExerciseCategory } from '../../../entities/exercise/categories';
 import { exercises as melodyLibrary } from '../../../entities/exercise/library';
 import type { Activity, SkillId } from '../model/types';
@@ -34,7 +33,7 @@ const EAR_ACTIVITIES: Activity[] = [
     kind: 'ear',
     id: 'major-minor',
     title: 'Major or minor?',
-    tier: 'free',
+    tier: 'premium',
     skills: ['chord-recognition'],
     difficulties: null,
     minutes: 2,
@@ -67,7 +66,7 @@ const EAR_ACTIVITIES: Activity[] = [
     kind: 'ear',
     id: 'odd-one-out',
     title: 'Odd one out',
-    tier: 'free',
+    tier: 'premium',
     skills: ['interval-recognition', 'chord-recognition'],
     difficulties: ['intervals', 'chords', 'scales'],
     minutes: 3,
@@ -78,7 +77,7 @@ const EAR_ACTIVITIES: Activity[] = [
     kind: 'ear',
     id: 'finish-melody',
     title: 'Finish the melody',
-    tier: 'free',
+    tier: 'premium',
     skills: ['musical-memory', 'interval-singing'],
     difficulties: null,
     minutes: 2,
@@ -89,7 +88,7 @@ const EAR_ACTIVITIES: Activity[] = [
     kind: 'ear',
     id: 'echo-interval',
     title: 'Echo the interval',
-    tier: 'free',
+    tier: 'premium',
     skills: ['interval-recognition', 'melody-reproduction'],
     difficulties: ['beginner', 'intermediate', 'advanced'],
     minutes: 3,
@@ -100,7 +99,7 @@ const EAR_ACTIVITIES: Activity[] = [
     kind: 'ear',
     id: 'sing-interval',
     title: 'Sing the interval',
-    tier: 'free',
+    tier: 'premium',
     skills: ['interval-singing', 'interval-recognition'],
     difficulties: ['beginner', 'intermediate', 'advanced'],
     minutes: 3,
@@ -174,13 +173,13 @@ const CATEGORY_PROFILE: Record<ExerciseCategory, { skills: SkillId[]; minutes: n
 
 const DIFFICULTY_CHALLENGE: Record<string, number> = { easy: 0.2, medium: 0.4, hard: 0.6 };
 
-const MELODY_ACTIVITIES: Activity[] = melodyLibrary.map((e) => {
+export const MELODY_ACTIVITIES: Activity[] = melodyLibrary.map((e) => {
   const profile = CATEGORY_PROFILE[e.category];
   return {
     kind: 'melody',
     id: e.id,
     title: e.title,
-    tier: categoryTier(e.category),
+    tier: e.id === 'twinkle' || e.id === 'c-major-scale' ? 'free' : 'premium',
     skills: profile.skills,
     difficulties: null,
     minutes: profile.minutes,
@@ -189,8 +188,7 @@ const MELODY_ACTIVITIES: Activity[] = melodyLibrary.map((e) => {
   };
 });
 
-// TODO: re-enable melody (sing-with-accompaniment) exercises once the feature is ready
-export const CATALOG: Activity[] = [...EAR_ACTIVITIES /* , ...MELODY_ACTIVITIES */];
+export const CATALOG: Activity[] = [...EAR_ACTIVITIES, ...MELODY_ACTIVITIES];
 
 /** everything a free user can actually open */
 export const FREE_CATALOG: Activity[] = CATALOG.filter((a) => a.tier === 'free');
@@ -205,6 +203,9 @@ export function catalogForTier(tier: 'free' | 'premium'): Activity[] {
   return tier === 'premium' ? CATALOG : FREE_CATALOG;
 }
 
+/** All known activities — ear + melody — for lookups. */
+const ALL_ACTIVITIES: Activity[] = [...EAR_ACTIVITIES, ...MELODY_ACTIVITIES];
+
 export function activityById(kind: Activity['kind'], id: string): Activity | undefined {
-  return CATALOG.find((a) => a.kind === kind && a.id === id);
+  return ALL_ACTIVITIES.find((a) => a.kind === kind && a.id === id);
 }

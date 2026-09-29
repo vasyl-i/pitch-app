@@ -2,7 +2,7 @@
  * Edit learning preferences any time. Saves live into the preferences store;
  * historical learning data is untouched by design (separate store).
  */
-import { ScrollView } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import {
   DEFAULT_PREFERENCES,
   GENRE_OPTIONS,
@@ -13,7 +13,7 @@ import {
 } from '@/features/learning';
 import { AppText, BackButton, ChipGroup, Screen, type ChipOption } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
-import type { ProfileScreenProps } from '@/app/navigation/types';
+import type { RootScreenProps } from '@/app/navigation/types';
 
 type Option<T> = ChipOption<T>;
 
@@ -59,7 +59,7 @@ const DIFFICULTY: Option<LearningPreferences['preferredDifficulty']>[] = [
   { value: 'challenge', label: 'Challenge' },
 ];
 
-export function LearningPreferencesScreen({ navigation }: ProfileScreenProps<'LearningPreferences'>) {
+export function LearningPreferencesScreen({ navigation }: RootScreenProps<'LearningPreferences'>) {
   const { spacing } = useTheme();
   const prefs = usePreferencesStore((s) => s.preferences) ?? { ...DEFAULT_PREFERENCES, updatedAt: 0 };
   const setPreferences = usePreferencesStore((s) => s.setPreferences);
@@ -72,8 +72,10 @@ export function LearningPreferencesScreen({ navigation }: ProfileScreenProps<'Le
   };
 
   return (
-    <Screen>
+    <Screen noBottomPadding>
+      <View style={{ paddingBottom: 16 }}>
       <BackButton onPress={() => navigation.goBack()} />
+      </View>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: spacing.xxl }}>
         <AppText variant="title" style={{ fontSize: 34, marginTop: spacing.sm }}>
           Learning preferences

@@ -62,7 +62,7 @@ export type PremiumFeature =
  * Plans                                                               *
  * ------------------------------------------------------------------ */
 
-export type PlanId = 'monthly' | 'yearly';
+export type PlanId = 'weekly' | 'monthly' | 'yearly';
 
 export interface Plan {
   id: PlanId;

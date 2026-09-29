@@ -9,9 +9,9 @@ import { View } from 'react-native';
 import RevenueCatUI from 'react-native-purchases-ui';
 import { fetchSubscriptionState, useSubscriptionStore } from '@/features/subscription';
 import { BackButton, Screen } from '@/shared/ui';
-import type { ProfileScreenProps } from '@/app/navigation/types';
+import type { RootScreenProps } from '@/app/navigation/types';
 
-export function ManageSubscriptionScreen({ navigation }: ProfileScreenProps<'ManageSubscription'>) {
+export function ManageSubscriptionScreen({ navigation }: RootScreenProps<'ManageSubscription'>) {
   const handleDismiss = async () => {
     // Sync any changes made in Customer Center back to our store
     try {

@@ -63,8 +63,37 @@ export interface VoiceGate {
  */
 export function createVoiceGate(): VoiceGate {
   const rmsHistory: number[] = [];
+  /**
+   * Sorted copy of rmsHistory, maintained incrementally. On insertion the new
+   * value is binary-searched into position (O(log n) compare + O(n) splice);
+   * on eviction the oldest value is binary-searched out. This replaces the
+   * previous `[...rmsHistory].sort()` on every frame, which was O(n log n)
+   * copy-and-sort ~85 times/sec and the single biggest JS-thread cost.
+   */
+  const sortedRms: number[] = [];
   let lastVoiceAt = 0;
   let lastVoiceMidi: number | null = null;
+
+  /** Binary search: index of first element >= value. */
+  const lowerBound = (arr: number[], value: number): number => {
+    let lo = 0;
+    let hi = arr.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >>> 1;
+      if (arr[mid] < value) lo = mid + 1;
+      else hi = mid;
+    }
+    return lo;
+  };
+
+  const insertSorted = (value: number) => {
+    sortedRms.splice(lowerBound(sortedRms, value), 0, value);
+  };
+
+  const removeSorted = (value: number) => {
+    const idx = lowerBound(sortedRms, value);
+    if (idx < sortedRms.length && sortedRms[idx] === value) sortedRms.splice(idx, 1);
+  };
 
   return {
     accept(rms, midi, now) {
@@ -73,9 +102,10 @@ export function createVoiceGate(): VoiceGate {
       // background has actually been observed the estimate is not used at
       // all, so one stray sample cannot raise the bar on its own; the
       // absolute minimum covers that window.
-      const sorted = [...rmsHistory].sort((a, b) => a - b);
       const floor =
-        rmsHistory.length >= MIN_FLOOR_SAMPLES ? (sorted[Math.floor(sorted.length * FLOOR_QUANTILE)] ?? 0) : 0;
+        rmsHistory.length >= MIN_FLOOR_SAMPLES
+          ? (sortedRms[Math.floor(sortedRms.length * FLOOR_QUANTILE)] ?? 0)
+          : 0;
 
       const continues =
         midi !== null &&
@@ -114,8 +144,11 @@ export function createVoiceGate(): VoiceGate {
        */
       const midPhrase = now - lastVoiceAt < CONTINUITY_MS;
       if (!isVoice && !midPhrase) {
+        if (rmsHistory.length >= RMS_HISTORY) {
+          removeSorted(rmsHistory.shift()!);
+        }
         rmsHistory.push(rms);
-        if (rmsHistory.length > RMS_HISTORY) rmsHistory.shift();
+        insertSorted(rms);
       }
 
       return isVoice;
@@ -128,6 +161,7 @@ export function createVoiceGate(): VoiceGate {
 
     reset() {
       rmsHistory.length = 0;
+      sortedRms.length = 0;
       lastVoiceAt = 0;
       lastVoiceMidi = null;
     },

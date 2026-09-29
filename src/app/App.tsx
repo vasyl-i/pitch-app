@@ -9,14 +9,21 @@ import { useFonts } from 'expo-font';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
-import { startLearningTracker, usePreferencesStore } from '@/features/learning';
+import { catalogForTier, generateDefaultWeeklyPlan, startLearningTracker, usePreferencesStore } from '@/features/learning';
 import { AuthGate, useAuthStore, startSync, stopSync, pullFromServer } from '@/features/auth';
-import { setupNotificationHandler, syncReminder, registerPushToken } from '@/shared/lib/notifications';
+import {
+  setupNotificationHandler,
+  syncReminder,
+  registerPushToken,
+  scheduleTrialEndingReminder,
+  cancelTrialEndingReminder,
+} from '@/shared/lib/notifications';
 import {
   initRevenueCat,
   identifyRevenueCatUser,
   logOutRevenueCat,
   fetchSubscriptionState,
+  isPremium,
   onSubscriptionChange,
   useSubscriptionStore,
 } from '@/features/subscription';
@@ -111,6 +118,54 @@ function ReminderSync() {
   return null;
 }
 
+/** Schedules or cancels the trial-ending push notification based on subscription state. */
+function TrialReminderSync() {
+  const subscription = useSubscriptionStore((s) => s.subscription);
+
+  useEffect(() => {
+    if (subscription.status === 'trialing' && subscription.trialEndsAt) {
+      scheduleTrialEndingReminder(subscription.trialEndsAt);
+    } else {
+      cancelTrialEndingReminder();
+    }
+  }, [subscription.status, subscription.trialEndsAt]);
+
+  return null;
+}
+
+/**
+ * Rebuilds the weekly plan when the user upgrades to Premium.
+ *
+ * A free user's weekly plan contains only free exercises. When they subscribe,
+ * the plan should be rebuilt from the full catalog so they immediately see
+ * premium exercises in their daily practice.
+ */
+function WeeklyPlanSync() {
+  const subscription = useSubscriptionStore((s) => s.subscription);
+  const prefs = usePreferencesStore((s) => s.preferences);
+  const setPreferences = usePreferencesStore((s) => s.setPreferences);
+  const premium = isPremium(subscription);
+
+  useEffect(() => {
+    if (!prefs?.weeklyPlan) return;
+    if (!premium) return;
+
+    // Check if the current weekly plan only contains free exercises —
+    // if so, the user just upgraded and we should rebuild with the full catalog
+    const freeIds = new Set(catalogForTier('free').map((a) => a.id));
+    const allEntries = Object.values(prefs.weeklyPlan).flat() as { activityId: string }[];
+    const allFree = allEntries.length > 0 && allEntries.every((e) => freeIds.has(e.activityId));
+
+    if (allFree) {
+      setPreferences({
+        weeklyPlan: generateDefaultWeeklyPlan(prefs.dailyMinutes, 'premium'),
+      });
+    }
+  }, [premium]);
+
+  return null;
+}
+
 export default function App() {
   const [fontsLoaded] = useFonts(satoshiFonts);
   const authLoading = useAuthStore((s) => s.loading);
@@ -172,6 +227,8 @@ export default function App() {
             <AuthGate fallback={<AuthNavigator />}>
               <SyncManager />
               <ReminderSync />
+              <TrialReminderSync />
+              <WeeklyPlanSync />
               <RootNavigator />
             </AuthGate>
             <StatusBar style="light" />

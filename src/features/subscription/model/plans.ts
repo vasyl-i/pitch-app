@@ -11,11 +11,22 @@
  */
 import type { Plan, PlanId } from './types';
 
+export const WEEKLY_PLAN: Plan = {
+  id: 'weekly',
+  productId: 'weekly_299',
+  name: 'Weekly',
+  priceCents: 299,
+  currency: 'USD',
+  periodMonths: 0.25,
+  trialDays: 7,
+  recommended: false,
+};
+
 export const MONTHLY_PLAN: Plan = {
   id: 'monthly',
-  productId: 'monthly_799',
+  productId: 'monthly_499',
   name: 'Monthly',
-  priceCents: 799,
+  priceCents: 499,
   currency: 'USD',
   periodMonths: 1,
   trialDays: 7,
@@ -24,18 +35,19 @@ export const MONTHLY_PLAN: Plan = {
 
 export const YEARLY_PLAN: Plan = {
   id: 'yearly',
-  productId: 'yearly_4999',
+  productId: 'yearly_2499',
   name: 'Yearly',
-  priceCents: 4999,
+  priceCents: 2499,
   currency: 'USD',
   periodMonths: 12,
   trialDays: 7,
   recommended: true,
 };
 
-export const PLANS: readonly Plan[] = [MONTHLY_PLAN, YEARLY_PLAN];
+export const PLANS: readonly Plan[] = [WEEKLY_PLAN, MONTHLY_PLAN, YEARLY_PLAN];
 
 const PLAN_MAP: Record<PlanId, Plan> = {
+  weekly: WEEKLY_PLAN,
   monthly: MONTHLY_PLAN,
   yearly: YEARLY_PLAN,
 };
@@ -57,9 +69,10 @@ export function formatPrice(cents: number, currency: Plan['currency'] = 'USD'): 
   return `${symbol}${(cents / 100).toFixed(2)}`;
 }
 
-/** "$7.99/month" · "$49.99/year" */
+/** "$2.99/week" · "$4.99/month" · "$24.99/year" */
 export function formatPlanPrice(plan: Plan): string {
-  return `${formatPrice(plan.priceCents, plan.currency)}/${plan.periodMonths === 12 ? 'year' : 'month'}`;
+  const period = plan.periodMonths === 12 ? 'year' : plan.periodMonths < 1 ? 'week' : 'month';
+  return `${formatPrice(plan.priceCents, plan.currency)}/${period}`;
 }
 
 /** what the plan works out to per month — the only fair way to compare them */
@@ -77,14 +90,14 @@ export function formatMonthlyEquivalent(plan: Plan): string {
  * percent. Floored rather than rounded: claiming a bigger discount than the
  * arithmetic supports is exactly the kind of thing store review rejects.
  */
-export function savingsPercent(plan: Plan, reference: Plan = MONTHLY_PLAN): number {
-  const full = reference.priceCents * plan.periodMonths;
+export function savingsPercent(plan: Plan, reference: Plan = WEEKLY_PLAN): number {
+  const full = reference.priceCents * (plan.periodMonths / reference.periodMonths);
   if (full <= 0 || plan.priceCents >= full) return 0;
   return Math.floor(((full - plan.priceCents) / full) * 100);
 }
 
-/** "Save 17%", or null when the plan has no advantage worth a badge */
-export function savingsBadge(plan: Plan, reference: Plan = MONTHLY_PLAN): string | null {
+/** "Save 58%", or null when the plan has no advantage worth a badge */
+export function savingsBadge(plan: Plan, reference: Plan = WEEKLY_PLAN): string | null {
   const pct = savingsPercent(plan, reference);
   return pct > 0 ? `Save ${pct}%` : null;
 }

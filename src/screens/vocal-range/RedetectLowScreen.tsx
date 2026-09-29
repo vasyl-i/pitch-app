@@ -1,9 +1,9 @@
 import { ScrollView, View } from 'react-native';
 import { BackButton, Screen } from '@/shared/ui';
 import { DetectionFlow, MicCalibrationGate } from '@/features/vocal-range';
-import type { ProfileScreenProps } from '@/app/navigation/types';
+import type { RootScreenProps } from '@/app/navigation/types';
 
-export function RedetectLowScreen({ navigation }: ProfileScreenProps<'RedetectLow'>) {
+export function RedetectLowScreen({ navigation }: RootScreenProps<'RedetectLow'>) {
   return (
     <Screen>
       <View style={{ flexDirection: 'row', marginBottom: 8 }}>

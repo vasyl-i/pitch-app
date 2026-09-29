@@ -82,6 +82,9 @@ export function createPitchEngine(
    * deactivate it — doing so deafens whichever recorder is live now.
    */
   let holdsSession = false;
+  /** Reusable buffer for the native bridge — avoids allocating a new number[]
+   *  from Float32Array on every audio callback (~85/sec). */
+  const frameBuf: number[] = new Array(HOP);
 
   async function start() {
     if (status === 'running') return;
@@ -132,9 +135,10 @@ export function createPitchEngine(
       const chunk = event.buffer.getChannelData(0);
       const sr = event.buffer.sampleRate || SAMPLE_RATE;
 
-      // Convert Float32Array to number[] for the native bridge
-      const samples = Array.from(chunk);
-      const result = processor!.processFrame(samples, sr);
+      // Copy into the reusable buffer instead of Array.from() — avoids
+      // allocating and GC'ing a 512-element array ~85 times per second.
+      for (let i = 0; i < chunk.length; i++) frameBuf[i] = chunk[i];
+      const result = processor!.processFrame(frameBuf, sr);
       if (!result) return;
 
       const { frequency, rms, clarity, clipped } = result;

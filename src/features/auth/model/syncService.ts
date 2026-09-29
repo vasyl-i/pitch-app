@@ -55,6 +55,13 @@ function debounced(key: string, fn: () => void, ms = 1000) {
 }
 
 // ── Push helpers ────────────────────────────────────────────────────
+async function pushTotalPractice() {
+  const userId = getUserId();
+  if (!userId) return;
+  const totalPracticeSec = useProgressStore.getState().totalPracticeSec;
+  await supabase.from('profiles').update({ total_practice_sec: totalPracticeSec }).eq('id', userId);
+}
+
 async function pushVocalProfile() {
   const userId = getUserId();
   const profile = useProfileStore.getState().profile;
@@ -94,6 +101,7 @@ async function pushLearningPreferences() {
     exercise_balance: prefs.exerciseBalance ?? 0.5,
     disabled_exercises: prefs.disabledExercises ?? [],
     skip_redo_warning: prefs.skipRedoWarning ?? false,
+    weekly_plan: prefs.weeklyPlan ?? null,
     updated_at: new Date().toISOString(),
   });
 }
@@ -240,6 +248,7 @@ export async function pullFromServer() {
         exerciseBalance: lp.exercise_balance ?? 0.5,
         disabledExercises: lp.disabled_exercises ?? [],
         skipRedoWarning: lp.skip_redo_warning ?? false,
+        weeklyPlan: lp.weekly_plan ?? undefined,
       });
     }
 
@@ -300,6 +309,21 @@ export async function pullFromServer() {
           .sort((a, b) => b.at - a.at)
           .slice(0, 500);
         useProgressStore.setState({ sessions: merged });
+      }
+    }
+
+    // Total practice time (server value wins if larger — monotonically increasing)
+    const { data: profileRow } = await supabase
+      .from('profiles')
+      .select('total_practice_sec')
+      .eq('id', userId)
+      .single();
+
+    if (profileRow) {
+      const serverTotal = profileRow.total_practice_sec ?? 0;
+      const localTotal = useProgressStore.getState().totalPracticeSec;
+      if (serverTotal > localTotal) {
+        useProgressStore.setState({ totalPracticeSec: serverTotal });
       }
     }
 
@@ -365,6 +389,7 @@ export function startSync() {
         const newSession = state.sessions[0]; // newest is prepended
         if (newSession) pushSession(newSession);
         lastSessionCount = state.sessions.length;
+        debounced('total-practice', pushTotalPractice);
       }
     }),
   );

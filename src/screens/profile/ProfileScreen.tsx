@@ -3,7 +3,7 @@
  * preferences, the practice library, and (moved here from their former
  * top-level tabs) Progress and Journey.
  */
-import { Alert, Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Linking, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useProfileStore, voiceType } from '@/entities/profile';
 import { useAuthStore } from '@/features/auth';
@@ -24,6 +24,11 @@ function reminderSubtitle(hour: number | null, minute: number): string {
   return `Daily at ${h}:${m} ${period}`;
 }
 
+const ICON_COLORS = [
+  '#E84855', '#F67828', '#F5B700', '#44AF69',
+  '#3B82F6', '#8B5CF6', '#EC4899', '#14B8A6',
+] as const;
+
 export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>) {
   const { palette, spacing } = useTheme();
   const tabBarClearance = useFloatingTabBarClearance(spacing.xl);
@@ -35,6 +40,7 @@ export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>)
   const deleteAccount = useAuthStore((s) => s.deleteAccount);
   const guest = useAuthStore((s) => s.guest);
   const range = profile?.comfortRange ?? null;
+  let colorIndex = 0;
 
   const handleLogout = () => {
     Alert.alert('Log out', 'Are you sure you want to log out?', [
@@ -44,6 +50,29 @@ export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>)
   };
 
   const handleDeleteAccount = () => {
+    if (premium.isPremium) {
+      const manageUrl = Platform.OS === 'ios'
+        ? 'https://apps.apple.com/account/subscriptions'
+        : 'https://play.google.com/store/account/subscriptions';
+      Alert.alert(
+        'Active subscription',
+        'You have an active Premium subscription. Please cancel it in your device\'s subscription settings first, then delete your account. Deleting your account will not automatically cancel your subscription.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Manage subscription', onPress: () => Linking.openURL(manageUrl) },
+          {
+            text: 'Delete anyway',
+            style: 'destructive',
+            onPress: () => confirmDeleteAccount(),
+          },
+        ],
+      );
+    } else {
+      confirmDeleteAccount();
+    }
+  };
+
+  const confirmDeleteAccount = () => {
     Alert.alert(
       'Delete account',
       'This will permanently delete your account and all your data. This action cannot be undone.',
@@ -84,6 +113,7 @@ export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>)
             icon={premium.isPremium ? 'sparkles' : 'star'}
             title={premium.isPremium ? 'Premium' : 'Upgrade to Premium'}
             subtitle={premiumSubtitle}
+            iconColor={palette.accent}
             onPress={() =>
               premium.isPremium
                 ? navigation.navigate('ManageSubscription')
@@ -98,12 +128,14 @@ export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>)
                 ? `${midiToName(range.lowMidi)} – ${midiToName(range.highMidi)} · ≈${voiceType(range)}`
                 : 'Not measured yet — exercises fit better once it is'
             }
+            bgColor={ICON_COLORS[colorIndex++ % ICON_COLORS.length]}
             onPress={() => navigation.navigate('VocalRangeSettings')}
           />
           <Row
             icon="volume-high"
             title="Sound"
             subtitle={`${SOUND_TYPE_LABELS[soundType]} wave`}
+            bgColor={ICON_COLORS[colorIndex++ % ICON_COLORS.length]}
             onPress={() => navigation.navigate('SoundSettings')}
           />
           <Row
@@ -114,25 +146,29 @@ export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>)
                 ? `${GOAL_LABELS[prefs.primaryGoal]} · ${prefs.dailyMinutes} min a day`
                 : "Set what you're working toward"
             }
+            bgColor={ICON_COLORS[colorIndex++ % ICON_COLORS.length]}
             onPress={() => navigation.navigate('LearningPreferences')}
           />
           <Row
             icon="options"
             title="Exercise settings"
             subtitle="Choose which exercises appear in your daily plan"
+            bgColor={ICON_COLORS[colorIndex++ % ICON_COLORS.length]}
             onPress={() => navigation.navigate('ExerciseSettings')}
+          />
+          <Row
+            icon="calendar"
+            title="Weekly plan"
+            subtitle="Customise exercises for each day of the week"
+            bgColor={ICON_COLORS[colorIndex++ % ICON_COLORS.length]}
+            onPress={() => navigation.navigate('WeeklyPlan')}
           />
           <Row
             icon="notifications"
             title="Practice reminder"
             subtitle={reminderSubtitle(prefs?.reminderHour ?? null, prefs?.reminderMinute ?? 0)}
+            bgColor={ICON_COLORS[colorIndex++ % ICON_COLORS.length]}
             onPress={() => navigation.navigate('ReminderSettings')}
-          />
-          <Row
-            icon="albums"
-            title="Practice library"
-            subtitle="Explore any exercise freely, outside your daily practice"
-            onPress={() => navigation.navigate('PracticeLibrary')}
             last
           />
         </View>
@@ -142,12 +178,14 @@ export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>)
             icon="document-text"
             title="Privacy policy"
             subtitle="How we handle your data"
+            bgColor={ICON_COLORS[colorIndex++ % ICON_COLORS.length]}
             onPress={() => Linking.openURL('https://pitchgym.anyabedrytska.com/privacy-policy.html')}
           />
           <Row
             icon="shield-checkmark"
             title="Terms of service"
             subtitle="Rules for using the app"
+            bgColor={ICON_COLORS[colorIndex++ % ICON_COLORS.length]}
             onPress={() => Linking.openURL('https://pitchgym.anyabedrytska.com/terms-of-service.html')}
             last
           />
@@ -158,6 +196,7 @@ export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>)
             icon="log-out"
             title="Log out"
             subtitle={guest ? 'You are using the app as a guest' : 'Sign out of your account'}
+            bgColor={ICON_COLORS[colorIndex++ % ICON_COLORS.length]}
             onPress={handleLogout}
             last={!!guest}
           />
@@ -166,6 +205,7 @@ export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>)
               icon="trash"
               title="Delete account"
               subtitle="Permanently remove your account and all data"
+              iconColor={palette.danger}
               destructive
               last
               onPress={handleDeleteAccount}
@@ -186,6 +226,8 @@ function Row({
   title,
   subtitle,
   onPress,
+  bgColor,
+  iconColor,
   destructive = false,
   last = false,
 }: {
@@ -193,6 +235,8 @@ function Row({
   title: string;
   subtitle: string;
   onPress: () => void;
+  bgColor?: string;
+  iconColor?: string;
   /** red text for dangerous actions */
   destructive?: boolean;
   /** suppress bottom border on last item in a group */
@@ -203,8 +247,8 @@ function Row({
     <Pressable accessibilityRole="button" onPress={onPress}>
       {({ pressed }) => (
         <View style={[styles.row, !last && styles.border, pressed && { opacity: 0.7 }]}>
-          <View style={styles.iconContainer}>
-            <Ionicons name={icon} size={18} color="#FFFFFF" />
+          <View style={[styles.iconContainer, bgColor ? { backgroundColor: bgColor } : undefined]}>
+            <Ionicons name={icon} size={18} color={iconColor ?? '#FFFFFF'} />
           </View>
           <View style={{ flex: 1 }}>
             <AppText variant="label" style={{ fontSize: 16 }} color={destructive ? palette.danger : undefined}>

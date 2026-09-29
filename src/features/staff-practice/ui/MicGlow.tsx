@@ -12,7 +12,7 @@ import { micActive } from '@/shared/lib/micRmsBus';
 
 const AnimatedGradient = Animated.createAnimatedComponent(LinearGradient);
 
-const EDGE_SIZE = 60;
+const EDGE_SIZE = 30;
 const STATIC_OPACITY = 0.15;
 
 const BLUE_SOLID = '#5B8DEF';

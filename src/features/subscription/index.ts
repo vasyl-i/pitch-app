@@ -18,6 +18,7 @@ export { freeSubscription } from './model/types';
 
 export {
   PLANS,
+  WEEKLY_PLAN,
   MONTHLY_PLAN,
   YEARLY_PLAN,
   DEFAULT_PLAN_ID,

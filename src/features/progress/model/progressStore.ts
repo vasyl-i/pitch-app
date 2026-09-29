@@ -55,6 +55,8 @@ const MAX_SESSIONS = 500;
 
 interface ProgressState {
   sessions: SessionRecord[];
+  /** Running all-time total — survives the 500-session cap. */
+  totalPracticeSec: number;
   hydrated: boolean;
   addSession: (record: SessionRecord) => void;
   clear: () => void;
@@ -64,17 +66,30 @@ export const useProgressStore = create<ProgressState>()(
   persist(
     (set) => ({
       sessions: [],
+      totalPracticeSec: 0,
       hydrated: false,
       addSession: (record) =>
-        set((s) => ({ sessions: [record, ...s.sessions].slice(0, MAX_SESSIONS) })),
-      clear: () => set({ sessions: [] }),
+        set((s) => ({
+          sessions: [record, ...s.sessions].slice(0, MAX_SESSIONS),
+          totalPracticeSec: s.totalPracticeSec + (record.durationSec ?? 0),
+        })),
+      clear: () => set({ sessions: [], totalPracticeSec: 0 }),
     }),
     {
       name: 'pitch-coach-progress',
       storage: createJSONStorage(() => mmkvStorage),
-      partialize: (s) => ({ sessions: s.sessions }) as ProgressState,
+      partialize: (s) => ({ sessions: s.sessions, totalPracticeSec: s.totalPracticeSec }) as ProgressState,
       onRehydrateStorage: () => (state) => {
-        if (state) state.hydrated = true;
+        if (state) {
+          state.hydrated = true;
+          // Backfill: if totalPracticeSec is 0 but sessions exist, sum them up
+          if (state.totalPracticeSec === 0 && state.sessions.length > 0) {
+            state.totalPracticeSec = state.sessions.reduce(
+              (sum, s) => sum + (s.durationSec ?? 0),
+              0,
+            );
+          }
+        }
       },
     }
   )

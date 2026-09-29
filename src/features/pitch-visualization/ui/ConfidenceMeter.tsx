@@ -28,7 +28,7 @@ export function ConfidenceMeter({ confidence, label = 'Confidence' }: { confiden
           {isAccent ? (
             <LinearGradient colors={gradient.accent} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
           ) : (
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: color }]} />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: "#7189FF" }]} />
           )}
         </View>
       </View>

@@ -117,6 +117,26 @@ export const IMPROVEMENT_GOAL_LABELS: Record<ImprovementGoal, string> = {
   'feel-confident': 'Feel more confident singing',
 };
 
+/* ------------------------------------------------------------------ *
+ * Weekly exercise plan                                                *
+ * ------------------------------------------------------------------ */
+
+/** 0=Mon, 1=Tue, … 6=Sun — ISO weekday order */
+export type WeekdayIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+
+/** A single exercise entry in a user's weekly plan for one day. */
+export interface WeeklyExerciseEntry {
+  activityId: string;
+  kind: ActivityKind;
+  difficultyId?: string;
+}
+
+/**
+ * Custom weekly exercise plan. Each day maps to an ordered list of exercises.
+ * Days without an entry use the default lesson generator.
+ */
+export type WeeklyPlan = Partial<Record<WeekdayIndex, WeeklyExerciseEntry[]>>;
+
 export interface LearningPreferences {
   primaryGoal: LearningGoal;
   secondaryGoal: LearningGoal | null;
@@ -138,6 +158,8 @@ export interface LearningPreferences {
   skipRedoWarning?: boolean;
   /** improvement goals selected during onboarding */
   improvementGoals?: ImprovementGoal[];
+  /** user's custom weekly exercise plan — overrides the generator for set days */
+  weeklyPlan?: WeeklyPlan;
   updatedAt: number;
 }
 
@@ -192,9 +214,14 @@ export interface Activity {
  * Lessons                                                             *
  * ------------------------------------------------------------------ */
 
-export type LessonSlot = 'warmup' | 'core-1' | 'core-2' | 'review' | 'challenge' | 'cooldown';
+/**
+ * Named lesson slots used by the generators. Weekly plan lessons use indexed
+ * string slots ('step-0', 'step-1', …) so the type is widened to `string`
+ * wherever slots are stored or compared.
+ */
+export type LessonSlot = 'warmup' | 'core-1' | 'core-2' | 'review' | 'challenge' | 'cooldown' | (string & {});
 
-export const SLOT_LABELS: Record<LessonSlot, string> = {
+export const SLOT_LABELS: Record<string, string> = {
   warmup: 'Warm-up',
   'core-1': 'Focus practice',
   'core-2': 'Focus practice',

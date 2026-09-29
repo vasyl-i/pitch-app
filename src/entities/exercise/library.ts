@@ -365,7 +365,7 @@ const harmonyThirds: Exercise = {
 
 void AS4; // reserved: flat-side modes, once the staff can spell flats
 
-const freeExercises: Exercise[] = [
+const basicExercises: Exercise[] = [
   cMajorScale,
   majorArpeggio,
   eMinorScale,
@@ -376,7 +376,7 @@ const freeExercises: Exercise[] = [
   frereJacques,
 ];
 
-const premiumExercises: Exercise[] = [
+const advancedExercises: Exercise[] = [
   dDorian,
   cLydian,
   gMixolydian,
@@ -393,7 +393,7 @@ const premiumExercises: Exercise[] = [
   harmonyThirds,
 ];
 
-export const exercises: Exercise[] = [...freeExercises, ...premiumExercises];
+export const exercises: Exercise[] = [...basicExercises, ...advancedExercises];
 
 /** Named `melodyById` rather than `exerciseById` — ear-training already owns
  *  that name for its own drill definitions, and the two are different things. */

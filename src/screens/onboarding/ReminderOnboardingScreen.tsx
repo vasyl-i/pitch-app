@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
   },
   top: {
     alignItems: 'center',
-    paddingTop: 60,
+    paddingTop: 120,
   },
   bellImage: {
     width: 100,
