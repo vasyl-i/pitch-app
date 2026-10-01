@@ -52,6 +52,9 @@ interface AuthState {
   signInWithEmail: (email: string, password: string) => Promise<void>;
   /** Returns true if the user's email is already confirmed (instant sign-in). */
   signUpWithEmail: (email: string, name: string, password: string) => Promise<boolean>;
+  resetPassword: (email: string) => Promise<void>;
+  pendingPasswordReset: boolean;
+  clearPendingPasswordReset: () => void;
   continueAsGuest: () => void;
   signOut: () => Promise<void>;
   deleteAccount: () => Promise<void>;
@@ -62,6 +65,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   loading: true,
   guest: false,
+  pendingPasswordReset: false,
+  clearPendingPasswordReset: () => set({ pendingPasswordReset: false }),
 
   initialize: () => {
     // Detect fresh install: MMKV is cleared on uninstall but iOS Keychain
@@ -207,6 +212,13 @@ export const useAuthStore = create<AuthState>((set) => ({
     return !!data.session;
   },
 
+  resetPassword: async (email) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: 'https://pitchgym.anyabedrytska.com/auth/callback.html',
+    });
+    if (error) throw error;
+  },
+
   continueAsGuest: () => {
     set({ guest: true, loading: false });
   },
@@ -228,8 +240,10 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   deleteAccount: async () => {
     const userId = useAuthStore.getState().user?.id;
+    console.log('22222', userId)
     if (userId) await unregisterPushToken(userId);
     const { error } = await supabase.rpc('delete_own_account');
+    console.log('error', error);
     if (error) throw error;
     // Auth row is gone server-side; clear local state
     try {

@@ -11,7 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { usePreferencesStore } from '@/features/learning';
 import { useProfileStore } from '@/entities/profile';
 import { requestNotificationPermissions, schedulePracticeReminder } from '@/shared/lib/notifications';
-import { AppText, Button, Screen } from '@/shared/ui';
+import { AppText, BackButton, Button, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
 import type { OnboardingScreenProps } from '@/app/navigation/types';
 
@@ -55,6 +55,9 @@ export function ReminderOnboardingScreen({ navigation }: OnboardingScreenProps<'
 
   return (
     <Screen noBottomPadding>
+      <View style={{ flexDirection: 'row', marginBottom: 16 }}>
+        <BackButton onPress={() => navigation.goBack()}/>
+      </View>
       <ScrollView contentContainerStyle={[styles.root]}>
         <View style={{ flex: 1, paddingBottom: insets.bottom + spacing.lg, justifyContent: "space-between"  }}>
         {/* Top section: icon + text */}
@@ -120,7 +123,7 @@ const styles = StyleSheet.create({
   },
   top: {
     alignItems: 'center',
-    paddingTop: 120,
+    paddingTop: 16,
   },
   bellImage: {
     width: 100,

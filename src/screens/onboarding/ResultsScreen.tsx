@@ -25,7 +25,7 @@ export function ResultsScreen({ navigation, route }: OnboardingScreenProps<'Resu
     <Screen noBottomPadding>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
         <View style={{ flex: 1, paddingBottom: insets.bottom + spacing.lg }}>
-        <BackButton onPress={() => navigation.goBack()} />
+        <BackButton onPress={() => navigation.navigate('Lowest')} />
 
         <AppText variant="title" style={{ fontSize: 28, textAlign: 'center', marginTop: spacing.lg }}>
           You’ve found your range!

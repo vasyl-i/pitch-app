@@ -31,7 +31,7 @@ import { ThemeProvider, theme } from '@/shared/theme';
 import { toastConfig } from '@/shared/ui';
 import { supabase } from '@/shared/lib/supabase';
 import { preloadSamples, useSoundStore } from '@/shared/audio';
-import { RootNavigator } from './navigation/RootNavigator';
+import { RootNavigator, PasswordResetRedirect } from './navigation/RootNavigator';
 import { AuthNavigator } from './navigation/AuthNavigator';
 
 SplashScreen.preventAutoHideAsync();
@@ -50,9 +50,13 @@ function handleAuthDeepLink(url: string) {
   const params = new URLSearchParams(fragment);
   const accessToken = params.get('access_token');
   const refreshToken = params.get('refresh_token');
+  const type = params.get('type');
 
   if (accessToken && refreshToken) {
     supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+    if (type === 'recovery') {
+      useAuthStore.setState({ pendingPasswordReset: true });
+    }
   }
 }
 
@@ -229,6 +233,7 @@ export default function App() {
               <ReminderSync />
               <TrialReminderSync />
               <WeeklyPlanSync />
+              <PasswordResetRedirect />
               <RootNavigator />
             </AuthGate>
             <StatusBar style="light" />

@@ -1,5 +1,5 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { SignInScreen, EmailEntryScreen, EmailSignInScreen, EmailSignUpScreen, CheckEmailScreen } from '@/screens/auth';
+import { SignInScreen, EmailEntryScreen, EmailSignInScreen, EmailSignUpScreen, CheckEmailScreen, ResetPasswordSentScreen } from '@/screens/auth';
 import { useTheme } from '@/shared/theme';
 import type { AuthStackParamList } from './types';
 
@@ -20,6 +20,7 @@ export function AuthNavigator() {
             <Stack.Screen name="EmailSignIn" component={EmailSignInScreen} />
             <Stack.Screen name="EmailSignUp" component={EmailSignUpScreen} />
             <Stack.Screen name="CheckEmail" component={CheckEmailScreen} />
+            <Stack.Screen name="ResetPasswordSent" component={ResetPasswordSentScreen} />
         </Stack.Navigator>
     );
 }

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { BlurView } from 'expo-blur';
 import { AppText, BackButton, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
@@ -9,8 +10,10 @@ import type { AuthScreenProps } from '@/app/navigation/types';
 export function EmailSignInScreen({ navigation, route }: AuthScreenProps<'EmailSignIn'>) {
     const { spacing, palette, radii, blur, typography } = useTheme();
     const signInWithEmail = useAuthStore((s) => s.signInWithEmail);
+    const resetPassword = useAuthStore((s) => s.resetPassword);
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
+    const [resetting, setResetting] = useState(false);
 
     const { email } = route.params;
     const valid = password.length >= 6;
@@ -69,6 +72,25 @@ export function EmailSignInScreen({ navigation, route }: AuthScreenProps<'EmailS
                 >
                     <AppText variant="label" color={palette.buttonPrimaryText}>
                         {loading ? 'Signing in...' : 'Sign in'}
+                    </AppText>
+                </Pressable>
+                <Pressable
+                    disabled={resetting}
+                    onPress={async () => {
+                        setResetting(true);
+                        try {
+                            await resetPassword(email);
+                            navigation.navigate('ResetPasswordSent', { email });
+                        } catch {
+                            Toast.show({ type: 'error', text1: 'Something went wrong', text2: 'Please try again later' });
+                        } finally {
+                            setResetting(false);
+                        }
+                    }}
+                    style={styles.switchLink}
+                >
+                    <AppText variant="body" style={{ color: palette.accent }}>
+                        {resetting ? 'Sending...' : 'Forgot password?'}
                     </AppText>
                 </Pressable>
                 <Pressable

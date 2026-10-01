@@ -95,7 +95,14 @@ export async function registerPushToken(userId: string): Promise<void> {
 /** Remove all push tokens for the current device on sign-out. */
 export async function unregisterPushToken(userId: string): Promise<void> {
   try {
-    const { data: token } = await Notifications.getDevicePushTokenAsync();
+    // getDevicePushTokenAsync() hangs indefinitely in the simulator / Expo Go
+    // where no APNs/FCM registration exists. A short timeout keeps it from
+    // blocking account deletion or sign-out.
+    const tokenResult = await Promise.race([
+      Notifications.getDevicePushTokenAsync(),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)),
+    ]);
+    const token = tokenResult?.data;
     if (!token) return;
 
     await supabase

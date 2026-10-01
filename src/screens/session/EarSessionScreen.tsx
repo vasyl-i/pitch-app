@@ -74,7 +74,7 @@ export function EarSessionScreen({ navigation, route }: RootScreenProps<'EarSess
   }
 
   return (
-    <Screen overlay={<MicGlow />}>
+    <Screen overlay={phase === 'listening' ? <MicGlow /> : undefined}>
       {stepLabel && (
         <AppText variant="caption" style={{ textAlign: 'center', marginBottom: spacing.sm }}>
           {stepLabel}

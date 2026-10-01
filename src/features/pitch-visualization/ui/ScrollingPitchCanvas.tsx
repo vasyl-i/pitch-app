@@ -73,7 +73,14 @@ export function ScrollingPitchCanvas({
     setSize((prev) => (prev.width === width && prev.height === height ? prev : { width, height }));
   }, []);
 
-  const centerRef = useRef(targetMidi ?? liveMidi ?? 60);
+  // Seed the vertical center from the exercise's note range so target blocks
+  // render at the right y from the very first frame — before any note is active
+  // under the playhead.  Without this, centerRef defaults to 60 (middle C) and
+  // notes flash at the wrong vertical position during the lead-in.
+  const targetsCenter = targets?.length
+    ? (Math.min(...targets.map((n) => n.midi)) + Math.max(...targets.map((n) => n.midi))) / 2
+    : null;
+  const centerRef = useRef(targetMidi ?? targetsCenter ?? liveMidi ?? 60);
   const prevTarget = useRef(targetMidi);
 
   if (targetMidi !== null && targetMidi !== prevTarget.current) {

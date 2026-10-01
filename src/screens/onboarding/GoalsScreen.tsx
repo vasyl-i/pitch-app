@@ -52,7 +52,7 @@ export function GoalsScreen({ navigation }: OnboardingScreenProps<'Goals'>) {
 
     const skip = () => {
         advanceOnboarding('goals-complete');
-        navigation.navigate('PracticeRhythm');
+        navigation.navigate('RangeStart');
     };
 
     return (

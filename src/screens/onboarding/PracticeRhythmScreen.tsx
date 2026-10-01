@@ -8,7 +8,7 @@ import { Image, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { generateDefaultWeeklyPlan, usePreferencesStore, type DailyMinutes } from '@/features/learning';
 import { usePremiumStatus } from '@/features/subscription';
-import { AppText, Button, Screen } from '@/shared/ui';
+import { AppText, BackButton, Button, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
 import type { OnboardingScreenProps } from '@/app/navigation/types';
 
@@ -37,6 +37,9 @@ export function PracticeRhythmScreen({ navigation }: OnboardingScreenProps<'Prac
 
   return (
     <Screen noBottomPadding>
+      <View style={{ flexDirection: 'row', marginBottom: 16 }}>
+        <BackButton onPress={() => navigation.goBack()}/>
+      </View>
       <View style={[styles.root, { paddingBottom: insets.bottom + spacing.lg }]}>
         <View style={styles.top}>
           <Image source={CLOCK_IMAGE} style={styles.clockImage} resizeMode="contain" />

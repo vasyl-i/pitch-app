@@ -4,6 +4,7 @@
  * top-level tabs) Progress and Journey.
  */
 import { Alert, Linking, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { Ionicons } from '@expo/vector-icons';
 import { useProfileStore, voiceType } from '@/entities/profile';
 import { useAuthStore } from '@/features/auth';
@@ -39,6 +40,8 @@ export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>)
   const signOut = useAuthStore((s) => s.signOut);
   const deleteAccount = useAuthStore((s) => s.deleteAccount);
   const guest = useAuthStore((s) => s.guest);
+  const user = useAuthStore((s) => s.user);
+  const isEmailUser = user?.app_metadata?.provider === 'email';
   const range = profile?.comfortRange ?? null;
   let colorIndex = 0;
 
@@ -82,9 +85,14 @@ export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>)
           text: 'Delete',
           style: 'destructive',
           onPress: () => {
+            console.log('11111111');
             Alert.alert('Are you sure?', 'All your progress, settings, and practice history will be lost forever.', [
               { text: 'Cancel', style: 'cancel' },
-              { text: 'Delete my account', style: 'destructive', onPress: () => deleteAccount() },
+              { text: 'Delete my account', style: 'destructive', onPress: () => {
+                deleteAccount().catch(() => {
+                  Toast.show({ type: 'error', text1: 'Something went wrong', text2: 'Please try again later' });
+                });
+              }},
             ]);
           },
         },
@@ -192,11 +200,20 @@ export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>)
         </View>
 
         <View style={{ marginTop: spacing.xl }}>
+          {isEmailUser && (
+            <Row
+              icon="key"
+              title="Change password"
+              subtitle="Update your account password"
+              bgColor="#F67828"
+              onPress={() => navigation.navigate('NewPassword', { requireOldPassword: true })}
+            />
+          )}
           <Row
             icon="log-out"
             title="Log out"
             subtitle={guest ? 'You are using the app as a guest' : 'Sign out of your account'}
-            bgColor={ICON_COLORS[colorIndex++ % ICON_COLORS.length]}
+            bgColor="#E84855"
             onPress={handleLogout}
             last={!!guest}
           />

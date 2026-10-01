@@ -3,6 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>PitchGym — Email confirmed</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -208,22 +211,115 @@
       </defs>
     </svg>
 
-    <h1>Email confirmed</h1>
+    <h1 id="title">Email confirmed</h1>
     <p id="message" class="subtitle">Redirecting you to PitchGym...</p>
+
+    <!-- Password reset form (hidden by default) -->
+    <form id="reset-form" style="display:none; text-align:left; margin-bottom:24px;">
+      <label for="new-password" style="display:block; font-size:14px; color:rgba(255,255,255,0.55); margin-bottom:6px;">New password</label>
+      <input id="new-password" type="password" placeholder="At least 6 characters" autocomplete="new-password"
+        style="width:100%; padding:14px 16px; border-radius:12px; border:none; background:rgba(255,255,255,0.08); color:#fff; font-size:16px; margin-bottom:12px; outline:none;" />
+      <label for="confirm-password" style="display:block; font-size:14px; color:rgba(255,255,255,0.55); margin-bottom:6px;">Confirm password</label>
+      <input id="confirm-password" type="password" placeholder="Re-enter password" autocomplete="new-password"
+        style="width:100%; padding:14px 16px; border-radius:12px; border:none; background:rgba(255,255,255,0.08); color:#fff; font-size:16px; margin-bottom:8px; outline:none;" />
+      <p id="form-error" style="color:#EE8672; font-size:14px; min-height:20px; margin-bottom:8px;"></p>
+      <button type="submit" class="btn" style="width:100%; border:none; cursor:pointer; text-align:center;">Update password</button>
+    </form>
+
     <a id="open-app" class="btn" href="#">Open PitchGym</a>
     <p id="desktop-msg" class="desktop-msg"></p>
   </div>
 
   <div class="footer">PitchGym</div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script>
     (function() {
+      var SUPABASE_URL = 'https://jnmkuhwddjzwkxjormgl.supabase.co';
+      var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpubWt1aHdkZGp6d2t4am9ybWdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyNjY5NjksImV4cCI6MjEwMTg0Mjk2OX0.Sx61oTq6cYa7R0g75BnPdtMMhI9z78lHlqFnX63pFVg';
+
       var fragment = window.location.hash || '';
-      var deepLink = 'app.anya.eargym://auth/callback' + fragment;
+      var params = new URLSearchParams(fragment.replace('#', ''));
+      var error = params.get('error');
+      var errorDesc = params.get('error_description');
+      var isRecovery = params.get('type') === 'recovery';
+      var accessToken = params.get('access_token');
+      var refreshToken = params.get('refresh_token');
       var openBtn = document.getElementById('open-app');
+      var title = document.getElementById('title');
       var message = document.getElementById('message');
       var desktopMsg = document.getElementById('desktop-msg');
+      var cat = document.querySelector('.cat');
+      var resetForm = document.getElementById('reset-form');
+      var formError = document.getElementById('form-error');
 
+      if (error) {
+        document.title = 'PitchGym — Link expired';
+        title.textContent = 'Link expired';
+        if (cat) cat.style.display = 'none';
+        message.textContent = errorDesc
+          ? decodeURIComponent(errorDesc.replace(/\+/g, ' '))
+          : 'This link is no longer valid.';
+        openBtn.textContent = 'Open PitchGym';
+        openBtn.href = 'app.anya.eargym://';
+        desktopMsg.style.display = 'block';
+        desktopMsg.textContent = 'Please request a new link from the app.';
+        return;
+      }
+
+      if (isRecovery && accessToken && refreshToken) {
+        // Show password reset form
+        document.title = 'PitchGym — Reset password';
+        title.textContent = 'Set your new password';
+        message.textContent = 'Enter your new password below.';
+        if (cat) cat.style.display = 'none';
+        openBtn.style.display = 'none';
+        resetForm.style.display = 'block';
+
+        var sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Set the recovery session
+        sb.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+
+        resetForm.addEventListener('submit', function(e) {
+          e.preventDefault();
+          var pw = document.getElementById('new-password').value;
+          var pw2 = document.getElementById('confirm-password').value;
+          formError.textContent = '';
+
+          if (pw.length < 6) {
+            formError.textContent = 'Password must be at least 6 characters.';
+            return;
+          }
+          if (pw !== pw2) {
+            formError.textContent = 'Passwords do not match.';
+            return;
+          }
+
+          var btn = resetForm.querySelector('button');
+          btn.disabled = true;
+          btn.textContent = 'Updating...';
+
+          sb.auth.updateUser({ password: pw }).then(function(result) {
+            if (result.error) {
+              formError.textContent = result.error.message;
+              btn.disabled = false;
+              btn.textContent = 'Update password';
+            } else {
+              resetForm.style.display = 'none';
+              title.textContent = 'Password updated';
+              message.textContent = 'You can now sign in with your new password.';
+              openBtn.style.display = 'inline-block';
+              openBtn.textContent = 'Open PitchGym';
+              openBtn.href = 'app.anya.eargym://';
+            }
+          });
+        });
+        return;
+      }
+
+      // Email confirmation flow
+      var deepLink = 'app.anya.eargym://auth/callback' + fragment;
       openBtn.href = deepLink;
 
       var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);

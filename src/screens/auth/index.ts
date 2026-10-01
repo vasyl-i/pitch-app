@@ -3,3 +3,5 @@ export { EmailEntryScreen } from './EmailEntryScreen';
 export { EmailSignInScreen } from './EmailSignInScreen';
 export { EmailSignUpScreen } from './EmailSignUpScreen';
 export { CheckEmailScreen } from './CheckEmailScreen';
+export { ResetPasswordSentScreen } from './ResetPasswordSentScreen';
+export { NewPasswordScreen } from './NewPasswordScreen';

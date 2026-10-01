@@ -97,6 +97,7 @@ export type RootStackParamList = {
   RedetectLow: undefined;
   RedetectHigh: { low: DetectionResult };
   RedetectResults: { low: DetectionResult; high: DetectionResult };
+  NewPassword: { requireOldPassword?: boolean } | undefined;
 };
 
 /** Auth screens shown before the user is signed in. */
@@ -106,6 +107,7 @@ export type AuthStackParamList = {
   EmailSignIn: { email: string };
   EmailSignUp: { email: string };
   CheckEmail: { email: string; password: string };
+  ResetPasswordSent: { email: string };
 };
 
 export type AuthScreenProps<T extends keyof AuthStackParamList> = NativeStackScreenProps<AuthStackParamList, T>;

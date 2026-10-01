@@ -16,10 +16,12 @@ import { PaywallScreen } from '@/screens/paywall';
 import { WeakSpotsScreen } from '@/screens/weak-spots';
 import { ManageSubscriptionScreen } from '@/screens/subscription';
 import { StaffPracticeScreen } from '@/screens/staff-practice';
+import { NewPasswordScreen } from '@/screens/auth';
 import { VocalRangeSettingsScreen, RedetectLowScreen, RedetectHighScreen, RedetectResultsScreen } from '@/screens/vocal-range';
 import { WelcomeScreen, LowestNoteScreen, HighestNoteScreen, ResultsScreen, GoalsScreen, PracticeRhythmScreen, ReminderOnboardingScreen } from '@/screens/onboarding';
 import { useProfileStore } from '@/entities/profile';
-import { waitForSyncReady } from '@/features/auth';
+import { useAuthStore, waitForSyncReady } from '@/features/auth';
+import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '@/shared/theme';
 import type {
   ExercisesStackParamList,
@@ -245,6 +247,23 @@ export function RootNavigator() {
       <RootStack.Screen name="RedetectLow" component={RedetectLowScreen} />
       <RootStack.Screen name="RedetectHigh" component={RedetectHighScreen} />
       <RootStack.Screen name="RedetectResults" component={RedetectResultsScreen} />
+      <RootStack.Screen name="NewPassword" component={NewPasswordScreen} options={{ presentation: 'modal' }} />
     </RootStack.Navigator>
   );
+}
+
+/** Navigates to NewPassword when a recovery deep link sets the flag. */
+export function PasswordResetRedirect() {
+  const pending = useAuthStore((s) => s.pendingPasswordReset);
+  const clear = useAuthStore((s) => s.clearPendingPasswordReset);
+  const navigation = useNavigation<any>();
+
+  useEffect(() => {
+    if (pending) {
+      clear();
+      navigation.navigate('NewPassword');
+    }
+  }, [pending, clear, navigation]);
+
+  return null;
 }
