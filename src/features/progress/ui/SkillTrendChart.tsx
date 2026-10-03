@@ -218,10 +218,10 @@ export function SkillTrendChart({
       >
         {visibleSnapshots.length > 0 && (
           <>
-            <AppText variant="caption" style={{ fontSize: 10, color: palette.textFaint }}>
+            <AppText variant="caption" style={{ fontSize: 12, color: palette.textFaint }}>
               {formatWeekKey(visibleSnapshots[0].weekKey)}
             </AppText>
-            <AppText variant="caption" style={{ fontSize: 10, color: palette.textFaint }}>
+            <AppText variant="caption" style={{ fontSize: 12, color: palette.textFaint }}>
               {formatWeekKey(visibleSnapshots[visibleSnapshots.length - 1].weekKey)}
             </AppText>
           </>
@@ -263,7 +263,7 @@ export function SkillTrendChart({
               <AppText
                 style={{
                   fontFamily: typography.family.regular,
-                  fontSize: 11,
+                  fontSize: 12,
                   color: palette.textSecondary,
                 }}
               >

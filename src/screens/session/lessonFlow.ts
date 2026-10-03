@@ -200,5 +200,6 @@ export function activeStepLabel(): string | null {
   if (!activeSlot) return null;
   const index = steps.findIndex((s) => s.slot === activeSlot);
   if (index < 0) return null;
-  return `Step ${index + 1} of ${steps.length} · ${SLOT_LABELS[activeSlot] ?? 'Practice'}`;
+  // return `Step ${index + 1} of ${steps.length} · ${SLOT_LABELS[activeSlot] ?? 'Practice'}`;
+  return `Step ${index + 1} of ${steps.length}`;
 }

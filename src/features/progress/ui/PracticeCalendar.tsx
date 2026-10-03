@@ -70,7 +70,7 @@ export function PracticeCalendar({ practicedDays }: { practicedDays: Set<string>
       <View style={styles.grid}>
         {WEEKDAYS.map((label, i) => (
           <View key={`wd-${i}`} style={styles.cell}>
-            <AppText variant="caption" style={{ fontSize: 10 }}>
+            <AppText variant="caption" style={{ fontSize: 12 }}>
               {label}
             </AppText>
           </View>

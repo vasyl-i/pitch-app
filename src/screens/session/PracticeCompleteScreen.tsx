@@ -64,7 +64,7 @@ function Tile({ icon, value, label }: { icon: keyof typeof Ionicons.glyphMap; va
       <AppText variant="label" style={{ fontSize: 18, marginTop: 6 }}>
         {value}
       </AppText>
-      <AppText variant="caption" style={{ fontSize: 10 }}>
+      <AppText variant="caption" style={{ fontSize: 12 }}>
         {label}
       </AppText>
     </Card>

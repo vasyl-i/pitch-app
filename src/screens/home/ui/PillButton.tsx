@@ -1,6 +1,6 @@
 import { Pressable, View, type PressableProps, type ViewStyle } from 'react-native';
 import { AppText } from '@/shared/ui';
-import { useTheme } from '@/shared/theme';
+import { palette, useTheme } from '@/shared/theme';
 import { todayColor } from '../todayPalette';
 
 type Variant = 'dark' | 'soft';
@@ -30,7 +30,7 @@ export function PillButton({ title, variant = 'dark', disabled, style, ...rest }
   const textColor = variant === 'dark' ? todayColor.inkOnAccent : todayColor.ink;
 
   const content = (
-    <AppText variant="label" color={textColor}>
+    <AppText variant="label" color={textColor} gradient={false}>
       {title}
     </AppText>
   );
@@ -51,7 +51,7 @@ export function PillButton({ title, variant = 'dark', disabled, style, ...rest }
           style={[
             base,
             {
-              backgroundColor: todayColor.orange,
+              backgroundColor: palette.white,
             },
           ]}
         >

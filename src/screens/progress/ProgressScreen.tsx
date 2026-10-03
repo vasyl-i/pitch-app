@@ -146,7 +146,7 @@ export function ProgressScreen({ navigation }: ProgressScreenProps<'ProgressOver
                                     <AppText variant="label" style={{ fontSize: 15 }}>
                                         Weekly review
                                     </AppText>
-                                    <AppText variant="caption" style={{ fontSize: 11 }}>
+                                    <AppText variant="caption" style={{ fontSize: 12 }}>
                                         What moved this week, and what’s next
                                     </AppText>
                                 </View>

@@ -46,10 +46,10 @@ export function NoteHeatmap({ data }: { data: HeatmapEntry[] }) {
       <View style={styles.labels}>
         {data.map((e) => (
           <View key={e.pitchClass} style={styles.col}>
-            <AppText variant="caption" style={{ fontSize: 10 }}>
+            <AppText variant="caption" style={{ fontSize: 12 }}>
               {e.name}
             </AppText>
-            <AppText variant="caption" color={Math.abs(e.avgCents) < 10 ? palette.textFaint : palette.textSecondary} style={{ fontSize: 9 }}>
+            <AppText variant="caption" color={Math.abs(e.avgCents) < 10 ? palette.textFaint : palette.textSecondary} style={{ fontSize: 12 }}>
               {e.avgCents > 0 ? '+' : ''}
               {Math.round(e.avgCents)}
             </AppText>
@@ -57,7 +57,7 @@ export function NoteHeatmap({ data }: { data: HeatmapEntry[] }) {
         ))}
       </View>
       <View style={styles.legend}>
-        <AppText variant="caption" style={{ fontSize: 10 }}>
+        <AppText variant="caption" style={{ fontSize: 12 }}>
           ↑ sharp · ↓ flat · last 30 days
         </AppText>
       </View>

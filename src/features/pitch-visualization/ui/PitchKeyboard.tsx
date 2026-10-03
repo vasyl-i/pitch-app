@@ -129,6 +129,6 @@ const styles = StyleSheet.create({
   wrap: { height: 56 },
   keys: { flex: 1, flexDirection: 'row', gap: 2, position: 'relative' },
   white: { flex: 1, justifyContent: 'flex-end', alignItems: 'center', paddingBottom: 3, borderWidth: 1, backgroundColor: 'rgba(255,255,255,0.06)' },
-  cLabel: { fontSize: 9 },
+  cLabel: { fontSize: 12 },
   black: { position: 'absolute', top: 4, height: '56%' },
 });

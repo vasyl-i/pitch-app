@@ -18,7 +18,7 @@ export function LightPremiumBadge({ label = 'Premium', locked = false }: { label
       }}
     >
       <Ionicons name={locked ? 'lock-closed' : 'sparkles'} size={9} color={todayColor.indigoDeep} />
-      <AppText color={todayColor.indigoDeep} style={{ fontSize: 11, fontWeight: '600' }}>
+      <AppText color={todayColor.indigoDeep} style={{ fontSize: 12, fontWeight: '600' }}>
         {label}
       </AppText>
     </View>

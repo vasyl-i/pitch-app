@@ -30,13 +30,13 @@ export function CentsGauge({ cents }: { cents: number | null }) {
         )}
       </View>
       <View style={styles.labels}>
-        <AppText variant="caption" style={{ fontSize: 10 }}>
+        <AppText variant="caption" style={{ fontSize: 12 }}>
           ♭ flat
         </AppText>
-        <AppText variant="caption" style={{ fontSize: 10 }}>
+        <AppText variant="caption" style={{ fontSize: 12 }}>
           in tune
         </AppText>
-        <AppText variant="caption" style={{ fontSize: 10 }}>
+        <AppText variant="caption" style={{ fontSize: 12 }}>
           sharp ♯
         </AppText>
       </View>

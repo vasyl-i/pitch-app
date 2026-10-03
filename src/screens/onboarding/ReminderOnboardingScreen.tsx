@@ -8,6 +8,7 @@ import { Image, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
+import { track } from '@/shared/lib/analytics';
 import { usePreferencesStore } from '@/features/learning';
 import { useProfileStore } from '@/entities/profile';
 import { requestNotificationPermissions, schedulePracticeReminder } from '@/shared/lib/notifications';
@@ -35,6 +36,7 @@ export function ReminderOnboardingScreen({ navigation }: OnboardingScreenProps<'
 
   const finishOnboarding = () => {
     completeOnboarding();
+    track('onboarding_completed');
     navigation.replace('Paywall', { source: 'onboarding' });
   };
 

@@ -13,7 +13,7 @@ export const todayColor = {
   surfaceMuted: 'rgba(255, 255, 255, 0.035)',
 
   ink: '#F7F5FB',
-  inkSecondary: 'rgba(247, 245, 251, 0.2)',
+  inkSecondary: '#A1A0A5',
   inkFaint: '#A1A0A5',
   inkOnDark: '#FFFFFF',
 

@@ -292,7 +292,7 @@ function MelodyRow({ exercise, bgColor, best, onPress, onAdd }: { exercise: Exer
                                     {[0, 1, 2].map((i) => (
                                         <Ionicons key={i} name={i < earned ? 'star' : 'star-outline'} size={11} color={i < earned ? palette.accent : palette.textFaint} />
                                     ))}
-                                    <AppText variant="caption" style={{ fontSize: 10, marginLeft: 4 }}>
+                                    <AppText variant="caption" style={{ fontSize: 12, marginLeft: 4 }}>
                                         best {best}
                                     </AppText>
                                 </View>

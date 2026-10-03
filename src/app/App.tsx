@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Platform, View } from 'react-native';
-import { DarkTheme, NavigationContainer } from '@react-navigation/native';
+import { DarkTheme, NavigationContainer, type NavigationContainerRef } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import * as Linking from 'expo-linking';
@@ -27,6 +27,7 @@ import {
   onSubscriptionChange,
   useSubscriptionStore,
 } from '@/features/subscription';
+import { initAnalytics, identifyUser, resetAnalyticsUser, setUserProperties, track } from '@/shared/lib/analytics';
 import { ThemeProvider, theme } from '@/shared/theme';
 import { toastConfig } from '@/shared/ui';
 import { supabase } from '@/shared/lib/supabase';
@@ -37,6 +38,7 @@ import { AuthNavigator } from './navigation/AuthNavigator';
 SplashScreen.preventAutoHideAsync();
 setupNotificationHandler();
 initRevenueCat('appl_kFBGeARTxhvdqgULiBoIIAvmvUF');
+initAnalytics();
 
 /**
  * Handle Supabase auth deep links (email confirmation, magic links).
@@ -83,7 +85,13 @@ function SyncManager() {
   const user = useAuthStore((s) => s.user);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      resetAnalyticsUser();
+      return;
+    }
+    identifyUser(user.id, {
+      provider: user.app_metadata?.provider ?? 'unknown',
+    });
     pullFromServer();
     startSync();
     registerPushToken(user.id);
@@ -137,6 +145,22 @@ function TrialReminderSync() {
   return null;
 }
 
+/** Keeps Amplitude user properties in sync with subscription and profile state. */
+function UserPropertiesSync() {
+  const subscription = useSubscriptionStore((s) => s.subscription);
+  const premium = isPremium(subscription);
+
+  useEffect(() => {
+    setUserProperties({
+      subscription_status: subscription.status,
+      is_premium: premium,
+      platform: Platform.OS,
+    });
+  }, [subscription.status, premium]);
+
+  return null;
+}
+
 /**
  * Rebuilds the weekly plan when the user upgrades to Premium.
  *
@@ -170,10 +194,27 @@ function WeeklyPlanSync() {
   return null;
 }
 
+function getActiveRouteName(state: any): string | undefined {
+  if (!state) return undefined;
+  const route = state.routes[state.index];
+  if (route.state) return getActiveRouteName(route.state);
+  return route.name;
+}
+
 export default function App() {
   const [fontsLoaded] = useFonts(satoshiFonts);
   const authLoading = useAuthStore((s) => s.loading);
   const [appleReady, setAppleReady] = useState(Platform.OS !== 'ios');
+  const navigationRef = useRef<NavigationContainerRef<any>>(null);
+  const currentRouteRef = useRef<string | undefined>();
+
+  const onNavigationStateChange = useCallback(() => {
+    const currentRoute = getActiveRouteName(navigationRef.current?.getRootState());
+    if (currentRoute && currentRoute !== currentRouteRef.current) {
+      currentRouteRef.current = currentRoute;
+      track('screen_viewed', { screen: currentRoute });
+    }
+  }, []);
 
   // Handle auth deep links (email confirmation callback)
   useEffect(() => {
@@ -227,12 +268,13 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutReady}>
       <SafeAreaProvider>
         <ThemeProvider>
-          <NavigationContainer theme={navigationTheme}>
+          <NavigationContainer ref={navigationRef} theme={navigationTheme} onStateChange={onNavigationStateChange}>
             <AuthGate fallback={<AuthNavigator />}>
               <SyncManager />
               <ReminderSync />
               <TrialReminderSync />
               <WeeklyPlanSync />
+              <UserPropertiesSync />
               <PasswordResetRedirect />
               <RootNavigator />
             </AuthGate>

@@ -123,7 +123,7 @@ function MilestoneRow({ milestone, onReplay }: { milestone: JourneyMilestone; on
         <AppText variant="label" style={{ fontSize: 15 }}>
           {m.node.title}
         </AppText>
-        <AppText variant="caption" style={{ fontSize: 11, marginTop: 2 }}>
+        <AppText variant="caption" style={{ fontSize: 12, marginTop: 2 }}>
           {caption}
         </AppText>
       </View>

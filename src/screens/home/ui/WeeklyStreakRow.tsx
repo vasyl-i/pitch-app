@@ -35,7 +35,7 @@ export function WeeklyStreakRow({ practicedDays, now = Date.now() }: { practiced
             >
               {practiced && <AppText style={{ fontSize: 13, color: todayColor.inkOnAccent }}>✓</AppText>}
             </View>
-            <AppText variant="caption" color={isToday ? todayColor.ink : todayColor.inkFaint} style={{ fontSize: 11 }}>
+            <AppText variant="caption" color={isToday ? todayColor.ink : todayColor.inkFaint} style={{ fontSize: 12 }}>
               {label}
             </AppText>
           </View>

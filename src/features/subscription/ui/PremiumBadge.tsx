@@ -33,5 +33,5 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     alignSelf: 'flex-start',
   },
-  text: { fontSize: 11, fontWeight: '600' },
+  text: { fontSize: 12, fontWeight: '600' },
 });

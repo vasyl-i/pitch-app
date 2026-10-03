@@ -1,241 +1,295 @@
 /**
  * The in-round view, driven entirely by the session store's phase:
  * preparing → playing → (waiting) → (countdown) → listening → evaluating
- * → round-result. One layout for all eight exercises.
+ * → round-result. One layout for all exercises.
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { StyleSheet, useWindowDimensions, View } from 'react-native';
-import Svg, { Circle } from 'react-native-svg';
-import {
-  exerciseById,
-  useEarTrainingStore,
-  type NoteOutcome,
-} from '@/features/ear-training';
+import { Dimensions, Image, StyleSheet, View } from 'react-native';
+import { exerciseById, type NoteOutcome, useEarTrainingStore, } from '@/features/ear-training';
 import { colorForCents } from '@/shared/lib/music';
-import { palette as themePalette, useTheme } from '@/shared/theme';
+import { typography, useTheme } from '@/shared/theme';
 import { AppText, Button } from '@/shared/ui';
+import { VoiceWaveform } from '@/shared/ui/VoiceWaveform';
 
 interface SessionControls {
-  hearAgain(): void;
-  answer(optionId: string): void;
-  exit(): void;
+    hearAgain(): void;
+
+    next(): void;
+
+    answer(optionId: string): void;
+
+    exit(): void;
 }
 
-/** which chord tones / melody notes are already in, shown live while singing */
+/* ---------- result mascot map ---------- */
+
+const MASCOT_IMAGES = {
+    'Love it!': require('../../../assets/love-it.png'),
+    'Almost': require('../../../assets/almost.png'),
+    'Try once more': require('../../../assets/try-once-more.png'),
+    'Couldn\'t hear you': require('../../../assets/couldnt-hear-you.png'),
+} as Record<string, ReturnType<typeof require>>;
+
+const RESULT_COLORS: Record<string, string> = {
+    'Love it!': '#EEFF88',
+    'Almost': '#EDA069',
+    'Try once more': '#F95F4F',
+    'Couldn\'t hear you': '#F0F0F0',
+};
+
+/* ---------- outcome dots ---------- */
+
 function OutcomeDots({ outcomes }: { outcomes: NoteOutcome[] }) {
-  const { palette, spacing } = useTheme();
-  const color = (o: NoteOutcome) =>
-    o.status === 'hit' ? palette.accent : o.status === 'close' ? palette.warning : o.status === 'extra' ? palette.danger : palette.textFaint;
-  return (
-    <View style={{ flexDirection: 'row', gap: spacing.sm, justifyContent: 'center', marginTop: spacing.md, flexWrap: 'wrap' }}>
-      {outcomes.map((o, i) => (
-        <AppText key={i} variant="caption" color={color(o)}>
-          {o.status === 'hit' ? '●' : o.status === 'close' ? '◐' : o.status === 'extra' ? '+' : '○'} {o.label}
-        </AppText>
-      ))}
-    </View>
-  );
+    const { palette, spacing } = useTheme();
+    const color = (o: NoteOutcome) =>
+        o.status === 'hit' ? palette.accent : o.status === 'close' ? palette.warning : o.status === 'extra' ? palette.danger : palette.textFaint;
+    return (
+        <View style={{
+            flexDirection: 'row',
+            gap: spacing.sm,
+            justifyContent: 'center',
+            marginTop: spacing.md,
+            flexWrap: 'wrap'
+        }}>
+            {outcomes.map((o, i) => (
+                <AppText key={i} variant="caption" color={color(o)}>
+                    {o.status === 'hit' ? '●' : o.status === 'close' ? '◐' : o.status === 'extra' ? '+' : '○'} {o.label}
+                </AppText>
+            ))}
+        </View>
+    );
 }
+
+/* ---------- main component ---------- */
 
 export function ActiveRound({ session }: { session: SessionControls }) {
-  const { palette, spacing } = useTheme();
+    const { palette, spacing } = useTheme();
 
-  const phase = useEarTrainingStore((s) => s.phase);
-  const exerciseId = useEarTrainingStore((s) => s.exerciseId);
-  const round = useEarTrainingStore((s) => s.round);
-  const totalRounds = useEarTrainingStore((s) => s.totalRounds);
-  const instruction = useEarTrainingStore((s) => s.instruction);
-  const countdown = useEarTrainingStore((s) => s.countdown);
-  const waitSecondsLeft = useEarTrainingStore((s) => s.waitSecondsLeft);
-  const choices = useEarTrainingStore((s) => s.choices);
-  const live = useEarTrainingStore((s) => s.live);
-  const roundResult = useEarTrainingStore((s) => s.roundResult);
-  const promptDurationMs = useEarTrainingStore((s) => s.promptDurationMs);
-  const promptStartedAt = useEarTrainingStore((s) => s.promptStartedAt);
+    const phase = useEarTrainingStore((s) => s.phase);
+    const exerciseId = useEarTrainingStore((s) => s.exerciseId);
+    const round = useEarTrainingStore((s) => s.round);
+    const totalRounds = useEarTrainingStore((s) => s.totalRounds);
+    const instruction = useEarTrainingStore((s) => s.instruction);
+    const countdown = useEarTrainingStore((s) => s.countdown);
+    const waitSecondsLeft = useEarTrainingStore((s) => s.waitSecondsLeft);
+    const choices = useEarTrainingStore((s) => s.choices);
+    const live = useEarTrainingStore((s) => s.live);
+    const roundResult = useEarTrainingStore((s) => s.roundResult);
 
-  const title = exerciseId ? (exerciseById(exerciseId)?.title ?? '') : '';
-  const isChoice = choices !== null;
+    const exerciseDef = exerciseId ? exerciseById(exerciseId) : undefined;
+    const title = exerciseDef?.title ?? '';
+    const isChoice = choices !== null;
+    const isResult = phase === 'round-result';
+    const needsMic = exerciseDef?.needsMic ?? false;
+    const showWaveform = phase === 'listening' && needsMic;
+    const isSmallScreen = Dimensions.get('screen').height < 700;
 
-  let headline = '';
-  let headlineColor: string = palette.textPrimary;
-  let support = ' ';
+    // note color for waveform accent — blue when no signal, then pitch-accuracy color
+    const noteColor = live.score?.signedCents != null
+        ? colorForCents(live.score.signedCents)
+        : live.note ? palette.accent : undefined;
 
-  switch (phase) {
-    case 'preparing':
-      headline = 'Getting ready…';
-      support = 'warming up the audio';
-      break;
-    case 'playing':
-      headline = 'Listen…';
-      break;
-    case 'waiting':
-      headline = `${waitSecondsLeft ?? 0}`;
-      support = 'hold that note in your mind';
-      break;
-    case 'countdown':
-      headline = `${countdown ?? 0}`;
-      headlineColor = palette.accent;
-      support = 'get ready to sing';
-      break;
-    case 'listening':
-      if (isChoice) {
-        headline = instruction;
-      } else {
-        headline = live.note ?? '♪';
-        headlineColor = live.score?.signedCents != null ? colorForCents(live.score.signedCents) : live.note ? palette.accent : palette.textPrimary;
-        support = instruction;
-      }
-      break;
-    case 'evaluating':
-      headline = '…';
-      break;
-    case 'round-result':
-      headline = roundResult?.label ?? '';
-      headlineColor = roundResult?.ok ? palette.accent : palette.warning;
-      support = roundResult?.detail ?? ' ';
-      break;
-  }
+    /* ---- phase-specific content ---- */
 
-  return (
-    <>
-      <View style={styles.header}>
-        <AppText variant="label">{title}</AppText>
-        <AppText variant="caption">
-          {round} / {totalRounds}
-        </AppText>
-      </View>
+    let subtitle = '';
+    let centerContent: React.ReactNode = null;
 
-      <View style={styles.center}>
-        <View style={styles.headlineBlock}>
-          {phase === 'playing' && promptDurationMs && promptStartedAt ? (
-            <PromptCountdown durationMs={promptDurationMs} startedAt={promptStartedAt}>
-              <AppText
-                variant="display"
-                color={headlineColor}
-                style={{ fontSize: 44, textAlign: 'center' }}
-              >
-                {headline}
-              </AppText>
-            </PromptCountdown>
-          ) : (
-            <AppText
-              variant="display"
-              color={headlineColor}
-              style={{ fontSize: phase === 'listening' && isChoice ? 30 : 44, textAlign: 'center' }}
-            >
-              {headline}
-            </AppText>
-          )}
-        </View>
-        <AppText variant="body" style={{ textAlign: 'center', marginTop: spacing.sm }}>
-          {support}
-        </AppText>
-
-        {/* fixed-height slot for auxiliary info so layout never shifts */}
-        <View style={styles.auxBlock}>
-          {phase === 'listening' && !isChoice && (
-            <AppText variant="caption" style={{ textAlign: 'center' }}>
-              {live.score && live.score.actual !== '—' ? `score so far: ${live.score.score}` : 'any octave is fine'}
-            </AppText>
-          )}
-          {phase === 'listening' && live.outcomes && <OutcomeDots outcomes={live.outcomes} />}
-          {phase === 'round-result' && roundResult && roundResult.actual !== '—' && (
-            <AppText variant="caption" style={{ textAlign: 'center' }}>
-              target {roundResult.expected} · you {roundResult.actual}
-            </AppText>
-          )}
-        </View>
-      </View>
-
-      {phase === 'listening' && isChoice && (
-        <View style={[styles.row, { gap: spacing.md }]}>
-          {choices.map((c) => (
-            <Button key={c.id} title={c.label} style={{ flex: 1 }} onPress={() => session.answer(c.id)} />
-          ))}
-        </View>
-      )}
-
-      <View style={{ gap: spacing.md, marginTop: spacing.lg }}>
-        <Button title="Hear it again" variant="ghost" onPress={() => session.hearAgain()} />
-        <Button title="End" variant="ghost" onPress={() => session.exit()} />
-      </View>
-    </>
-  );
-}
-
-const RING_PADDING = 32;
-const RING_STROKE = 3;
-
-function PromptCountdown({
-  durationMs,
-  startedAt,
-  children,
-}: {
-  durationMs: number;
-  startedAt: number;
-  children: React.ReactNode;
-}) {
-  const { width } = useWindowDimensions();
-  const size = width - RING_PADDING * 2;
-  const radius = (size - RING_STROKE) / 2;
-  const circumference = 2 * Math.PI * radius;
-
-  const [progress, setProgress] = useState(0);
-  const rafRef = useRef<number | null>(null);
-
-  const tick = useCallback(() => {
-    const elapsed = Date.now() - startedAt;
-    const p = Math.min(elapsed / durationMs, 1);
-    setProgress(p);
-    if (p < 1) {
-      rafRef.current = requestAnimationFrame(tick);
+    switch (phase) {
+        case 'preparing':
+            subtitle = 'Getting ready...';
+            break;
+        case 'playing':
+            subtitle = 'Listen...';
+            // centerContent = <VoiceWaveform active={false}/>;
+            break;
+        case 'waiting':
+            subtitle = 'Hold that note in your mind';
+            centerContent = (
+                <AppText variant="display" color={palette.textPrimary} style={styles.bigNumber}>
+                    {waitSecondsLeft ?? 0}
+                </AppText>
+            );
+            break;
+        case 'countdown':
+            subtitle = 'Get ready to sing';
+            centerContent = (
+                <AppText variant="display" color={palette.accent} style={styles.bigNumber}>
+                    {countdown ?? 0}
+                </AppText>
+            );
+            break;
+        case 'listening':
+            if (isChoice) {
+                subtitle = instruction;
+            } else {
+                subtitle = 'Sing it back';
+                const noteColor = live.score?.signedCents != null
+                    ? colorForCents(live.score.signedCents)
+                    : live.note ? palette.accent : palette.textPrimary;
+                centerContent = (
+                    <View style={styles.singContent}>
+                        <View style={{ height: 80, justifyContent: "space-between", gap: 4, alignItems: "center" }}>
+                            <View style={{ height: 50 }}>
+                            <AppText variant="display" color={noteColor} style={styles.noteDisplay}>
+                                {live.note ?? '♪'}
+                            </AppText>
+                            </View>
+                            {(
+                                <AppText variant="caption" color={palette.white}>
+                                    {live.score && live.score.actual !== '—' ? `${live.score.score}% accuracy` : ' '}
+                                </AppText>
+                            )}
+                        </View>
+                    </View>
+                );
+            }
+            break;
+        case 'evaluating':
+            subtitle = '...';
+            break;
+        case 'round-result': {
+            const label = roundResult?.label ?? '';
+            const mascot = MASCOT_IMAGES[label];
+            const labelColor = RESULT_COLORS[label] ?? (roundResult?.ok ? palette.accent : palette.warning);
+            centerContent = (
+                <View style={styles.resultContent}>
+                    {mascot && (
+                        <Image source={mascot} style={styles.mascot} resizeMode="contain"/>
+                    )}
+                    <AppText variant="display" color={labelColor} style={styles.resultLabel}>
+                        {label}
+                    </AppText>
+                    {roundResult && (
+                        <AppText variant="caption" color={palette.textSecondary}
+                                 style={{ textAlign: 'center', marginTop: 4 }}>
+                            {roundResult.detail}
+                        </AppText>
+                    )}
+                    {roundResult && roundResult.expected && roundResult.actual !== '—' && (
+                        <AppText variant="caption" color={palette.textFaint}
+                                 style={{ textAlign: 'center', marginTop: 8 }}>
+                            Target note · {roundResult.expected} · Your result · {roundResult.actual}
+                        </AppText>
+                    )}
+                </View>
+            );
+            break;
+        }
     }
-  }, [durationMs, startedAt]);
 
-  useEffect(() => {
-    rafRef.current = requestAnimationFrame(tick);
-    return () => {
-      if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
-    };
-  }, [tick]);
+    return (
+        <View style={styles.container}>
+            {/* Fixed top section: round counter + exercise title + subtitle */}
+            <View style={[styles.header, isSmallScreen && { marginBottom: 0 }]}>
+                <AppText variant="caption" color={palette.white}>
+                    Round {round} of {totalRounds}
+                </AppText>
+            </View>
+            {!isResult && (
+                <View style={{ alignItems: "center", marginTop: isSmallScreen ? 0 : 60 }}>
+                    <AppText variant="display" gradient style={styles.title}>
+                        {title}
+                    </AppText>
+                    <AppText variant="body" color={palette.textSecondary} style={styles.subtitle}>
+                        {subtitle}
+                    </AppText>
+                </View>
+            )}
 
-  const strokeDashoffset = circumference * (1 - progress);
+            {/* Center area — flex:1; result phase centers vertically, others sit higher */}
+            <View style={[styles.center, isResult && styles.centerResult]}>
+                <View style={styles.visualArea}>
+                    {centerContent}
+                </View>
 
-  return (
-    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-      <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
-        <Circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          stroke="rgba(255, 255, 255, 0.1)"
-          strokeWidth={RING_STROKE}
-          fill="none"
-        />
-        <Circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          stroke={themePalette.accent}
-          strokeWidth={RING_STROKE}
-          fill="none"
-          strokeLinecap="round"
-          strokeDasharray={`${circumference}`}
-          strokeDashoffset={strokeDashoffset}
-          rotation={-90}
-          origin={`${size / 2}, ${size / 2}`}
-        />
-      </Svg>
-      {children}
-    </View>
-  );
+                {/* Live outcome dots for chord/melody exercises */}
+                {phase === 'listening' && live.outcomes && <OutcomeDots outcomes={live.outcomes}/>}
+
+                {/* Waveform — right below note display so they stay close */}
+                {needsMic && (
+                    <View style={{ opacity: showWaveform ? 1 : 0, marginHorizontal: -spacing.lg }} pointerEvents="none">
+                        <VoiceWaveform active={showWaveform} accentColor={noteColor} />
+                    </View>
+                )}
+            </View>
+
+            {/* Choice buttons */}
+            {phase === 'listening' && isChoice && (
+                <View style={[styles.row, { gap: spacing.md, marginBottom: spacing.md }]}>
+                    {choices.map((c) => (
+                        <Button key={c.id} title={c.label} style={{ flex: 1 }} onPress={() => session.answer(c.id)}/>
+                    ))}
+                </View>
+            )}
+
+            {/* Footer controls */}
+            <View style={styles.footer}>
+                <Button title={isResult ? "Next" : "Hear it again"} variant="ghost"
+                        onPress={() => isResult ? session.next() : session.hearAgain()}/>
+                <Button title="Stop practice" variant="transparent" onPress={() => session.exit()}/>
+            </View>
+        </View>
+    );
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  center: { flex: 1, justifyContent: 'center' },
-  headlineBlock: { justifyContent: 'center', alignItems: 'center' },
-  /** reserve space for score caption + outcome dots so they don't push layout */
-  auxBlock: { minHeight: 64, justifyContent: 'center' },
-  row: { flexDirection: 'row' },
+    container: { flex: 1 },
+    header: {
+        alignItems: 'center',
+        paddingTop: 4,
+        marginBottom: 8,
+    },
+    center: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        paddingTop: '10%',
+    },
+    centerResult: {
+        justifyContent: 'center',
+        paddingTop: 0,
+    },
+    title: {
+        fontSize: 40,
+        textAlign: 'center',
+    },
+    subtitle: {
+        fontSize: 20,
+        textAlign: 'center',
+        marginTop: 20,
+    },
+    visualArea: {
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    bigNumber: {
+        fontSize: 64,
+        textAlign: 'center',
+    },
+    singContent: {
+        alignItems: 'center',
+        marginTop: 16,
+        gap: 8,
+    },
+    noteDisplay: {
+        fontSize: 48,
+        textAlign: 'center',
+    },
+    resultContent: {
+        alignItems: 'center',
+        gap: 4,
+    },
+    mascot: {
+        width: 140,
+        height: 140,
+        marginBottom: 12,
+    },
+    resultLabel: {
+        fontSize: 32,
+        textAlign: 'center',
+    },
+    row: { flexDirection: 'row' },
+    footer: {
+        gap: 12,
+        paddingBottom: 8,
+    },
 });

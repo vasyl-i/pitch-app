@@ -122,7 +122,7 @@ function Tile({ label, value, icon }: { label: string; value: string; icon: keyo
             <AppText variant="label" style={{ fontSize: 17, marginTop: 4 }}>
                 {value}
             </AppText>
-            <AppText variant="caption" style={{ fontSize: 10 }}>
+            <AppText variant="caption" style={{ fontSize: 12 }}>
                 {label}
             </AppText>
         </Card>

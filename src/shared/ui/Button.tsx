@@ -3,7 +3,7 @@ import { BlurView } from 'expo-blur';
 import { useTheme } from '@/shared/theme';
 import { AppText } from './AppText';
 
-type Variant = 'primary' | 'ghost';
+type Variant = 'primary' | 'ghost' | "transparent";
 
 interface ButtonProps extends Omit<PressableProps, 'children'> {
   title: string;
@@ -28,9 +28,10 @@ export function Button({ title, variant = 'primary', disabled, style, ...rest }:
 
   const variants: Record<Variant, ViewStyle> = {
     primary: {
-      backgroundColor: palette.buttonPrimaryBg,
+      backgroundColor: palette.white,
     },
     ghost: {},
+    transparent: {},
   };
 
   const textColor = variant === 'primary' ? palette.buttonPrimaryText : palette.textPrimary;
@@ -44,11 +45,11 @@ export function Button({ title, variant = 'primary', disabled, style, ...rest }:
     >
       {variant === 'ghost' && (
         <>
-          <BlurView intensity={blur.card} tint="dark" style={StyleSheet.absoluteFill} />
+          <BlurView style={[{ backgroundColor: palette.ghost }, StyleSheet.absoluteFill]} />
           <View style={[StyleSheet.absoluteFill, { backgroundColor: palette.surface }]} />
         </>
       )}
-      <AppText variant="label" color={textColor}>
+      <AppText variant="label" color={textColor} gradient={false}>
         {title}
       </AppText>
     </Pressable>

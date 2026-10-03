@@ -116,7 +116,7 @@ function SpotCard({ spot, onPress }: { spot: WeakSpot; onPress: () => void }) {
           </AppText>
 
           {playable && (
-            <AppText variant="caption" color={palette.textSecondary} style={{ marginTop: 8, fontSize: 11 }}>
+            <AppText variant="caption" color={palette.textSecondary} style={{ marginTop: 8, fontSize: 12 }}>
               Drill: {spot.activity?.title}
             </AppText>
           )}

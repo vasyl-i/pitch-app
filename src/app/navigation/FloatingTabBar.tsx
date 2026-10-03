@@ -26,7 +26,7 @@ export function useFloatingTabBarClearance(extraMargin = 0) {
     return insets.bottom + BAR_BOTTOM_GAP + BAR_HEIGHT + extraMargin;
 }
 
-const NAV_ACTIVE = '#C8DA59';
+const NAV_ACTIVE = '#FFFFFF';
 const NAV_ON_ACTIVE = '#0A0A05';
 const NAV_INACTIVE = 'rgba(228, 228, 232, 0.55)';
 const BORDER_COLOR = 'rgba(255, 255, 255, 0.12)';

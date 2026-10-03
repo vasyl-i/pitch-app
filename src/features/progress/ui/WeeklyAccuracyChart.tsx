@@ -51,10 +51,10 @@ export function WeeklyAccuracyChart({ points }: { points: WeeklyAccuracyPoint[] 
         })}
       </View>
       <View style={styles.labels}>
-        <AppText variant="caption" style={{ fontSize: 10 }}>
+        <AppText variant="caption" style={{ fontSize: 12 }}>
           {points.length} weeks ago
         </AppText>
-        <AppText variant="caption" style={{ fontSize: 10 }}>
+        <AppText variant="caption" style={{ fontSize: 12 }}>
           this week
         </AppText>
       </View>

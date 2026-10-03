@@ -124,5 +124,5 @@ export function KeyTrailView({
 
 const styles = StyleSheet.create({
   container: { flex: 1, minHeight: 220 },
-  label: { position: 'absolute', left: 4, fontSize: 9 },
+  label: { position: 'absolute', left: 4, fontSize: 12 },
 });

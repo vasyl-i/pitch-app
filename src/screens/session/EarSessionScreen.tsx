@@ -74,12 +74,14 @@ export function EarSessionScreen({ navigation, route }: RootScreenProps<'EarSess
   }
 
   return (
-    <Screen overlay={phase === 'listening' ? <MicGlow /> : undefined}>
+    <Screen noHorizontalPadding={phase === "completed"} overlay={phase === 'listening' ? <MicGlow /> : undefined}>
+      <View style={{ marginTop: phase === 'completed' ? 0 : 80 }}>
       {stepLabel && (
-        <AppText variant="caption" style={{ textAlign: 'center', marginBottom: spacing.sm }}>
+        <AppText variant="caption" color={palette.white} style={{ textAlign: 'center', marginBottom: spacing.sm }}>
           {stepLabel}
         </AppText>
       )}
+      </View>
       {phase === 'completed' ? (
         <SessionResults
           session={session}

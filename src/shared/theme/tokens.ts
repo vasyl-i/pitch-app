@@ -22,9 +22,12 @@ export const palette = {
   border: 'rgba(255, 255, 255, 0.16)',
   borderSubtle: 'rgba(255, 255, 255, 0.09)',
 
+  ghost: "#524E6266",
+
   textPrimary: '#ffffff',
   textSecondary: 'rgba(255, 255, 255, 0.64)',
-  textFaint: 'rgba(255, 255, 255, 0.40)',
+  textSecondaryElevated: '#F0F0F0',
+  textFaint: '#A1A0A5',
 
   accent: '#C8DA59',
   accentSecondary: '#8B7CFF',
@@ -35,6 +38,8 @@ export const palette = {
 
   buttonPrimaryBg: '#C8DA59',
   buttonPrimaryText: '#000000',
+
+  white: '#ffffff',
 } as const;
 
 /** Gradient stop sets — always applied top-left → bottom-right. */

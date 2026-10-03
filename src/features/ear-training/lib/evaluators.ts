@@ -51,8 +51,7 @@ export interface RoundScore {
   ok: boolean;
   /** 0–100 */
   score: number;
-  /** headline, always friendly: "Excellent!", "Almost", "Try once more" */
-  label: string;
+  /** headline: "Love it!", "Almost", "Try once more", "Couldn't hear you" */label: string;
   /** coaching line, e.g. "just a touch sharp" */
   detail: string;
   expected: string;
@@ -83,8 +82,8 @@ function sharpFlat(cents: number, mild: string, stronger: string): string {
 const NOT_HEARD: Omit<RoundScore, 'expected'> = {
   ok: false,
   score: 0,
-  label: "Didn't quite catch that",
-  detail: 'sing right after the tone, nice and steady',
+  label: "Couldn't hear you",
+  detail: 'Please, try again',
   actual: '—',
   avgCents: null,
   signedCents: null,
@@ -120,7 +119,7 @@ export function evaluateSingleTarget(frames: SungFrame[], targetPc: number, expe
     return {
       ...base,
       ok: true,
-      label: 'Excellent!',
+      label: 'Love it!',
       detail: off <= PERFECT_CENTS ? 'dead center' : sharpFlat(deviation, 'just a touch', 'a little'),
     };
   }
@@ -249,7 +248,7 @@ export function evaluateChordTones(frames: SungFrame[], target: ChordToneTarget)
   return {
     ok: allFound && orderOk,
     score,
-    label: allFound && orderOk ? 'Excellent!' : coverage >= 0.5 ? 'Almost' : 'Try once more',
+    label: allFound && orderOk ? 'Love it!' : coverage >= 0.5 ? 'Almost' : 'Try once more',
     detail,
     expected: expectedText,
     actual: sungOrder.map((m) => noteName(Math.round(m.note.midi))).join('  ·  ') || '—',
@@ -374,7 +373,7 @@ export function evaluateMelodyEcho(frames: SungFrame[], target: MelodyNote[]): R
   return {
     ok: score >= 70,
     score,
-    label: score >= 85 ? 'Excellent!' : score >= 55 ? 'Almost' : 'Try once more',
+    label: score >= 85 ? 'Love it!' : score >= 55 ? 'Almost' : 'Try once more',
     detail,
     expected: expectedText,
     actual: sung.map((n) => noteName(Math.round(n.midi))).join('  ·  '),
@@ -402,7 +401,7 @@ export function evaluateChoice(options: {
   return {
     ok,
     score: ok ? 100 : 0,
-    label: ok ? 'Excellent!' : 'Not quite',
+    label: ok ? 'Love it!' : 'Try once more',
     detail: options.detail,
     expected: options.expectedLabel,
     actual: options.chosenLabel,

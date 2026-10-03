@@ -29,6 +29,7 @@ import { acquireMic, createThrottle, MicPermissionError, type MicLease, type Pit
 import { useProgressStore } from '@/features/progress';
 import { centsToGlowTier, micActive, micGlowTier, micRms } from '@/shared/lib/micRmsBus';
 import { hapticMicReady, playTick } from '@/shared/audio';
+import { track } from '@/shared/lib/analytics';
 import { createSessionGuard } from '@/shared/lib/sessionGuard';
 import { createSingCapture } from '../lib/capture';
 import { summarizeSession, type RoundScore } from '../lib/evaluators';
@@ -170,6 +171,16 @@ export function useEarTrainingSession() {
   async function playPrompt(gen: number, round: EarRound) {
     listeningRef.current = false;
     capture.end();
+    // Release the mic so iOS switches from playAndRecord to playback category,
+    // which plays audio at full volume through the speaker.
+    const needsMicLater = defRef.current?.needsMic ?? false;
+    if (needsMicLater && leaseRef.current) {
+      await releaseLease();
+    }
+    if (!guard.isCurrent(gen)) return;
+    // With mic released, ensurePlaybackReady sets the louder playback category
+    await ensurePlaybackReady({ micHeld: false });
+    if (!guard.isCurrent(gen)) return;
     setStore({ phase: 'playing', countdown: null, waitSecondsLeft: null, choices: null, live: { note: null, score: null, outcomes: null }, promptDurationMs: round.prompt.length * 1000, promptStartedAt: Date.now() });
     const handle = player.play(round.prompt);
     await handle.done;
@@ -181,7 +192,7 @@ export function useEarTrainingSession() {
     const tick = (left: number) => {
       if (!guard.isCurrent(gen)) return;
       if (left <= 0) {
-        openSingWindow(gen, response);
+        void openSingWindow(gen, response);
         return;
       }
       playTick();
@@ -195,7 +206,7 @@ export function useEarTrainingSession() {
     const step = (k: number) => {
       if (!guard.isCurrent(gen)) return;
       if (k <= 0) {
-        openSingWindow(gen, response);
+        void openSingWindow(gen, response);
         return;
       }
       playTick();
@@ -205,7 +216,12 @@ export function useEarTrainingSession() {
     step(response.countdownSec);
   }
 
-  function openSingWindow(gen: number, response: SingResponse) {
+  async function openSingWindow(gen: number, response: SingResponse) {
+    // Reacquire the mic (released during prompt playback for louder audio)
+    if (!leaseRef.current) {
+      await ensureMic(gen);
+      if (!guard.isCurrent(gen)) return;
+    }
     capture.begin();
     listeningRef.current = true;
     micActive.value = true;
@@ -254,7 +270,7 @@ export function useEarTrainingSession() {
     // re-verified every round: an OS interruption between rounds can suspend
     // the context, and listening-only sessions have no mic engine to revive it
     try {
-      await ensurePlaybackReady({ micHeld: leaseRef.current !== null });
+      await ensurePlaybackReady({ micHeld: false });
     } catch (err) {
       if (guard.isCurrent(gen)) failSession(friendlyStartupMessage(err));
       return;
@@ -293,6 +309,12 @@ export function useEarTrainingSession() {
         .addSession(buildEarSessionRecord(def, difficultyRef.current, roundsRef.current, newResults, summary));
     }
     setStore({ phase: 'completed', summary });
+    track('session_completed', {
+      exercise: def?.id ?? null,
+      score: summary.overall,
+      rounds: summary.totalRounds,
+      correct_rounds: summary.correctRounds,
+    });
   }
 
   /* ---------------------------- controls --------------------------- */
@@ -319,17 +341,17 @@ export function useEarTrainingSession() {
       totalRounds: def.rounds,
       ...(resume ? { round: resume.completedRounds, results: resume.results } : {}),
     });
+    track('session_started', { exercise: def.id, difficulty: difficultyRef.current, rounds: def.rounds });
 
     try {
-      if (def.needsMic) {
-        await ensureMic(gen);
-      } else {
+      if (!def.needsMic) {
         // listening-only exercise: hand the hardware back
         await releaseLease();
       }
       if (!guard.isCurrent(gen)) return;
-      // a round must never begin without working audio output
-      await ensurePlaybackReady({ micHeld: def.needsMic });
+      // Mic exercises acquire the mic just before the sing window, not upfront,
+      // so the prompt plays under the louder `playback` audio session category.
+      await ensurePlaybackReady({ micHeld: false });
     } catch (err) {
       if (!guard.isCurrent(gen)) return;
       failSession(friendlyStartupMessage(err));
@@ -376,6 +398,20 @@ export function useEarTrainingSession() {
       const gen = freshGeneration();
       player.cancel();
       showRoundResult(gen, response.evaluate(optionId));
+    },
+
+    /** skip the round-result timer and immediately advance to the next round (or complete) */
+    next() {
+      const { phase } = useEarTrainingStore.getState();
+      if (phase !== 'round-result') return;
+      const def = defRef.current;
+      if (!def) return;
+      const gen = freshGeneration();
+      if (useEarTrainingStore.getState().round >= def.rounds) {
+        completeSession();
+      } else {
+        void runRound(gen);
+      }
     },
 
     /** play the correct answer (results screens); index defaults to the latest round */

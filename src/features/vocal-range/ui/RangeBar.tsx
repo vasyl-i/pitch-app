@@ -47,13 +47,13 @@ export function RangeBar({
       </View>
 
       <View style={styles.labels}>
-        <AppText variant="caption" style={{ fontSize: 10 }}>
+        <AppText variant="caption" style={{ fontSize: 12 }}>
           {midiToName(floor)}
         </AppText>
         <AppText variant="label" color={palette.accent} style={{ fontSize: 15 }}>
           {lowMidi !== null && highMidi !== null ? `${midiToName(lowMidi)} – ${midiToName(highMidi)}` : '—'}
         </AppText>
-        <AppText variant="caption" style={{ fontSize: 10 }}>
+        <AppText variant="caption" style={{ fontSize: 12 }}>
           {midiToName(ceiling)}
         </AppText>
       </View>

@@ -107,7 +107,7 @@ export function TodayScreen({ navigation }: HomeScreenProps<'Today'>) {
                                 <AppText
                                     variant="caption"
                                     color="#F0943A"
-                                    style={{ fontSize: 11, fontFamily: typography.family.medium }}
+                                    style={{ fontSize: 12, fontFamily: typography.family.medium }}
                                 >
                                     Trial ends tomorrow
                                 </AppText>

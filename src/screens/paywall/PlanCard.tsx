@@ -60,7 +60,7 @@ export function PlanCard({ plan, selected, showTrial, onSelect }: PlanCardProps)
                   </AppText>
                   {savings && (
                     <View style={[styles.savings, { backgroundColor: 'rgba(200, 218, 89, 0.16)' }]}>
-                      <AppText variant="caption" color={palette.accent} style={{ fontSize: 10, fontWeight: '600' }}>
+                      <AppText variant="caption" color={palette.accent} style={{ fontSize: 12, fontWeight: '600' }}>
                         {savings}
                       </AppText>
                     </View>
@@ -92,7 +92,7 @@ export function PlanCard({ plan, selected, showTrial, onSelect }: PlanCardProps)
 const styles = StyleSheet.create({
   wrapper: { position: 'relative' },
   ribbon: { position: 'absolute', top: -10, right: 16, paddingHorizontal: 10, paddingVertical: 3 },
-  ribbonText: { fontSize: 9, letterSpacing: 0.8, fontWeight: '700' },
+  ribbonText: { fontSize: 12, letterSpacing: 0.8, fontWeight: '700' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   radioDot: { width: 10, height: 10, borderRadius: 5 },

@@ -190,7 +190,7 @@ export function StaffView({ exercise, rate }: { exercise: Exercise; rate: number
                     {VERDICT_GLYPH[done.verdict]}
                   </AppText>
                 )}
-                <AppText variant="caption" style={{ fontSize: 10 }}>
+                <AppText variant="caption" style={{ fontSize: 12 }}>
                   {n.lyric ?? noteName(n.midi)}
                 </AppText>
               </View>

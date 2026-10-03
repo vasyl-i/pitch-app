@@ -1,0 +1,23 @@
+{
+  "project_info": {
+    "project_number": "82746638442",
+    "project_id": "pitchgym-anya",
+    "storage_bucket": "pitchgym-anya.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:82746638442:android:placeholder",
+        "android_client_info": {
+          "package_name": "app.anya.eargym"
+        }
+      },
+      "api_key": [
+        {
+          "current_key": "AIzaSyAsA784aM3VPCznAkKVj41orqS5KCdXzWo"
+        }
+      ]
+    }
+  ],
+  "configuration_version": "1"
+}
