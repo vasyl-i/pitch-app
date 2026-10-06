@@ -98,6 +98,9 @@ export type RootStackParamList = {
   RedetectHigh: { low: DetectionResult };
   RedetectResults: { low: DetectionResult; high: DetectionResult };
   NewPassword: { requireOldPassword?: boolean } | undefined;
+  DevMenu: undefined;
+  DevCheckEmail: { email: string; password: string };
+  DevMicCalibration: undefined;
 };
 
 /** Auth screens shown before the user is signed in. */

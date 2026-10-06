@@ -3,7 +3,7 @@
  * your streak, and one exit back Home. No decisions, just the win.
  */
 import { useMemo } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Image, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLessonSessionStore } from '@/features/learning';
 import { currentStreak, formatPracticeTime, localDayKey, useProgressStore } from '@/features/progress';
@@ -27,11 +27,11 @@ export function PracticeCompleteScreen({ navigation }: RootScreenProps<'Practice
   return (
     <Screen>
       <View style={styles.center}>
-        <Ionicons name="checkmark-circle" size={64} color={palette.accent} />
-        <AppText variant="title" style={{ fontSize: 26, marginTop: spacing.lg, textAlign: 'center' }}>
-          That’s today’s practice
+        <Image source={require('../../../assets/practice-complete.png')} />
+        <AppText variant="title" style={{ fontSize: 40, marginTop: 20, textAlign: 'center' }}>
+          You did it!
         </AppText>
-        <AppText variant="body" style={{ marginTop: spacing.sm, textAlign: 'center' }}>
+        <AppText variant="body" gradient style={{ fontSize: 20, marginTop: spacing.lg, textAlign: 'center', paddingHorizontal: 24 }}>
           {steps.length} steps done. Showing up is the whole secret — see you tomorrow.
         </AppText>
 
@@ -58,13 +58,14 @@ export function PracticeCompleteScreen({ navigation }: RootScreenProps<'Practice
 }
 
 function Tile({ icon, value, label }: { icon: keyof typeof Ionicons.glyphMap; value: string; label: string }) {
+  const { palette, spacing } = useTheme();
   return (
     <Card style={styles.tile}>
-      <IconBubble name={icon} size={32} iconSize={14} />
-      <AppText variant="label" style={{ fontSize: 18, marginTop: 6 }}>
+      <IconBubble name={icon} size={28} iconSize={14} />
+      <AppText variant="title" style={{ fontSize: 32, lineHeight: 38, marginTop: spacing.sm }}>
         {value}
       </AppText>
-      <AppText variant="caption" style={{ fontSize: 12 }}>
+      <AppText variant="caption" color={palette.textSecondary} style={{ fontSize: 13, lineHeight: 16, marginTop: 2 }}>
         {label}
       </AppText>
     </Card>
@@ -74,5 +75,5 @@ function Tile({ icon, value, label }: { icon: keyof typeof Ionicons.glyphMap; va
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   tiles: { flexDirection: 'row', gap: 10 },
-  tile: { flex: 1, padding: 14, alignItems: 'flex-start' },
+  tile: { flex: 1, padding: 16, alignItems: 'flex-start', justifyContent: 'flex-start' },
 });

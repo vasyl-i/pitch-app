@@ -4,8 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { hapticWarning } from '@/shared/audio';
 import { AppText, Button } from '@/shared/ui';
-import { useTheme } from '@/shared/theme';
-import { useMicCalibration } from '../lib/calibration';
+import { typography, useTheme } from '@/shared/theme';
+import { useMicCalibration, type CalibrationStatus } from '../lib/calibration';
 import { AudioManager } from 'react-native-audio-api';
 
 const NOTE_ICON = require('../../../../assets/onboarding/note.png');
@@ -15,7 +15,7 @@ const COPY: Record<string, { title: string; body: string }> = {
   'listen-quiet': { title: 'Give us a second of quiet…', body: 'Stay still — we’re measuring the room.' },
   'listen-level': { title: 'Now hum any note', body: 'Comfortably loud, like you would when practicing.' },
   'too-noisy': { title: 'This space is a little noisy', body: 'Find somewhere quieter, or move away from fans and traffic, then try again.' },
-  'too-quiet': { title: 'We’re barely picking up your voice', body: 'Move closer to the microphone, or check that it isn’t muted, then try again.' },
+  'too-quiet': { title: 'We barely picking up your voice', body: 'Move closer to the microphone, or check that it isn’t muted, then try again.' },
   error: { title: 'Couldn’t reach the microphone', body: 'Something went wrong starting the recorder.' },
 };
 
@@ -26,9 +26,16 @@ const COPY: Record<string, { title: string; body: string }> = {
  * but catching "the room is too loud" or "the mic is basically off" up front
  * avoids a frustrating detection attempt that was doomed from the start.
  */
-export function MicCalibrationGate({ children }: PropsWithChildren) {
+export interface MicCalibrationGateProps extends PropsWithChildren {
+  /** DEV ONLY: override the calibration status to preview specific states */
+  __devStatusOverride?: CalibrationStatus;
+}
+
+export function MicCalibrationGate({ children, __devStatusOverride }: MicCalibrationGateProps) {
   const { palette, spacing, radii, gradient } = useTheme();
-  const { status, errorMessage, level, retry } = useMicCalibration();
+  const calibration = useMicCalibration({ skip: !!__devStatusOverride });
+  const status = __devStatusOverride ?? calibration.status;
+  const { errorMessage, level, retry } = calibration;
 
   useEffect(() => {
     if (status === 'too-noisy' || status === 'too-quiet' || status === 'error' || status === 'permission-denied') {
@@ -65,12 +72,12 @@ export function MicCalibrationGate({ children }: PropsWithChildren) {
       {isHumming ? (
         <Image source={NOTE_ICON} style={styles.noteIcon} resizeMode="contain" />
       ) : (
-        <Ionicons name={warning ? 'warning-outline' : 'mic-outline'} size={36} color={warning ? palette.warning : palette.accent} />
+        <Image source={require('./../../../../assets/mic-no-sound.png')} style={{ width: 118, height: 118 }} />
       )}
-      <AppText variant="title" style={{ marginTop: spacing.xl, textAlign: 'center', fontSize: 22 }}>
+      <AppText variant="title" gradient style={{ textAlign: 'center', fontSize: 40, fontFamily: typography.family.bold, lineHeight: 40 }}>
         {copy.title}
       </AppText>
-      <AppText variant="body" style={{ marginTop: spacing.sm, textAlign: 'center' }}>
+      <AppText variant="body" color={palette.textSecondaryElevated} style={{ fontSize: 20, marginTop: spacing.sm, textAlign: 'center' }}>
         {copy.body}
       </AppText>
 
@@ -92,7 +99,7 @@ export function MicCalibrationGate({ children }: PropsWithChildren) {
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, gap: 24 },
   noteIcon: { width: 64, height: 64 },
   meterTrack: { width: '100%', height: 10, overflow: 'hidden' },
   meterFill: { height: '100%' },

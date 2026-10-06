@@ -16,7 +16,7 @@ import { PaywallScreen } from '@/screens/paywall';
 import { WeakSpotsScreen } from '@/screens/weak-spots';
 import { ManageSubscriptionScreen } from '@/screens/subscription';
 import { StaffPracticeScreen } from '@/screens/staff-practice';
-import { NewPasswordScreen } from '@/screens/auth';
+import { NewPasswordScreen, CheckEmailScreen } from '@/screens/auth';
 import { VocalRangeSettingsScreen, RedetectLowScreen, RedetectHighScreen, RedetectResultsScreen } from '@/screens/vocal-range';
 import { WelcomeScreen, LowestNoteScreen, HighestNoteScreen, ResultsScreen, GoalsScreen, PracticeRhythmScreen, ReminderOnboardingScreen } from '@/screens/onboarding';
 import { useProfileStore } from '@/entities/profile';
@@ -34,6 +34,9 @@ import type {
   SingStackParamList,
 } from './types';
 import { VocalRangeStartScreen } from '@/screens/onboarding/VocalRangeStartScreen';
+// @ts-ignore — dev-only screens, may not exist in prod builds
+const DevMenuScreen = __DEV__ ? require('@/screens/dev/DevMenuScreen').DevMenuScreen : null;
+const DevMicCalibrationScreen = __DEV__ ? require('@/screens/dev/DevMicCalibrationScreen').DevMicCalibrationScreen : null;
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -248,6 +251,13 @@ export function RootNavigator() {
       <RootStack.Screen name="RedetectHigh" component={RedetectHighScreen} />
       <RootStack.Screen name="RedetectResults" component={RedetectResultsScreen} />
       <RootStack.Screen name="NewPassword" component={NewPasswordScreen} options={{ presentation: 'modal' }} />
+      {__DEV__ && DevMenuScreen && (
+        <>
+          <RootStack.Screen name="DevMenu" component={DevMenuScreen} options={{ presentation: 'modal' }} />
+          <RootStack.Screen name="DevCheckEmail" component={CheckEmailScreen} />
+          <RootStack.Screen name="DevMicCalibration" component={DevMicCalibrationScreen} />
+        </>
+      )}
     </RootStack.Navigator>
   );
 }

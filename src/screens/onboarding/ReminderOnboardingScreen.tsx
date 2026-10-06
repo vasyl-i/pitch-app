@@ -16,7 +16,7 @@ import { AppText, BackButton, Button, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
 import type { OnboardingScreenProps } from '@/app/navigation/types';
 
-const BELL_IMAGE = require('../../../assets/notifications.png');
+const BELL_IMAGE = require('../../../assets/notification-bell.png');
 
 export function ReminderOnboardingScreen({ navigation }: OnboardingScreenProps<'Reminder'>) {
   const { palette, spacing, typography } = useTheme();
@@ -67,14 +67,14 @@ export function ReminderOnboardingScreen({ navigation }: OnboardingScreenProps<'
           <Image source={BELL_IMAGE} style={styles.bellImage} resizeMode="contain" />
           <AppText
             variant="title"
-            style={{ fontSize: 40, textAlign: 'center', fontFamily: typography.family.bold, marginTop: spacing.lg }}
+            style={{ fontSize: 40, textAlign: 'center', fontFamily: typography.family.bold, marginTop: 20 }}
           >
             Daily reminder
           </AppText>
           <AppText
             variant="body"
-            color={palette.textPrimary}
-            style={{ textAlign: 'center', marginTop: spacing.sm, fontSize: 20 }}
+            gradient
+            style={{ textAlign: 'center', marginTop: spacing.lg, fontSize: 20 }}
           >
             Get notifications to speed up your{'\n'}progress.
           </AppText>
@@ -128,8 +128,8 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
   bellImage: {
-    width: 100,
-    height: 100,
+    width: 118,
+    height: 118,
   },
   pickerSection: {
     alignItems: 'center',

@@ -2,7 +2,7 @@
  * Home: the dashboard — overall progress, today's exercise plan,
  * and the primary entry point into daily practice.
  */
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -56,6 +56,21 @@ export function TodayScreen({ navigation }: HomeScreenProps<'Today'>) {
     const allDone = planReady && steps.length > 0 && doneCount === steps.length;
     const skipRedoWarning = prefs?.skipRedoWarning ?? false;
 
+    // DEV: triple-tap heading to open DevMenu
+    const devTapRef = useRef({ count: 0, lastTap: 0 });
+    const handleDevTap = __DEV__
+        ? () => {
+              const now = Date.now();
+              if (now - devTapRef.current.lastTap > 500) devTapRef.current.count = 0;
+              devTapRef.current.lastTap = now;
+              devTapRef.current.count += 1;
+              if (devTapRef.current.count >= 3) {
+                  devTapRef.current.count = 0;
+                  navigation.navigate('DevMenu' as never);
+              }
+          }
+        : undefined;
+
     const handleStepPress = useCallback(
         (step: GuidedStep) => {
             const isCompleted = completedSlots.includes(step.slot);
@@ -92,12 +107,14 @@ export function TodayScreen({ navigation }: HomeScreenProps<'Today'>) {
                 <ScrollView showsVerticalScrollIndicator={false}
                             contentContainerStyle={{ paddingBottom: tabBarClearance }}>
                     <View style={styles.headingRow}>
-                        <AppText
-                            color={palette.textPrimary}
-                            style={[styles.heading, { fontFamily: typography.family.bold, flex: 1 }]}
-                        >
-                            Let’s practice 🎧️️
-                        </AppText>
+                        <Pressable onPress={handleDevTap} style={{ flex: 1 }}>
+                            <AppText
+                                color={palette.textPrimary}
+                                style={[styles.heading, { fontFamily: typography.family.bold }]}
+                            >
+                                Let’s practice 🎧️️
+                            </AppText>
+                        </Pressable>
                         {trialDaysLeft !== null && trialDaysLeft <= 1 && (
                             <Pressable
                                 onPress={() => navigation.navigate('ManageSubscription' as never)}

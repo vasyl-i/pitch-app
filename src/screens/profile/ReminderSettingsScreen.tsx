@@ -15,7 +15,7 @@ import { AppText, BackButton, Button, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
 import type { RootScreenProps } from '@/app/navigation/types';
 
-const BELL_IMAGE = require('../../../assets/notifications.png');
+const BELL_IMAGE = require('../../../assets/notification-bell.png');
 
 export function ReminderSettingsScreen({ navigation }: RootScreenProps<'ReminderSettings'>) {
   const { palette, spacing, typography } = useTheme();

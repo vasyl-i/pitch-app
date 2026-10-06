@@ -39,7 +39,7 @@ export interface CalibrationState {
   retry: () => void;
 }
 
-export function useMicCalibration(): CalibrationState {
+export function useMicCalibration(opts?: { skip?: boolean }): CalibrationState {
   const [status, setStatus] = useState<CalibrationStatus>('initial');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [level, setLevel] = useState(0);
@@ -119,6 +119,7 @@ export function useMicCalibration(): CalibrationState {
   };
 
   useEffect(() => {
+    if (opts?.skip) return;
     if (!recordingPermissionStatus) {
       void checkPermissions().then(() => {
         setTimeout(() => {

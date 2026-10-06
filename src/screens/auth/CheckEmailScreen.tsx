@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
-import { AppState, Pressable, StyleSheet, View } from 'react-native';
+import { AppState, Pressable, Image, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { AppText, Screen } from '@/shared/ui';
-import { useTheme } from '@/shared/theme';
+import { AppText, BackButton, Button, Screen } from '@/shared/ui';
+import { typography, useTheme } from '@/shared/theme';
 import { supabase } from '@/shared/lib/supabase';
 import type { AuthScreenProps } from '@/app/navigation/types';
 
@@ -47,53 +47,58 @@ export function CheckEmailScreen({ navigation, route }: AuthScreenProps<'CheckEm
 
     return (
         <Screen>
+            <View style={{ paddingBottom: 16 }}>
+                <BackButton onPress={() => navigation.popToTop()} />
+            </View>
             <View style={styles.content}>
                 <View style={styles.hero}>
-                    <View style={[styles.iconCircle, { backgroundColor: palette.surface }]}>
-                        <Ionicons name="mail-open" size={48} color={palette.accent} />
+                    <View style={styles.iconCircle}>
+                        <Image source={require('../../../assets/email-solid.png')}/>
                     </View>
-                    <AppText variant="title" style={{ fontSize: 26, textAlign: 'center' }}>
+                    <AppText variant="title" gradient style={{ fontSize: 40, textAlign: 'center' }}>
                         Check your email
                     </AppText>
-                    <AppText
-                        variant="body"
-                        style={{ textAlign: 'center', color: palette.textSecondary, lineHeight: 22 }}
-                    >
-                        We sent a confirmation link to{'\n'}
-                        <AppText variant="body" style={{ color: palette.textPrimary }}>
+                    <View style={{
+                        alignItems: 'center',
+                        gap: 10,
+                    }}>
+                        <AppText
+                            variant="body"
+                            style={{
+                                fontSize: 20,
+                                color: palette.textSecondaryElevated,
+                            }}
+                        >
+                            We sent a confirmation link to</AppText>
+                        <AppText variant="body"
+                                 style={{
+                                     fontSize: 20,
+                                     color: palette.textPrimary,
+                                     fontFamily: typography.family.bold
+                                 }}>
                             {email}
                         </AppText>
-                        {'\n'}Tap the link to activate your account.
-                    </AppText>
+                        <AppText variant="body"
+                                 style={{
+                                     fontSize: 20,
+                                     color: palette.textSecondaryElevated,
+                                 }}>
+                            Tap the link to activate your account.
+                        </AppText>
+                    </View>
                 </View>
-                <Pressable
-                    accessibilityRole="button"
-                    onPress={() => navigation.popToTop()}
-                    style={({ pressed }) => [
-                        styles.button,
-                        {
-                            borderRadius: radii.pill,
-                            backgroundColor: palette.surface,
-                        },
-                        pressed && { opacity: 0.8 },
-                    ]}
-                >
-                    <AppText variant="label" color={palette.textPrimary}>
-                        Back to sign in
-                    </AppText>
-                </Pressable>
+                <Button onPress={() => navigation.popToTop()} variant="ghost" title={"Back to sign in"} />
             </View>
         </Screen>
     );
 }
 
 const styles = StyleSheet.create({
-    content: { flex: 1, justifyContent: 'center', gap: 32 },
+    content: { flex: 1, justifyContent: 'center', gap: 40 },
     hero: { alignItems: 'center', gap: 16 },
     iconCircle: {
-        width: 96,
-        height: 96,
-        borderRadius: 48,
+        width: 118,
+        height: 118,
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 8,

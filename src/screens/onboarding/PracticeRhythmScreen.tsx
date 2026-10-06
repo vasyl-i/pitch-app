@@ -12,7 +12,7 @@ import { AppText, BackButton, Button, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
 import type { OnboardingScreenProps } from '@/app/navigation/types';
 
-const CLOCK_IMAGE = require('../../../assets/time.png');
+const CLOCK_IMAGE = require('../../../assets/hourglass.png');
 
 const OPTIONS: { value: DailyMinutes; label: string }[] = [
   { value: 5, label: '5 min' },
@@ -45,19 +45,19 @@ export function PracticeRhythmScreen({ navigation }: OnboardingScreenProps<'Prac
           <Image source={CLOCK_IMAGE} style={styles.clockImage} resizeMode="contain" />
           <AppText
             variant="title"
-            style={{ fontSize: 30, textAlign: 'center', fontFamily: typography.family.bold, marginTop: spacing.lg }}
+            style={{ fontSize: 40, textAlign: 'center', fontFamily: typography.family.bold, marginTop: 20, lineHeight: 40 }}
           >
             Set your practice{'\n'}rhythm
           </AppText>
           <AppText
             variant="body"
-            color={palette.textSecondary}
-            style={{ textAlign: 'center', marginTop: spacing.sm, fontSize: 16 }}
+            gradient
+            style={{ textAlign: 'center', marginTop: spacing.lg, fontSize: 20 }}
           >
             Even 5 minutes can bring you closer{'\n'}to better pitch.
           </AppText>
 
-          <View style={[styles.pills, { marginTop: spacing.xxl }]}>
+          <View style={[styles.pills, { marginTop: 58 }]}>
             {OPTIONS.map((opt) => {
               const active = selected === opt.value;
               return (
@@ -67,7 +67,7 @@ export function PracticeRhythmScreen({ navigation }: OnboardingScreenProps<'Prac
                   style={[
                     styles.pill,
                     {
-                      backgroundColor: active ? palette.accent : palette.surface,
+                      backgroundColor: active ? palette.white : palette.surface,
                     },
                   ]}
                 >
@@ -75,7 +75,7 @@ export function PracticeRhythmScreen({ navigation }: OnboardingScreenProps<'Prac
                     variant="body"
                     style={{
                       fontFamily: typography.family.medium,
-                      fontSize: 16,
+                      fontSize: 20,
                       color: active ? '#000000' : palette.textPrimary,
                     }}
                   >
@@ -112,11 +112,11 @@ const styles = StyleSheet.create({
   },
   pills: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 24,
   },
   pill: {
     paddingHorizontal: 24,
-    paddingVertical: 12,
+    paddingVertical: 10,
     borderRadius: 999,
   },
 });
