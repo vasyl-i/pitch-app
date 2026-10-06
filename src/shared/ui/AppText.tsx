@@ -1,4 +1,4 @@
-import { Text, type TextProps, type TextStyle } from 'react-native';
+import { StyleSheet, Text, type TextProps, type TextStyle } from 'react-native';
 import MaskedView from '@react-native-masked-view/masked-view';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '@/shared/theme';
@@ -67,7 +67,8 @@ export function AppText({ variant = 'body', color, gradient, style, ...rest }: A
     return (
       <MaskedView maskElement={textElement}>
         <LinearGradient
-          colors={['#FFFFFF', 'rgba(255, 255, 255, 0.7)']}
+          colors={['#FFFFFF', '#FFFFFF', 'rgba(255, 255, 255, 0.7)']}
+          locations={[0, 0.6, 1]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
         >

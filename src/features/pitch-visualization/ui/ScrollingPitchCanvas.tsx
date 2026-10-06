@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Canvas, Circle, Group, Line, Path, Rect, RoundedRect, Skia, Text as SkiaText, useFont, useClock, vec } from '@shopify/react-native-skia';
+import { Blur, Canvas, Circle, Group, Line, Paint, Path, Rect, RoundedRect, Skia, Text as SkiaText, useFont, useClock, vec } from '@shopify/react-native-skia';
 import { useDerivedValue, useSharedValue } from 'react-native-reanimated';
 import { colorForCents, midiToName, NOTICEABLE_CENTS, PERFECT_CENTS, SLIGHT_CENTS } from '@/shared/lib/music';
 import { useStabilizedNote } from '../lib/useStabilizedNote';
@@ -35,6 +35,8 @@ interface ScrollingPitchCanvasProps {
   targets?: { start: number; duration: number; midi: number }[];
   rate?: number;
   trailColor?: string;
+  /** Live frequency in Hz — shown beside the note label when provided. */
+  liveFrequency?: number | null;
   /** Show a vertical playback-position line on the left side of the canvas. */
   showPlayhead?: boolean;
   /** Show note name labels on each target note block. */
@@ -66,6 +68,7 @@ export function ScrollingPitchCanvas({
   targets,
   rate = 1,
   trailColor,
+  liveFrequency,
   showPlayhead = false,
   showNoteLabels = false,
 }: ScrollingPitchCanvasProps) {
@@ -141,7 +144,7 @@ export function ScrollingPitchCanvas({
   const contentHeight = size.height;
   const semiH = contentHeight / VISIBLE_SEMITONES;
   const W = size.width;
-  const dotX = W * (showPlayhead ? 0.25 : 0.8);
+  const dotX = W * (showPlayhead ? 0.25 : 0.5);
   const pxPerSec = W > 0 ? W / visibleSeconds : 1;
 
   const yOfMidi = (midi: number) => {
@@ -330,20 +333,30 @@ export function ScrollingPitchCanvas({
   }, [liveMidi, liveCents, contentHeight, W, yCenter, semiH, dotX, trailColor]);
 
   const shownNote = useStabilizedNote(liveMidi);
-  const noteColor = trailColor ?? colorForCents(liveCents);
-  const noteFont = useFont(require('../../../../assets/fonts/Satoshi-Medium.ttf'), 14);
+  const noteFont = useFont(require('../../../../assets/fonts/Satoshi-Medium.ttf'), 16);
+  const hzFont = useFont(require('../../../../assets/fonts/Satoshi-Regular.ttf'), 12);
 
   const noteLabel = useMemo(() => {
     if (shownNote === null || !liveHead || !noteFont) return null;
     const text = midiToName(shownNote, 'ascii');
-    const measured = noteFont.measureText(text);
+    const gap = 16; // space between dot and label
+    const noteX = liveHead.x + gap;
+    // Vertically center the label on the dot
+    const noteY = liveHead.y + 5;
+    return { text, x: noteX, y: noteY };
+  }, [shownNote, liveHead, noteFont]);
+
+  const hzLabel = useMemo(() => {
+    if (!noteLabel || !noteFont || !hzFont || !liveFrequency) return null;
+    const noteMeasured = noteFont.measureText(noteLabel.text);
+    const hzText = `${Math.round(liveFrequency)} hz`;
+    const spacing = 6;
     return {
-      text,
-      x: liveHead.x - measured.width / 2,
-      y: Math.max(16, liveHead.y - 18),
-      color: noteColor,
+      text: hzText,
+      x: noteLabel.x + noteMeasured.width + spacing,
+      y: noteLabel.y,
     };
-  }, [shownNote, liveHead, noteFont, noteColor]);
+  }, [noteLabel, noteFont, hzFont, liveFrequency]);
 
   return (
     <View style={styles.container} onLayout={handleLayout}>
@@ -427,12 +440,21 @@ export function ScrollingPitchCanvas({
           {/* live head — glowing dot (fixed at dotX, not scrolling) */}
           {liveHead && (
             <>
-              <Circle cx={liveHead.x} cy={liveHead.y} r={24} color={liveHead.color} opacity={0.06} />
-              <Circle cx={liveHead.x} cy={liveHead.y} r={18} color={liveHead.color} opacity={0.10} />
-              <Circle cx={liveHead.x} cy={liveHead.y} r={12} color={liveHead.color} opacity={0.20} />
-              <Circle cx={liveHead.x} cy={liveHead.y} r={7} color={liveHead.color} opacity={0.45} />
-              <Circle cx={liveHead.x} cy={liveHead.y} r={4.5} color="#ffffff" opacity={0.9} />
-              <Circle cx={liveHead.x} cy={liveHead.y} r={3} color="#ffffff" />
+              {/* Soft outer glow */}
+              <Group layer={<Paint><Blur blur={10} /></Paint>}>
+                <Circle cx={liveHead.x} cy={liveHead.y} r={16} color={liveHead.color} opacity={0.4} />
+              </Group>
+              {/* Mid glow ring */}
+              <Group layer={<Paint><Blur blur={5} /></Paint>}>
+                <Circle cx={liveHead.x} cy={liveHead.y} r={11} color={liveHead.color} opacity={0.5} />
+              </Group>
+              {/* Colored core */}
+              <Circle cx={liveHead.x} cy={liveHead.y} r={10} color={liveHead.color} opacity={0.85} />
+              {/* Warm white transition ring */}
+              <Circle cx={liveHead.x} cy={liveHead.y} r={7.5} color={liveHead.color} opacity={0.5} />
+              <Circle cx={liveHead.x} cy={liveHead.y} r={7.5} color="#ffffff" opacity={0.5} />
+              {/* Bright white center */}
+              <Circle cx={liveHead.x} cy={liveHead.y} r={5} color="#ffffff" opacity={0.95} />
             </>
           )}
 
@@ -442,7 +464,16 @@ export function ScrollingPitchCanvas({
               y={noteLabel.y}
               text={noteLabel.text}
               font={noteFont}
-              color={noteLabel.color}
+              color="#EEFF88"
+            />
+          )}
+          {hzLabel && hzFont && (
+            <SkiaText
+              x={hzLabel.x}
+              y={hzLabel.y}
+              text={hzLabel.text}
+              font={hzFont}
+              color="#F0F0F0"
             />
           )}
         </Canvas>

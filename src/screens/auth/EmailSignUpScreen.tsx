@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { BlurView } from 'expo-blur';
+import { AmpMaskView } from '@amplitude/plugin-session-replay-react-native';
 import { AppText, BackButton, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
 import { useAuthStore } from '@/features/auth';
@@ -36,6 +37,7 @@ export function EmailSignUpScreen({ navigation, route }: AuthScreenProps<'EmailS
 
     return (
         <Screen dismissKeyboard avoidKeyboard>
+          <AmpMaskView mask="amp-block" style={{ flex: 1 }}>
             <BackButton onPress={() => navigation.goBack()} />
             <View style={styles.content}>
                 <View style={styles.header}>
@@ -110,6 +112,7 @@ export function EmailSignUpScreen({ navigation, route }: AuthScreenProps<'EmailS
                     </AppText>
                 </Pressable>
             </View>
+          </AmpMaskView>
         </Screen>
     );
 }

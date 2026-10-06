@@ -12,6 +12,7 @@
  */
 import { AppState, Platform, type AppStateStatus } from 'react-native';
 import * as amplitude from '@amplitude/analytics-react-native';
+import { SessionReplayPlugin } from '@amplitude/plugin-session-replay-react-native';
 import { setMonetizationSink } from '@/features/subscription/lib/analytics';
 
 const API_KEY = '18679ad187e9ca5839b5934eea0b5feb';
@@ -41,6 +42,14 @@ export function initAnalytics(): void {
         ipAddress: false,
       },
     });
+
+    const sessionReplay = new SessionReplayPlugin({
+      sampleRate: 0.1,
+      privacyConfig: {
+        maskLevel: 'medium',
+      },
+    });
+    amplitude.add(sessionReplay);
   } catch {
     // Amplitude init failed — continue without it
   }

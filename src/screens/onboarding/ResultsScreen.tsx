@@ -29,10 +29,10 @@ export function ResultsScreen({ navigation, route }: OnboardingScreenProps<'Resu
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
         <View style={{ flex: 1, paddingBottom: insets.bottom + spacing.lg }}>
 
-        <AppText variant="title" style={{ fontSize: 40, textAlign: 'center', marginTop: spacing.lg }}>
+        <AppText variant="title" style={{ fontSize: 40, lineHeight: 46, textAlign: "center", marginTop: spacing.lg, paddingBottom: 4 }}>
           You’ve found your range!
         </AppText>
-        <AppText gradient style={{ fontSize: 20, textAlign: 'center', marginTop: spacing.sm }}>
+        <AppText gradient style={{ fontSize: 20, textAlign: 'center', marginTop: spacing.sm, paddingHorizontal: spacing.xl }}>
           Every exercise from here will fit your voice.
         </AppText>
 

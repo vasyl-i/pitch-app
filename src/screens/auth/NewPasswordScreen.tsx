@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
+import { AmpMaskView } from '@amplitude/plugin-session-replay-react-native';
 import { AppText, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
 import { supabase } from '@/shared/lib/supabase';
@@ -42,6 +43,7 @@ export function NewPasswordScreen({ navigation, route }: RootScreenProps<'NewPas
 
     return (
         <Screen dismissKeyboard avoidKeyboard>
+          <AmpMaskView mask="amp-block" style={{ flex: 1 }}>
             <View style={styles.content}>
                 <View style={styles.hero}>
                     <View style={[styles.iconCircle, { backgroundColor: palette.surface }]}>
@@ -130,6 +132,7 @@ export function NewPasswordScreen({ navigation, route }: RootScreenProps<'NewPas
                     </AppText>
                 </Pressable>
             </View>
+          </AmpMaskView>
         </Screen>
     );
 }
