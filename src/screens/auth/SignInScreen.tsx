@@ -130,7 +130,16 @@ export function SignInScreen() {
                     </Pressable>
                     <View style={styles.noSignInTextContainer}>
                         <Text style={styles.noSignInText}>{'Want to try first? '}</Text>
-                        <Pressable onPress={continueAsGuest} style={styles.clickableTextContainer}>
+                        <Pressable onPress={() => {
+                            Alert.alert(
+                              'Continue without account?',
+                              'Your practice progress won\'t be saved and you won\'t be able to access Premium features. You can always sign in later from Settings.',
+                              [
+                                { text: 'Go back', style: 'cancel' },
+                                { text: 'Continue', onPress: continueAsGuest },
+                              ],
+                            );
+                        }} style={styles.clickableTextContainer}>
                             <Text style={styles.noSignInTextClickable}>{'Proceed without account'}</Text>
                         </Pressable>
                     </View>

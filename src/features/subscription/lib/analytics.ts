@@ -26,6 +26,7 @@ export type PaywallSource =
   | 'profile'
   | 'instrumental-upload'
   | 'onboarding'
+  | 'practice-complete'
   | 'unknown';
 
 export type MonetizationEvent =

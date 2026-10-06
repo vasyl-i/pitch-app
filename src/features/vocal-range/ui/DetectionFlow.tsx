@@ -88,7 +88,7 @@ export function DetectionFlow({
             {errorMessage}
           </AppText>
           <View style={{ marginTop: spacing.lg, width: '100%' }}>
-            <Button title="Try again" onPress={start} />
+            <Button variant="transparent" title="Try again" onPress={start} />
           </View>
         </View>
       ) : (
@@ -137,7 +137,7 @@ export function DetectionFlow({
               <>
                 <Button
                   title="Try again"
-                  variant="ghost"
+                  variant="transparent"
                   onPress={() => { retry(); resetTrail(); }}
                 />
                 <Button
@@ -158,7 +158,7 @@ export function DetectionFlow({
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  capturedBlock: { alignItems: 'center', marginTop: 24 },
+  capturedBlock: { alignItems: 'center', marginTop: 48, marginBottom: 16 },
   canvasWrap: { height: 180 },
   holdTrack: { height: 6, overflow: 'hidden' },
   holdFill: { height: '100%' },

@@ -171,9 +171,10 @@ export function ScrollingPitchCanvas({
     const stepPx = contentHeight / GRID_ROWS;
     const stepSec = stepPx / pxPerSec;
     if (stepSec <= 0) return [];
-    // Cover a wide window (5x visible) so lines don't pop in/out between rebuilds
+    // Cover a wide window (5x visible) so lines don't pop in/out between rebuilds.
+    // Allow negative times so lines fill the canvas before playback starts.
     const centerT = vLineBucket * visibleSeconds;
-    const leftT = Math.max(0, centerT - visibleSeconds * 2.5);
+    const leftT = centerT - visibleSeconds * 2.5;
     const rightT = centerT + visibleSeconds * 3.5;
     const firstT = Math.ceil(leftT / stepSec) * stepSec;
     const out: number[] = [];
@@ -344,12 +345,15 @@ export function ScrollingPitchCanvas({
             />
           )}
 
-          {/* live head (fixed at dotX, not scrolling) */}
+          {/* live head — glowing dot (fixed at dotX, not scrolling) */}
           {liveHead && (
             <>
-              <Circle cx={liveHead.x} cy={liveHead.y} r={14} color={liveHead.color} opacity={0.18} />
-              <Circle cx={liveHead.x} cy={liveHead.y} r={7} color={liveHead.color} opacity={0.5} />
-              <Circle cx={liveHead.x} cy={liveHead.y} r={4} color="#ffffff" />
+              <Circle cx={liveHead.x} cy={liveHead.y} r={24} color={liveHead.color} opacity={0.06} />
+              <Circle cx={liveHead.x} cy={liveHead.y} r={18} color={liveHead.color} opacity={0.10} />
+              <Circle cx={liveHead.x} cy={liveHead.y} r={12} color={liveHead.color} opacity={0.20} />
+              <Circle cx={liveHead.x} cy={liveHead.y} r={7} color={liveHead.color} opacity={0.45} />
+              <Circle cx={liveHead.x} cy={liveHead.y} r={4.5} color="#ffffff" opacity={0.9} />
+              <Circle cx={liveHead.x} cy={liveHead.y} r={3} color="#ffffff" />
             </>
           )}
 

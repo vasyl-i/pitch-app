@@ -105,6 +105,8 @@ export interface RunControllerOptions {
   store: RunStore;
   /** a note the singer covered well enough to inform range learning */
   onWellSungNote?(midi: number, coverage: number): void;
+  /** called before a stage begins — async so the hook can release/acquire the mic */
+  onBeforeStage?(stage: RunStage): Promise<void> | void;
   now?(): number;
 }
 
@@ -131,6 +133,7 @@ export function createRunController({
   solo,
   store,
   onWellSungNote,
+  onBeforeStage,
   now = Date.now,
 }: RunControllerOptions): RunController {
   // one evaluator per scored attempt: same engine, same exercise, two
@@ -204,7 +207,9 @@ export function createRunController({
     }, interval);
   };
 
-  const startPlaybackStage = (next: 'listen' | 'accompanied', status: StaffStatus, player: MelodyPlayer) => {
+  const startPlaybackStage = async (next: 'listen' | 'accompanied', status: StaffStatus, player: MelodyPlayer) => {
+    await onBeforeStage?.(next);
+    if (disposed) return;
     stage = next;
     store.clearStageFeedback();
     trail.length = 0;
@@ -229,7 +234,9 @@ export function createRunController({
     }, TRANSITION_MS);
   };
 
-  const beginSoloStage = () => {
+  const beginSoloStage = async () => {
+    await onBeforeStage?.('solo');
+    if (disposed) return;
     stage = 'solo';
     store.clearStageFeedback();
     trail.length = 0;

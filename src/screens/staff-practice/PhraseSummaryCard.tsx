@@ -1,10 +1,14 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Dimensions, Image, Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { starsForScore } from '@/features/progress';
 import { PremiumGate } from '@/features/subscription';
-import { AppText, Button, Card } from '@/shared/ui';
-import { useTheme } from '@/shared/theme';
+import { AppText, Button, Card, Screen } from '@/shared/ui';
+import { typography, useTheme } from '@/shared/theme';
 import type { AttemptComparison, PhraseSummary } from '@/features/staff-practice';
+import { midiToName } from '@/shared/lib/music';
+import { voiceType } from '@/entities/profile';
+
+const isSmallScreen = Dimensions.get('screen').height < 700;
 
 interface SummaryAction {
   title: string;
@@ -36,90 +40,47 @@ export function PhraseSummaryCard({
   // single source of truth — the same helper decides the stars we persist
   const stars = starsForScore(summary.score);
 
-  const stat = (label: string, value: string) => (
-    <View style={styles.stat}>
-      <AppText variant="caption">{label}</AppText>
-      <AppText variant="label" style={{ fontSize: 17 }}>
-        {value}
-      </AppText>
-    </View>
-  );
+  const isSuccess = summary.score > 70;
 
   return (
-    <View style={styles.wrap}>
-      <Card style={styles.card}>
-        <AppText variant="caption" style={{ textAlign: 'center' }}>
-          Phrase score
-        </AppText>
-        <AppText variant="display" color={palette.accent} style={styles.score}>
-          {summary.score}
-        </AppText>
-        <AppText variant="title" style={{ textAlign: 'center', fontSize: 22, letterSpacing: 4 }}>
-          {'★'.repeat(stars)}
-          <AppText variant="title" color={palette.textFaint} style={{ fontSize: 22, letterSpacing: 4 }}>
-            {'★'.repeat(3 - stars)}
-          </AppText>
-        </AppText>
-
-        <View style={styles.grid}>
-          {stat('Avg. deviation', `${Math.round(summary.avgCents)}¢`)}
-          {stat('Pitch stability', `${summary.stability}%`)}
-          {stat('Rhythm', `${summary.rhythm}%`)}
-          {stat('Longest stable', `${summary.longestStableSec.toFixed(1)}s`)}
+      <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, justifyContent: 'flex-start', alignItems: 'center', paddingTop: 80 }}>
+          <View style={styles.scoreFrame}>
+            <AppText color={palette.textSecondaryElevated} style={{ fontSize: 14, lineHeight: 16, marginBottom: 12 }}>
+              Phrase score
+            </AppText>
+            <Image
+                source={require('../../../assets/Score.png')}
+                style={isSmallScreen ? styles.scoreMascotSmall : styles.scoreMascot}
+                resizeMode="contain"
+            />
+            {isSuccess &&
+                <Image
+                    source={require('../../../assets/results-board-overlay.png')}
+                    style={styles.scoreColorOverlay}
+                    resizeMode="contain"
+                    tintColor={'rgb(200 218 89 / 0.05)'}
+                />
+            }
+            <View style={styles.scoreOverlay}>
+              <AppText color={"#EEFF88"} style={{ fontSize: 48, lineHeight: 50, fontFamily: typography.family.bold }}>
+                {`${summary.score}%`}
+              </AppText>
+              <AppText color={palette.textSecondaryElevated} style={{ fontSize: 12, lineHeight: 14 }}>
+                {`${Math.round(summary.avgCents)}¢ average off  ·  ${summary.rhythm}% rhythm`}
+              </AppText>
+            </View>
+          </View>
         </View>
 
-        {/* The comparison is measured for everyone (the free 3-stage run
-            produces both attempts); only the breakdown is Premium. The lock
-            teaser carries the singer's *real* delta, so the value on offer is
-            their own result, not a mock-up. */}
-        {comparison && (
-          <View style={[styles.compare, { borderTopColor: palette.borderSubtle }]}>
-            <PremiumGate
-              feature="attempt-comparison"
-              source="attempt-comparison"
-              fallback={(openPaywall) => (
-                <LockedComparison comparison={comparison} onPress={openPaywall} />
-              )}
-            >
-              <View style={styles.compareRow}>
-                <View style={[styles.attempt, styles.attemptFirst]}>
-                  <AppText variant="caption">Assisted</AppText>
-                  <AppText variant="label" style={{ fontSize: 20, marginTop: 4 }}>
-                    {comparison.accompaniedScore}%
-                  </AppText>
-                </View>
-                <View style={[styles.attempt, { borderLeftColor: palette.borderSubtle }]}>
-                  <AppText variant="caption">Solo</AppText>
-                  <AppText variant="label" style={{ fontSize: 20, marginTop: 4 }}>
-                    {comparison.soloScore}%
-                  </AppText>
-                </View>
-                <View style={[styles.attempt, { borderLeftColor: palette.borderSubtle }]}>
-                  <AppText variant="caption">Difference</AppText>
-                  <AppText
-                    variant="label"
-                    color={comparison.trend === 'slipped' ? palette.textSecondary : palette.accent}
-                    style={{ fontSize: 20, marginTop: 4 }}
-                  >
-                    {comparison.delta > 0 ? '+' : comparison.delta < 0 ? '−' : ''}
-                    {Math.abs(comparison.delta)}%
-                  </AppText>
-                </View>
-              </View>
-              <AppText variant="body" style={styles.compareMessage}>
-                {comparison.message}
-              </AppText>
-            </PremiumGate>
-          </View>
-        )}
-      </Card>
-
-      <View style={{ gap: spacing.md, marginTop: spacing.lg }}>
-        <Button title={primary.title} onPress={primary.onPress} />
-        <Button title={secondary.title} variant="ghost" onPress={secondary.onPress} />
-        {tertiary && <Button title={tertiary.title} variant="ghost" onPress={tertiary.onPress} />}
+        <View style={{ paddingBottom: spacing.xl, gap: 20 }}>
+          <Button title={primary.title} onPress={primary.onPress} />
+          <Button title={secondary.title} variant="ghost" onPress={secondary.onPress} />
+          {tertiary && (
+            <Button title={tertiary.title} variant="transparent" onPress={tertiary.onPress} />
+          )}
+        </View>
       </View>
-    </View>
   );
 }
 
@@ -157,15 +118,43 @@ function LockedComparison({ comparison, onPress }: { comparison: AttemptComparis
 }
 
 const styles = StyleSheet.create({
-  wrap: { flex: 1, justifyContent: 'center' },
-  lockRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  card: { padding: 24 },
-  score: { fontSize: 64, textAlign: 'center', lineHeight: 70 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 20 },
-  stat: { width: '50%', paddingVertical: 10, gap: 3 },
-  compare: { marginTop: 20, paddingTop: 18, borderTopWidth: 1 },
-  compareRow: { flexDirection: 'row' },
-  attempt: { flex: 1, minWidth: 0, paddingLeft: 12, borderLeftWidth: 1 },
-  attemptFirst: { paddingLeft: 0, borderLeftWidth: 0 },
-  compareMessage: { marginTop: 14, fontSize: 14, lineHeight: 20 },
+  card: { padding: 18, alignItems: 'center' },
+  scoreFrame: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+  },
+  scoreMascot: {
+    width: 320,
+    height: 328,
+    marginHorizontal: 55,
+  },
+  scoreMascotSmall: {
+    width: 220,
+    height: 226,
+    marginHorizontal: 55,
+  },
+  scoreColorOverlay: {
+    position: 'absolute',
+    top: 130,
+    alignSelf: 'center',
+    marginLeft: -6,
+    opacity: 1,
+  },
+  scoreOverlay: {
+    position: 'absolute',
+    gap: 4,
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingTop: 120,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  scoreNumber: {
+    fontSize: 48,
+    fontFamily: typography.family.medium,
+  },
 });
+

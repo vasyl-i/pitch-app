@@ -23,7 +23,7 @@ export type CalibrationStatus =
   | 'permission-denied'
   | 'error';
 
-const QUIET_STAGE_MS = 700;
+const QUIET_STAGE_MS = 2000;
 const LEVEL_STAGE_MS = 1800;
 /** ambient rms above this reads as a noisy room, not just quiet electronics hiss */
 const NOISY_FLOOR_RMS = 0.02;

@@ -9,14 +9,15 @@
  */
 import { useEffect, useRef } from 'react';
 import { InteractionManager } from 'react-native';
+import { AudioManager } from 'react-native-audio-api';
 import type { Exercise } from '@/entities/exercise';
 import { recordObservedNote } from '@/entities/profile';
 import { acquireMic, MicPermissionError, type MicLease } from '@/features/pitch-detection';
 import { micActive, micGlowTier } from '@/shared/lib/micRmsBus';
 import { hapticMicReady } from '@/shared/audio';
-import { watchOutputRoute } from '@/shared/audio';
+import { audioContext, watchOutputRoute } from '@/shared/audio';
 import { createMelodyPlayer } from '../lib/melodyPlayer';
-import { createRunController } from './runController';
+import { createRunController, type RunStage } from './runController';
 import { useStaffStore } from './staffStore';
 
 export interface StaffSessionControls {
@@ -64,7 +65,51 @@ export function useStaffSession(exercise: Exercise, rate = 1): StaffSessionContr
       silent: true,
     });
 
-    const controller = createRunController({
+    // Declared early so closures below can reference it; assigned after creation.
+    let controller: ReturnType<typeof createRunController>;
+
+    /** Release the mic lease so the audio session can switch to playback. */
+    const releaseLease = async () => {
+      if (lease) {
+        micActive.value = false;
+        await lease.release();
+        lease = null;
+      }
+    };
+
+    /** Acquire the mic for recording stages. */
+    const acquireLease = async () => {
+      if (lease || disposed) return;
+      lease = await acquireMic({ onFrame: controller.onFrame });
+      if (disposed) {
+        void lease.release();
+        lease = null;
+        return;
+      }
+      micActive.value = true;
+      hapticMicReady();
+    };
+
+    /**
+     * Before the listen (demo) stage, release the mic and switch to playback
+     * category so iOS plays audio at full volume. Before accompanied/solo,
+     * re-acquire the mic — pitchEngine will set playAndRecord back.
+     */
+    const onBeforeStage = async (nextStage: RunStage) => {
+      if (disposed) return;
+      if (nextStage === 'listen') {
+        await releaseLease();
+        // Switch to playback category for full-volume demo
+        AudioManager.setAudioSessionOptions({ iosCategory: 'playback', iosMode: 'default' });
+        await AudioManager.setAudioSessionActivity(true);
+        const ctx = audioContext();
+        if (ctx.state === 'suspended') await ctx.resume();
+      } else if (nextStage === 'accompanied' || nextStage === 'solo') {
+        if (!lease) await acquireLease();
+      }
+    };
+
+    controller = createRunController({
       exercise,
       demo,
       accompaniment,
@@ -79,20 +124,19 @@ export function useStaffSession(exercise: Exercise, rate = 1): StaffSessionContr
         setAccompaniedSummary: (summary) => useStaffStore.getState().setAccompaniedSummary(summary),
         setSummary: (summary, comparison) => useStaffStore.getState().setSummary(summary, comparison),
       },
-      // feed smart range-learning: a comfortably-sung note outside the stored
-      // comfort range, sustained through most of its duration
       onWellSungNote: recordObservedNote,
+      onBeforeStage,
     });
 
     const begin = async () => {
       try {
-        lease = await acquireMic({ onFrame: controller.onFrame });
-        if (disposed) {
-          void lease.release();
-          return;
-        }
-        micActive.value = true;
-        hapticMicReady();
+        // Don't acquire mic yet — the demo stage doesn't need it.
+        // Switch to playback category for full-volume demo playback.
+        AudioManager.setAudioSessionOptions({ iosCategory: 'playback', iosMode: 'default' });
+        await AudioManager.setAudioSessionActivity(true);
+        const ctx = audioContext();
+        if (ctx.state === 'suspended') await ctx.resume();
+        if (disposed) return;
         controller.startRun();
       } catch (err: unknown) {
         if (disposed) return;

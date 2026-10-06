@@ -30,12 +30,12 @@ export function RedetectResultsScreen({ navigation, route }: RootScreenProps<'Re
           Updated range
         </AppText>
         <View style={{ marginTop: spacing.xl }}>
-          <ResultsCard low={low.midi} high={high.midi} />
+          <ResultsCard low={low.midi} high={high.midi} success />
         </View>
         <View style={{ flex: 1 }} />
         <View style={{ gap: spacing.md }}>
+          <Button title="Start over" variant="transparent" onPress={() => navigation.navigate('RedetectLow')} disabled={saving} />
           <Button title="Save" onPress={save} disabled={saving} />
-          <Button title="Start over" variant="ghost" onPress={() => navigation.navigate('RedetectLow')} disabled={saving} />
         </View>
       </ScrollView>
     </Screen>

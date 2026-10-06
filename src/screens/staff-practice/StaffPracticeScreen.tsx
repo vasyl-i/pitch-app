@@ -158,19 +158,22 @@ function StaffSession({
 
   return (
     <Screen overlay={status === 'accompanied' || status === 'running' ? <MicGlow /> : undefined}>
-      <View style={styles.header}>
-        <BackButton onPress={() => navigation.goBack()} />
-        <View style={{ flex: 1 }}>
-          <AppText variant="label">{exercise.title}</AppText>
-          <AppText variant="caption">
-            {guided
-              ? (activeStepLabel() ?? "Today's practice")
-              : shift !== 0
-                ? `${exercise.key} · ${shift > 0 ? '+' : ''}${shift} for your range`
-                : exercise.source}
-          </AppText>
-        </View>
-      </View>
+      {
+        !showSummary &&
+          <View style={styles.header}>
+            <BackButton onPress={() => navigation.goBack()} />
+            <View style={{ flex: 1 }}>
+              <AppText variant="label">{exercise.title}</AppText>
+              <AppText variant="caption">
+                {guided
+                    ? (activeStepLabel() ?? "Today's practice")
+                    : shift !== 0
+                        ? `${exercise.key} · ${shift > 0 ? '+' : ''}${shift} for your range`
+                        : exercise.source}
+              </AppText>
+            </View>
+          </View>
+      }
 
       {/* Canvas stays mounted across all stages so the Skia clock and layout
           are always warm — remounting causes a layout + offset-init delay that
@@ -277,7 +280,7 @@ function StaffSession({
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   center: { flex: 1, justifyContent: 'center' },
-  overlay: { ...(StyleSheet.absoluteFill as object), flex: 1, justifyContent: 'center', paddingHorizontal: 24, backgroundColor: 'rgba(8, 7, 12, 0.92)' },
+  overlay: { ...(StyleSheet.absoluteFill as object), flex: 1, justifyContent: 'center', paddingHorizontal: 24 },
   // fixed height so the staff below doesn't shift as the copy changes
   promptBlock: { height: 44, alignItems: 'center', justifyContent: 'center' },
   promptText: { textAlign: 'center' },

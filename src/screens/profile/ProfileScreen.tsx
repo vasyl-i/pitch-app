@@ -3,19 +3,38 @@
  * preferences, the practice library, and (moved here from their former
  * top-level tabs) Progress and Journey.
  */
-import { Alert, Linking, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Image, ImageBackground, type ImageSourcePropType, Linking, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Toast from 'react-native-toast-message';
-import { Ionicons } from '@expo/vector-icons';
+
+const ICONS = {
+  microphone: require('../../../assets/account-tab/microphone.png'),
+  sound: require('../../../assets/account-tab/sound.png'),
+  goals: require('../../../assets/account-tab/goals.png'),
+  exercise: require('../../../assets/account-tab/exercise.png'),
+  weeklyPlan: require('../../../assets/account-tab/weekly-plan.png'),
+  reminder: require('../../../assets/account-tab/reminder.png'),
+  privacyPolicy: require('../../../assets/account-tab/privacy-policy.png'),
+  terms: require('../../../assets/account-tab/terms.png'),
+  logOut: require('../../../assets/account-tab/log-out.png'),
+  delete: require('../../../assets/account-tab/delete.png'),
+  message: require('../../../assets/account-tab/message.png'),
+  settings: require('../../../assets/account-tab/settings.png'),
+  arrowRight: require('../../../assets/account-tab/arrow-right.png'),
+};
 import { useProfileStore, voiceType } from '@/entities/profile';
 import { useAuthStore } from '@/features/auth';
 import { GOAL_LABELS, usePreferencesStore } from '@/features/learning';
-import { usePremiumStatus } from '@/features/subscription';
+import { usePremiumStatus, usePaywall } from '@/features/subscription';
 import { useSoundStore, SOUND_TYPE_LABELS } from '@/shared/audio';
 import { midiToName } from '@/shared/lib/music';
 import { AppText, Screen } from '@/shared/ui';
 import { typography, useTheme } from '@/shared/theme';
 import { useFloatingTabBarClearance } from '@/app/navigation/FloatingTabBar';
 import type { ProfileScreenProps } from '@/app/navigation/types';
+import { Ionicons } from '@expo/vector-icons';
+import { todayColor } from '@/screens/home/todayPalette';
+
+const UNLOCK_BG = require('../../../assets/background-unlock.png');
 
 function reminderSubtitle(hour: number | null, minute: number): string {
   if (hour == null) return 'Off — tap to set a daily reminder';
@@ -25,17 +44,24 @@ function reminderSubtitle(hour: number | null, minute: number): string {
   return `Daily at ${h}:${m} ${period}`;
 }
 
-const ICON_COLORS = [
-  '#E84855', '#F67828', '#F5B700', '#44AF69',
-  '#3B82F6', '#8B5CF6', '#EC4899', '#14B8A6',
-] as const;
+function formatTimeLeft(endMs: number): string {
+  const diff = endMs - Date.now();
+  if (diff <= 0) return 'Expired';
+  const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+  if (days > 60) {
+    const months = Math.round(days / 30);
+    return `${months} month${months === 1 ? '' : 's'} left`;
+  }
+  return `${days} day${days === 1 ? '' : 's'} left`;
+}
 
 export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>) {
-  const { palette, spacing } = useTheme();
+  const { palette, spacing, radii } = useTheme();
   const tabBarClearance = useFloatingTabBarClearance(spacing.xl);
   const profile = useProfileStore((s) => s.profile);
   const prefs = usePreferencesStore((s) => s.preferences);
   const premium = usePremiumStatus();
+  const openPaywall = usePaywall('profile');
   const soundType = useSoundStore((s) => s.soundType);
   const signOut = useAuthStore((s) => s.signOut);
   const deleteAccount = useAuthStore((s) => s.deleteAccount);
@@ -43,7 +69,6 @@ export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>)
   const user = useAuthStore((s) => s.user);
   const isEmailUser = user?.app_metadata?.provider === 'email';
   const range = profile?.comfortRange ?? null;
-  let colorIndex = 0;
 
   const handleLogout = () => {
     Alert.alert('Log out', 'Are you sure you want to log out?', [
@@ -85,7 +110,6 @@ export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>)
           text: 'Delete',
           style: 'destructive',
           onPress: () => {
-            console.log('11111111');
             Alert.alert('Are you sure?', 'All your progress, settings, and practice history will be lost forever.', [
               { text: 'Cancel', style: 'cancel' },
               { text: 'Delete my account', style: 'destructive', onPress: () => {
@@ -100,129 +124,155 @@ export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>)
     );
   };
 
-  const premiumSubtitle = premium.isPremium
+  const handleBannerPress = () => {
+    if (guest) {
+      Alert.alert(
+        'Sign in required',
+        'Create an account or sign in to unlock Premium and keep your progress safe across devices.',
+        [
+          { text: 'Not now', style: 'cancel' },
+          { text: 'Sign in', onPress: () => signOut() },
+        ],
+      );
+    } else if (premium.isPremium) {
+      navigation.navigate('ManageSubscription');
+    } else {
+      openPaywall();
+    }
+  };
+
+  const bannerTitle = premium.isPremium
+    ? 'PitchGym Premium'
+    : 'Unlock all exercises';
+
+  const bannerSubtitle = premium.isPremium
     ? premium.status === 'trialing'
       ? `Free trial · ${premium.trialDaysLeft ?? 0} day${premium.trialDaysLeft === 1 ? '' : 's'} left`
-      : `${premium.plan?.name ?? 'Premium'} · active`
-    : 'Your personal AI vocal coach — feedback, weak-spot drills & more';
+      : premium.currentPeriodEnd
+        ? `${premium.plan?.name ?? 'Premium'} · ${formatTimeLeft(premium.currentPeriodEnd)}`
+        : `${premium.plan?.name ?? 'Premium'} · Active`
+    : 'Get unlimited access to improve your voice';
 
   return (
     <Screen noHorizontalPadding noBottomPadding>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: tabBarClearance }}>
         <View style={{ paddingHorizontal: spacing.lg }}>
-        <AppText color={palette.textPrimary}
-                 style={[styles.heading, { fontFamily: typography.family.bold }]}>
-          Account
-        </AppText>
+          <AppText color={palette.textPrimary}
+                   style={[styles.heading, { fontFamily: typography.family.bold }]}>
+            Account
+          </AppText>
         </View>
 
-        <View style={{ marginTop: spacing.lg }}>
+        {/* Premium banner */}
+        <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.md }}>
+          <Pressable onPress={handleBannerPress} style={[styles.banner, { borderRadius: 10 }]}>
+            <ImageBackground source={UNLOCK_BG} style={styles.bannerBg} imageStyle={{ borderRadius: 10 }}>
+              <Image source={require('../../../assets/unlock-cat.png')} style={styles.bannerCat} resizeMode="contain" />
+              <View style={styles.bannerTextWrap}>
+                <AppText variant="body" style={{ fontSize: 16, lineHeight: 20, color: '#0D022F', fontFamily: typography.family.medium }}>
+                  {bannerTitle}
+                </AppText>
+                <AppText variant="body" style={{ fontSize: 12, lineHeight: 16, color: '#3D3E42', fontFamily: typography.family.regular }}>
+                  {bannerSubtitle}
+                </AppText>
+              </View>
+              <Image source={ICONS.arrowRight} style={[styles.chevron, { marginRight: 16 }]} tintColor={"#21222C"} />
+
+            </ImageBackground>
+          </Pressable>
+        </View>
+
+        {/* Settings */}
+        <SectionHeader label="Settings" />
+        <View style={[styles.card, { marginHorizontal: spacing.lg, borderRadius: 10 }]}>
           <Row
-            icon={premium.isPremium ? 'sparkles' : 'star'}
-            title={premium.isPremium ? 'Premium' : 'Upgrade to Premium'}
-            subtitle={premiumSubtitle}
-            iconColor={palette.accent}
-            onPress={() =>
-              premium.isPremium
-                ? navigation.navigate('ManageSubscription')
-                : navigation.navigate('Paywall', { source: 'profile' })
-            }
-          />
-          <Row
-            icon="mic"
+            icon={ICONS.microphone}
             title="Vocal range"
             subtitle={
               range
-                ? `${midiToName(range.lowMidi)} – ${midiToName(range.highMidi)} · ≈${voiceType(range)}`
-                : 'Not measured yet — exercises fit better once it is'
+                ? `${midiToName(range.lowMidi)} — ${midiToName(range.highMidi)} · ≈${voiceType(range)}`
+                : 'Not measured yet'
             }
-            bgColor={ICON_COLORS[colorIndex++ % ICON_COLORS.length]}
             onPress={() => navigation.navigate('VocalRangeSettings')}
           />
           <Row
-            icon="volume-high"
+            icon={ICONS.sound}
             title="Sound"
             subtitle={`${SOUND_TYPE_LABELS[soundType]} wave`}
-            bgColor={ICON_COLORS[colorIndex++ % ICON_COLORS.length]}
             onPress={() => navigation.navigate('SoundSettings')}
           />
           <Row
-            icon="flag"
+            icon={ICONS.goals}
             title="Goal & preferences"
             subtitle={
               prefs
                 ? `${GOAL_LABELS[prefs.primaryGoal]} · ${prefs.dailyMinutes} min a day`
                 : "Set what you're working toward"
             }
-            bgColor={ICON_COLORS[colorIndex++ % ICON_COLORS.length]}
             onPress={() => navigation.navigate('LearningPreferences')}
           />
           <Row
-            icon="options"
+            icon={ICONS.settings}
             title="Exercise settings"
             subtitle="Choose which exercises appear in your daily plan"
-            bgColor={ICON_COLORS[colorIndex++ % ICON_COLORS.length]}
             onPress={() => navigation.navigate('ExerciseSettings')}
           />
           <Row
-            icon="calendar"
+            icon={ICONS.weeklyPlan}
             title="Weekly plan"
-            subtitle="Customise exercises for each day of the week"
-            bgColor={ICON_COLORS[colorIndex++ % ICON_COLORS.length]}
+            subtitle="Customize exercises for each day of the week"
             onPress={() => navigation.navigate('WeeklyPlan')}
           />
           <Row
-            icon="notifications"
+            icon={ICONS.reminder}
             title="Practice reminder"
             subtitle={reminderSubtitle(prefs?.reminderHour ?? null, prefs?.reminderMinute ?? 0)}
-            bgColor={ICON_COLORS[colorIndex++ % ICON_COLORS.length]}
-            onPress={() => navigation.navigate('ReminderSettings')}
             last
+            onPress={() => navigation.navigate('ReminderSettings')}
           />
         </View>
 
-        <View style={{ marginTop: spacing.xl }}>
+        {/* Legal */}
+        <SectionHeader label="Legal" />
+        <View style={[styles.card, { marginHorizontal: spacing.lg, borderRadius: 10 }]}>
           <Row
-            icon="document-text"
+            icon={ICONS.privacyPolicy}
             title="Privacy policy"
             subtitle="How we handle your data"
-            bgColor={ICON_COLORS[colorIndex++ % ICON_COLORS.length]}
             onPress={() => Linking.openURL('https://pitchgym.anyabedrytska.com/privacy-policy.html')}
           />
           <Row
-            icon="shield-checkmark"
+            icon={ICONS.terms}
             title="Terms of service"
             subtitle="Rules for using the app"
-            bgColor={ICON_COLORS[colorIndex++ % ICON_COLORS.length]}
-            onPress={() => Linking.openURL('https://pitchgym.anyabedrytska.com/terms-of-service.html')}
             last
+            onPress={() => Linking.openURL('https://pitchgym.anyabedrytska.com/terms-of-service.html')}
           />
         </View>
 
-        <View style={{ marginTop: spacing.xl }}>
+        {/* Account */}
+        <SectionHeader label="Account" />
+        <View style={[styles.card, { marginHorizontal: spacing.lg, borderRadius: 10 }]}>
           {isEmailUser && (
             <Row
-              icon="key"
+              icon={ICONS.settings}
               title="Change password"
               subtitle="Update your account password"
-              bgColor="#F67828"
               onPress={() => navigation.navigate('NewPassword', { requireOldPassword: true })}
             />
           )}
           <Row
-            icon="log-out"
+            icon={ICONS.logOut}
             title="Log out"
             subtitle={guest ? 'You are using the app as a guest' : 'Sign out of your account'}
-            bgColor="#E84855"
             onPress={handleLogout}
-            last={!!guest}
+            last={!guest || !isEmailUser}
           />
           {!guest && (
             <Row
-              icon="trash"
+              icon={ICONS.delete}
               title="Delete account"
               subtitle="Permanently remove your account and all data"
-              iconColor={palette.danger}
               destructive
               last
               onPress={handleDeleteAccount}
@@ -230,11 +280,39 @@ export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>)
           )}
         </View>
 
-        <AppText variant="caption" style={{ textAlign: 'center', marginTop: spacing.xxl }}>
+        {/* Feedback & Support */}
+        <SectionHeader label="Feedback & Support" />
+        <View style={[styles.card, { marginHorizontal: spacing.lg, borderRadius: 10 }]}>
+          <Row
+            icon={ICONS.message}
+            title="Share your thoughts about PitchGym"
+            subtitle="We'll be happy to hear from you"
+            last
+            onPress={() => Linking.openURL('mailto:support@pitchgym.app?subject=PitchGym Feedback')}
+          />
+        </View>
+
+        <AppText variant="caption" color={palette.textFaint} style={{ textAlign: 'center', marginTop: spacing.xxl }}>
           Uses your microphone. Audio never leaves the device.
+        </AppText>
+        <AppText variant="caption" color={palette.textFaint} style={{ textAlign: 'center', marginTop: spacing.xs, marginBottom: spacing.md }}>
+          Version {require('../../../app.json').expo.version}
         </AppText>
       </ScrollView>
     </Screen>
+  );
+}
+
+function SectionHeader({ label }: { label: string }) {
+  const { palette, spacing } = useTheme();
+  return (
+    <AppText
+      variant="caption"
+      color={palette.textSecondaryElevated}
+      style={{ paddingHorizontal: spacing.lg, marginTop: spacing.xl, marginBottom: spacing.sm, fontSize: 12 }}
+    >
+      {label}
+    </AppText>
   );
 }
 
@@ -243,39 +321,33 @@ function Row({
   title,
   subtitle,
   onPress,
-  bgColor,
-  iconColor,
   destructive = false,
   last = false,
 }: {
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: ImageSourcePropType;
   title: string;
   subtitle: string;
   onPress: () => void;
-  bgColor?: string;
-  iconColor?: string;
-  /** red text for dangerous actions */
   destructive?: boolean;
-  /** suppress bottom border on last item in a group */
   last?: boolean;
 }) {
   const { palette } = useTheme();
   return (
-    <Pressable accessibilityRole="button" onPress={onPress}>
+    <Pressable style={styles.pressableRow} accessibilityRole="button" onPress={onPress}>
       {({ pressed }) => (
-        <View style={[styles.row, !last && styles.border, pressed && { opacity: 0.7 }]}>
-          <View style={[styles.iconContainer, bgColor ? { backgroundColor: bgColor } : undefined]}>
-            <Ionicons name={icon} size={18} color={iconColor ?? '#FFFFFF'} />
+        <View style={[styles.row, !last && styles.rowBorder, pressed && { opacity: 0.7 }]}>
+          <View style={styles.iconCircle}>
+            <Image source={icon} style={[styles.iconImage, destructive && { tintColor: '#F95F4F' }]} />
           </View>
           <View style={{ flex: 1 }}>
-            <AppText variant="label" style={{ fontSize: 16 }} color={destructive ? palette.danger : undefined}>
+            <AppText variant="label" style={{ fontSize: 14 }} color={destructive ? palette.danger : palette.textPrimary}>
               {title}
             </AppText>
-            <AppText variant="caption" style={{ marginTop: 3 }}>
+            <AppText variant="caption" color={"#CDC9C9"} style={{ marginTop: 2, fontSize: 12 }}>
               {subtitle}
             </AppText>
           </View>
-          <Ionicons name="chevron-forward" size={18} color={palette.textFaint} />
+          <Image source={ICONS.arrowRight} style={styles.chevron} />
         </View>
       )}
     </Pressable>
@@ -283,18 +355,35 @@ function Row({
 }
 
 const styles = StyleSheet.create({
-  row: { padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  border: { borderBottomWidth: 1, borderBottomColor: 'rgba(255, 255, 255, 0.08)' },
   heading: {
     fontSize: 24,
     lineHeight: 28,
   },
-  iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 14,
-    backgroundColor: '#1E1D1F',
+  banner: { width: '100%', overflow: 'hidden' },
+  bannerBg: { flexDirection: 'row', alignItems: 'center', height: 72 },
+  bannerCat: { width: 64, height: 64, marginLeft: 12, marginBottom: -8 },
+  bannerTextWrap: { flex: 1, marginLeft: 24, gap: 2 },
+  card: {
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    overflow: 'hidden',
+  },
+  pressableRow: { paddingHorizontal: 16 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 },
+  rowBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderColor: "#CDC9C91A" },
+  iconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#525158B2',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  iconImage: {
+    width: 20,
+    height: 20,
+  },
+  chevron: {
+    width: 16,
+    height: 16,
   },
 });

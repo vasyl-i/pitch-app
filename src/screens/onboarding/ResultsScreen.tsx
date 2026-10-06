@@ -23,26 +23,28 @@ export function ResultsScreen({ navigation, route }: OnboardingScreenProps<'Resu
 
   return (
     <Screen noBottomPadding>
+      <View style={{ paddingBottom: 16 }}>
+        <BackButton onPress={() => navigation.navigate('Lowest')} />
+      </View>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
         <View style={{ flex: 1, paddingBottom: insets.bottom + spacing.lg }}>
-        <BackButton onPress={() => navigation.navigate('Lowest')} />
 
-        <AppText variant="title" style={{ fontSize: 28, textAlign: 'center', marginTop: spacing.lg }}>
+        <AppText variant="title" style={{ fontSize: 40, textAlign: 'center', marginTop: spacing.lg }}>
           You’ve found your range!
         </AppText>
-        <AppText variant="body" style={{ textAlign: 'center', marginTop: spacing.sm }}>
+        <AppText gradient style={{ fontSize: 20, textAlign: 'center', marginTop: spacing.sm }}>
           Every exercise from here will fit your voice.
         </AppText>
 
-        <View style={{ marginTop: spacing.xl }}>
-          <ResultsCard low={low.midi} high={high.midi} />
+        <View style={{ marginTop: spacing.xxl }}>
+          <ResultsCard low={low.midi} high={high.midi} success />
         </View>
 
         <View style={{ flex: 1 }} />
 
         <View style={{ gap: spacing.md }}>
+          <Button title="Start over" variant="transparent" onPress={() => navigation.navigate('Reminder')} />
           <Button title="Save & continue" onPress={save} />
-          <Button title="Start over" variant="ghost" onPress={() => navigation.navigate('Reminder')} />
         </View>
         </View>
       </ScrollView>
