@@ -20,6 +20,8 @@ const ORANGE = '#f0954a';
 const RED = '#ff6d5c';
 const GRAY = 'rgba(255,255,255,0.4)';
 const GRID_COLOR = 'rgba(255,255,255,0.10)';
+const NOTE_BLUE = '#8B7CFF';
+const NOTE_ACTIVE = '#ffffff';
 
 interface ScrollingPitchCanvasProps {
   trail: PitchSample[];
@@ -73,20 +75,62 @@ export function ScrollingPitchCanvas({
     setSize((prev) => (prev.width === width && prev.height === height ? prev : { width, height }));
   }, []);
 
-  // Seed the vertical center from the exercise's note range so target blocks
-  // render at the right y from the very first frame — before any note is active
-  // under the playhead.  Without this, centerRef defaults to 60 (middle C) and
-  // notes flash at the wrong vertical position during the lead-in.
+  // Seed the vertical center from the first target note so the canvas is
+  // already focused when the exercise starts — no drift on the first note.
+  // Falls back to the midpoint of all targets, then targetMidi, then liveMidi.
+  const firstTargetMidi = targets?.length ? targets[0].midi : null;
   const targetsCenter = targets?.length
     ? (Math.min(...targets.map((n) => n.midi)) + Math.max(...targets.map((n) => n.midi))) / 2
     : null;
-  const centerRef = useRef(targetMidi ?? targetsCenter ?? liveMidi ?? 60);
+  const centerRef = useRef(targetMidi ?? firstTargetMidi ?? targetsCenter ?? liveMidi ?? 60);
   const prevTarget = useRef(targetMidi);
 
-  if (targetMidi !== null && targetMidi !== prevTarget.current) {
-    centerRef.current = targetMidi;
+  if (targets?.length) {
+    // Look ahead: find notes near the playhead so we can pre-pan before they
+    // arrive, instead of chasing the active note after it already appeared.
+    const now = currentTime;
+    const lookAheadSec = visibleSeconds * 0.6;
+    const nearby = targets.filter((n) => {
+      const s = n.start / rate;
+      const e = (n.start + n.duration) / rate;
+      return e > now - 1 && s < now + lookAheadSec;
+    });
+
+    let idealCenter = centerRef.current;
+    if (nearby.length > 0) {
+      const minM = Math.min(...nearby.map((n) => n.midi));
+      const maxM = Math.max(...nearby.map((n) => n.midi));
+      idealCenter = (minM + maxM) / 2;
+    } else if (targetMidi !== null) {
+      idealCenter = targetMidi;
+    }
+
+    const drift = idealCenter - centerRef.current;
+    if (Math.abs(drift) > 0.05) {
+      const factor = Math.min(0.2, 0.05 + Math.abs(drift) * 0.012);
+      centerRef.current += drift * factor;
+    }
+
+    // Hard clamp: every nearby note must stay on screen (2-semi margin)
+    if (nearby.length > 0) {
+      const minM = Math.min(...nearby.map((n) => n.midi));
+      const maxM = Math.max(...nearby.map((n) => n.midi));
+      const halfVis = VISIBLE_SEMITONES / 2 - 2;
+      if (maxM > centerRef.current + halfVis) centerRef.current = maxM - halfVis;
+      if (minM < centerRef.current - halfVis) centerRef.current = minM + halfVis;
+    }
     prevTarget.current = targetMidi;
-  } else if (targetMidi === null && liveMidi !== null) {
+  } else if (targetMidi !== null) {
+    prevTarget.current = targetMidi;
+    const drift = targetMidi - centerRef.current;
+    if (Math.abs(drift) > 0.05) {
+      const factor = Math.min(0.25, 0.06 + Math.abs(drift) * 0.015);
+      centerRef.current += drift * factor;
+    }
+    const margin = VISIBLE_SEMITONES / 2 - 2;
+    if (targetMidi > centerRef.current + margin) centerRef.current = targetMidi - margin;
+    if (targetMidi < centerRef.current - margin) centerRef.current = targetMidi + margin;
+  } else if (liveMidi !== null) {
     const drift = liveMidi - centerRef.current;
     if (Math.abs(drift) > VISIBLE_SEMITONES / 3) {
       centerRef.current += drift * 0.15;
@@ -151,15 +195,23 @@ export function ScrollingPitchCanvas({
     return [{ translateX: dotXSV.value - t * pxPerSecSV.value }];
   });
 
-  // ---- Static horizontal grid ----
+  // ---- Horizontal grid ----
+  // Fixed pixel spacing with a sub-pixel offset derived from yCenter so the
+  // grid scrolls vertically in perfect lockstep with notes and targets.
   const GRID_ROWS = 6;
   const hLines = useMemo(() => {
     if (!contentHeight) return [];
     const step = contentHeight / GRID_ROWS;
+    // Continuous offset: as yCenter rises, grid slides down by semiH per
+    // semitone. Modulo keeps values in range; extra lines above/below hide
+    // the wrap-around at the edges.
+    const offset = ((yCenter * semiH) % step + step) % step;
     const out: number[] = [];
-    for (let i = 0; i <= GRID_ROWS; i++) out.push(Math.round(i * step));
+    for (let i = -1; i <= GRID_ROWS + 1; i++) {
+      out.push(i * step + offset);
+    }
     return out;
-  }, [contentHeight]);
+  }, [contentHeight, yCenter, semiH]);
 
   // ---- Vertical grid (absolute positions, wide coverage) ----
   // Quantise currentTime to a coarse bucket so vLines only rebuild when the
@@ -186,10 +238,21 @@ export function ScrollingPitchCanvas({
   }, [W, contentHeight, vLineBucket, visibleSeconds, pxPerSec]);
 
   // ---- Target note bands (absolute positions) ----
+  // Find which note is currently under the playhead so we can highlight it.
+  const activeNoteIdx = useMemo(() => {
+    if (!targets) return -1;
+    for (let i = 0; i < targets.length; i++) {
+      const s = targets[i].start / rate;
+      const e = (targets[i].start + targets[i].duration) / rate;
+      if (currentTime >= s && currentTime < e) return i;
+    }
+    return -1;
+  }, [targets, currentTime, rate]);
+
   const targetFont = useFont(require('../../../../assets/fonts/Satoshi-Medium.ttf'), 11);
   const targetRects = useMemo(() => {
     if (!targets || !W) return [];
-    return targets.map((note) => {
+    return targets.map((note, i) => {
       const noteStart = note.start / rate;
       const noteEnd = (note.start + note.duration) / rate;
       const x0 = noteStart * pxPerSec;
@@ -201,10 +264,11 @@ export function ScrollingPitchCanvas({
         y: y - semiH / 2,
         height: semiH,
         label: midiToName(note.midi, 'ascii'),
+        active: i === activeNoteIdx,
       };
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [targets, W, contentHeight, yCenter, semiH, rate, pxPerSec]);
+  }, [targets, W, contentHeight, yCenter, semiH, rate, pxPerSec, activeNoteIdx]);
 
   // ---- Trail paths (absolute x positions) ----
   // NO anchor reset, NO buildClockMs. Paths just sit at their absolute coords.
@@ -297,29 +361,44 @@ export function ScrollingPitchCanvas({
               <Line key={`v${i}`} p1={vec(x, 0)} p2={vec(x, contentHeight)} color={GRID_COLOR} strokeWidth={0.5} />
             ))}
 
-            {targetRects.map((r, i) => (
-              <Group key={i}>
-                <RoundedRect x={r.x} y={r.y} width={r.width} height={r.height} r={4} color={LIME} opacity={0.22} />
-                <RoundedRect
-                  x={r.x}
-                  y={r.y + r.height * 0.25}
-                  width={r.width}
-                  height={r.height * 0.5}
-                  r={3}
-                  color={LIME}
-                  opacity={0.35}
-                />
-                {showNoteLabels && targetFont && r.width > 20 && (
-                  <SkiaText
-                    x={r.x + 5}
-                    y={r.y + r.height / 2 + 4}
-                    text={r.label}
-                    font={targetFont}
-                    color="rgba(255,255,255,0.7)"
+            {targetRects.map((r, i) => {
+              const color = r.active ? NOTE_ACTIVE : NOTE_BLUE;
+              return (
+                <Group key={i}>
+                  {/* Outer glow — only on the active note */}
+                  {r.active && (
+                    <RoundedRect
+                      x={r.x - 3}
+                      y={r.y - 3}
+                      width={r.width + 6}
+                      height={r.height + 6}
+                      r={6}
+                      color={NOTE_ACTIVE}
+                      opacity={0.10}
+                    />
+                  )}
+                  <RoundedRect x={r.x} y={r.y} width={r.width} height={r.height} r={4} color={color} opacity={r.active ? 0.35 : 0.20} />
+                  <RoundedRect
+                    x={r.x}
+                    y={r.y + r.height * 0.25}
+                    width={r.width}
+                    height={r.height * 0.5}
+                    r={3}
+                    color={color}
+                    opacity={r.active ? 0.55 : 0.30}
                   />
-                )}
-              </Group>
-            ))}
+                  {showNoteLabels && targetFont && r.width > 20 && (
+                    <SkiaText
+                      x={r.x + 5}
+                      y={r.y + r.height / 2 + 4}
+                      text={r.label}
+                      font={targetFont}
+                      color={r.active ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.5)'}
+                    />
+                  )}
+                </Group>
+              );
+            })}
 
             {trailColor ? (
               <Path path={paths.single} color={trailColor} style="stroke" strokeWidth={3} strokeCap="round" strokeJoin="round" />

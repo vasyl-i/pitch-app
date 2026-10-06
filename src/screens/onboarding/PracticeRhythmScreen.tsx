@@ -75,7 +75,8 @@ export function PracticeRhythmScreen({ navigation }: OnboardingScreenProps<'Prac
                     variant="body"
                     style={{
                       fontFamily: typography.family.medium,
-                      fontSize: 20,
+                      fontSize: 14,
+                      lineHeight: 16,
                       color: active ? '#000000' : palette.textPrimary,
                     }}
                   >

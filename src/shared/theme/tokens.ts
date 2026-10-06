@@ -17,7 +17,7 @@ export const palette = {
   background: '#08070C',
   backgroundElevated: '#0D0D14',
   surface: 'rgba(255, 255, 255, 0.06)',
-  surfaceElevated: 'rgba(255, 255, 255, 0.10)',
+  surfaceElevated: '#524E6266',
   surfaceSolid: '#131319',
   border: 'rgba(255, 255, 255, 0.16)',
   borderSubtle: 'rgba(255, 255, 255, 0.09)',
