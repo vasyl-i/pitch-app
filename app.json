@@ -2,7 +2,7 @@
   "expo": {
     "name": "PitchGym",
     "slug": "sing-mvp",
-    "version": "1.1",
+    "version": "1.2",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -19,7 +19,9 @@
       "bundleIdentifier": "app.anya.eargym",
       "googleServicesFile": "./assets/GoogleService-Info.plist",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "LSApplicationCategoryType": "public.app-category.music",
+        "CFBundleDisplayName": "PitchGym"
       }
     },
     "android": {
