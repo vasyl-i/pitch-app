@@ -18,7 +18,7 @@ export function RedetectResultsScreen({ navigation, route }: RootScreenProps<'Re
     setSaving(true);
     const confidence = (low.confidence + high.confidence) / 2;
     setDetectedRange({ lowMidi: low.midi, highMidi: high.midi }, confidence);
-    navigation.navigate('VocalRangeSettings');
+    navigation.popTo('VocalRangeSettings');
   };
 
   return (

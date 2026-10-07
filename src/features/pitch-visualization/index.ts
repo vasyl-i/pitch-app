@@ -10,6 +10,7 @@ export { MiniStaff } from './ui/MiniStaff';
 export { CentsGauge } from './ui/CentsGauge';
 export { ConfidenceMeter } from './ui/ConfidenceMeter';
 export { ScrollingPitchCanvas } from './ui/ScrollingPitchCanvas';
+export { StaticPitchCanvas } from './ui/StaticPitchCanvas';
 
 /**
  * Display stabilization — the UI-only half of the pitch path.

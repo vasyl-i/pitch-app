@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
   },
   scoreColorOverlay: {
     position: 'absolute',
-    top: 130,
+    top: 160,
     alignSelf: 'center',
     marginLeft: -6,
     opacity: 1,

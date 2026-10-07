@@ -14,6 +14,7 @@ import { MicGlow } from '@/features/staff-practice';
 import { AppText, Button, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
 import type { RootScreenProps } from '@/app/navigation/types';
+import { resetToTab } from '@/app/navigation/resetToTab';
 import { ActiveRound } from './ActiveRound';
 import { SessionResults } from './SessionResults';
 import { activeStepLabel, advanceAfterStep } from './lessonFlow';
@@ -92,7 +93,7 @@ export function EarSessionScreen({ navigation, route }: RootScreenProps<'EarSess
                   secondary: { title: 'Try this one again', onPress: () => session.retry() },
                   tertiary: { title: 'Back to home', onPress: () => {
                     useLessonSessionStore.getState().completeActive();
-                    navigation.navigate('Main', { screen: 'HomeTab', params: { screen: 'Today' } });
+                    resetToTab(navigation, 'HomeTab');
                   }},
                 }
               : {

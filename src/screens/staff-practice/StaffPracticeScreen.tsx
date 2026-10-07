@@ -4,10 +4,11 @@ import { exercises, fitToRange, odeToJoy, transposeExercise } from '@/entities/e
 import { useProfileStore } from '@/entities/profile';
 import { buildSessionRecord, useProgressStore } from '@/features/progress';
 import { LiveReadout, MicGlow, PianoKeyboard, useStaffSession, useStaffStore, VERDICT_LABEL } from '@/features/staff-practice';
-import { ScrollingPitchCanvas } from '@/features/pitch-visualization';
+import { StaticPitchCanvas } from '@/features/pitch-visualization';
 import { AppText, BackButton, Button, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
 import type { RootScreenProps } from '@/app/navigation/types';
+import { resetToTab } from '@/app/navigation/resetToTab';
 import { useLessonSessionStore } from '@/features/learning';
 import { activeStepLabel, advanceAfterStep } from '../session/lessonFlow';
 import { PhraseSummaryCard } from './PhraseSummaryCard';
@@ -91,13 +92,11 @@ function StaffSession({
   const outputIsolated = useStaffStore((s) => s.outputIsolated);
   const lastVerdict = useStaffStore((s) => s.lastVerdict);
 
-  // scrolling canvas data
+  // canvas data
   const trail = useStaffStore((s) => s.trail);
   const liveMidi = useStaffStore((s) => s.liveMidi);
   const liveCents = useStaffStore((s) => s.liveCents);
-  const currentTargetMidi = useStaffStore((s) => s.currentTargetMidi);
   const position = useStaffStore((s) => s.position);
-  const positionUpdatedAt = useStaffStore((s) => s.positionUpdatedAt);
   const canvasRunning = status === 'running' || status === 'listen' || status === 'accompanied';
 
   const lowMidi = Math.min(...exercise.notes.map((n) => n.midi));
@@ -193,17 +192,15 @@ function StaffSession({
         </View>
 
         <View style={{ flex: 1, marginVertical: spacing.md }}>
-          <ScrollingPitchCanvas
+          <StaticPitchCanvas
             trail={trail}
             liveMidi={liveMidi}
             liveCents={liveCents}
-            targetMidi={currentTargetMidi}
             currentTime={position}
-            positionUpdatedAt={positionUpdatedAt}
-            running={canvasRunning}
             targets={exercise.notes}
             rate={rate}
-            showPlayhead
+            bpm={exercise.bpm}
+            running={canvasRunning}
             showNoteLabels
           />
         </View>
@@ -237,7 +234,7 @@ function StaffSession({
             {guided ? (
               <>
                 <Button title="Skip this step" variant="ghost" onPress={() => advanceAfterStep(navigation)} />
-                <Button title="Back to home" variant="ghost" onPress={() => { useLessonSessionStore.getState().completeActive(); navigation.navigate('Main', { screen: 'HomeTab', params: { screen: 'Today' } }); }} />
+                <Button title="Back to home" variant="ghost" onPress={() => { useLessonSessionStore.getState().completeActive(); resetToTab(navigation, 'HomeTab'); }} />
               </>
             ) : (
               <Button title="Done" variant="ghost" onPress={() => navigation.goBack()} />
@@ -267,7 +264,7 @@ function StaffSession({
             }
             tertiary={
               guided
-                ? { title: 'Back to home', onPress: () => navigation.navigate('Main', { screen: 'HomeTab', params: { screen: 'Today' } }) }
+                ? { title: 'Back to home', onPress: () => resetToTab(navigation, 'HomeTab') }
                 : undefined
             }
           />

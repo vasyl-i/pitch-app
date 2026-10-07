@@ -28,7 +28,7 @@ export function VocalRangeSettingsScreen({ navigation }: RootScreenProps<'VocalR
     return (
       <Screen noBottomPadding>
         <View style={styles.header}>
-          <BackButton onPress={() => navigation.goBack()} />
+          <BackButton onPress={() => navigation.pop()} />
           <AppText variant="label">Vocal range</AppText>
         </View>
         <View style={styles.emptyCenter}>

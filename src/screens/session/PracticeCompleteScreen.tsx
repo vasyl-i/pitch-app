@@ -11,6 +11,7 @@ import { usePaywall, usePremiumStatus } from '@/features/subscription';
 import { AppText, Button, Card, Screen } from '@/shared/ui';
 import { spacing, typography, useTheme } from '@/shared/theme';
 import type { RootScreenProps } from '@/app/navigation/types';
+import { resetToTab } from '@/app/navigation/resetToTab';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -151,15 +152,12 @@ export function PracticeCompleteScreen({ navigation }: RootScreenProps<'Practice
 
                 <Button
                     title="Done"
-                    onPress={() => navigation.navigate('Main', { screen: 'HomeTab', params: { screen: 'Today' } })}
+                    onPress={() => resetToTab(navigation, 'HomeTab')}
                 />
                 <Button
                     title="See my progress"
                     variant="transparent"
-                    onPress={() => navigation.navigate('Main', {
-                        screen: 'ProgressTab',
-                        params: { screen: 'ProgressOverview' }
-                    })}
+                    onPress={() => resetToTab(navigation, 'ProgressTab', { screen: 'ProgressOverview' })}
                 />
             </BlurView>
         </Screen>
