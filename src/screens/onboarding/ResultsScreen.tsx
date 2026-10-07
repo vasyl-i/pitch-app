@@ -1,6 +1,6 @@
 import { ScrollView, View } from 'react-native';
 import { AppText, BackButton, Button, Screen } from '@/shared/ui';
-import { spacing, useTheme } from '@/shared/theme';
+import { palette, spacing, useTheme } from '@/shared/theme';
 import { useProfileStore } from '@/entities/profile';
 import { ResultsCard } from '@/features/vocal-range';
 import type { OnboardingScreenProps } from '@/app/navigation/types';
@@ -9,7 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 /** The end of first-launch onboarding: celebratory-but-professional summary, then into the app. */
 export function ResultsScreen({ navigation, route }: OnboardingScreenProps<'Results'>) {
   const { low, high } = route.params;
-  const { spacing } = useTheme();
+  const { palette, spacing } = useTheme();
   const insets = useSafeAreaInsets();
   const setDetectedRange = useProfileStore((s) => s.setDetectedRange);
 
@@ -29,10 +29,10 @@ export function ResultsScreen({ navigation, route }: OnboardingScreenProps<'Resu
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
         <View style={{ flex: 1, paddingBottom: insets.bottom + spacing.lg }}>
 
-        <AppText variant="title" style={{ fontSize: 40, lineHeight: 46, textAlign: "center", marginTop: spacing.lg, paddingBottom: 4 }}>
+        <AppText variant="title" color={palette.white} style={{ fontSize: 32, lineHeight: 34, textAlign: "center", marginTop: spacing.lg, paddingBottom: 4 }}>
           You’ve found your range!
         </AppText>
-        <AppText gradient style={{ fontSize: 20, textAlign: 'center', marginTop: spacing.sm, paddingHorizontal: spacing.xl }}>
+        <AppText color={palette.white} gradient style={{ fontSize: 16, lineHeight: 18, textAlign: 'center', marginTop: spacing.sm, paddingHorizontal: spacing.xl }}>
           Every exercise from here will fit your voice.
         </AppText>
 

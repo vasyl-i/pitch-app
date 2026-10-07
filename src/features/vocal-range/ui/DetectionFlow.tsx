@@ -81,8 +81,8 @@ export function DetectionFlow({
                 gradient
                 color={palette.white}
                 style={{
-                    fontSize: 40,
-                    lineHeight: 46,
+                    fontSize: 32,
+                    lineHeight: 34,
                     paddingTop: 10,
                     fontFamily: typography.family.bold,
                     textAlign: 'center'
@@ -92,9 +92,9 @@ export function DetectionFlow({
             </AppText>
             <AppText color={palette.white}
                      gradient style={{
-                fontSize: 20,
+                fontSize: 16,
                 marginTop: spacing.lg,
-                lineHeight: 22,
+                lineHeight: 18,
                 textAlign: 'center',
                 paddingHorizontal: spacing.sm
             }}>

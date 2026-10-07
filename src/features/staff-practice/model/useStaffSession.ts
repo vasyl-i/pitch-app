@@ -58,6 +58,7 @@ export function useStaffSession(exercise: Exercise, rate = 1): StaffSessionContr
     const demo = createMelodyPlayer(exercise.notes, () => controller.referenceFinished(), { rate });
     const accompaniment = createMelodyPlayer(exercise.notes, () => controller.accompanimentFinished(), {
       rate,
+      volume: 0.85,
       gatesMicrophone: false,
     });
     const solo = createMelodyPlayer(exercise.notes, () => controller.phraseFinished(), {
