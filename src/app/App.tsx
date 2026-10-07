@@ -83,10 +83,22 @@ const navigationTheme = {
 /** Starts cloud sync + pulls latest data when the user is authenticated. */
 function SyncManager() {
   const user = useAuthStore((s) => s.user);
+  const loading = useAuthStore((s) => s.loading);
+  const guest = useAuthStore((s) => s.guest);
 
   useEffect(() => {
+    // Don't reset analytics while auth is still loading — we don't know the
+    // user state yet and calling amplitude.reset() would generate a new
+    // anonymous device ID, inflating "new user" counts.
+    if (loading) return;
+
     if (!user) {
-      resetAnalyticsUser();
+      // Only reset if this is a genuine sign-out (not guest mode).
+      // Guest users keep Amplitude's default device-based identity so
+      // repeated opens don't count as separate new users.
+      if (!guest) {
+        resetAnalyticsUser();
+      }
       return;
     }
     identifyUser(user.id, {
@@ -113,7 +125,7 @@ function SyncManager() {
       stopSync();
       unsubRC();
     };
-  }, [user]);
+  }, [user, loading, guest]);
 
   return null;
 }
