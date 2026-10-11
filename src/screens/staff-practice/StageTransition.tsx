@@ -31,10 +31,10 @@ export function StageTransition() {
     <View style={styles.center}>
       <Animated.View style={style}>
         <AppText variant="title" style={[styles.text, { marginBottom: spacing.sm }]}>
-          Great! Now try it on your own.
+          Now it’s your turn!
         </AppText>
         <AppText variant="body" color={palette.textSecondary} style={styles.text}>
-          Let’s see how well you remember the melody.
+          Sing the melody on your own.
         </AppText>
       </Animated.View>
     </View>

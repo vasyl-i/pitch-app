@@ -99,7 +99,7 @@ export function createSingCapture(): SingCapture {
       gate.confirm(rawMidi, now);
       frames.push({ t: (now - openedAt) / 1000, midi: rawMidi });
       const shown = displayNote.push(rawMidi);
-      live = { note: shown === null ? null : midiToName(shown), midi: rawMidi };
+      live = { note: shown === null ? null : midiToName(shown, 'ascii'), midi: rawMidi };
     },
 
     get frames() {

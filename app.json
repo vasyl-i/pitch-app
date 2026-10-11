@@ -1,8 +1,8 @@
 {
   "expo": {
     "name": "PitchGym",
-    "slug": "sing-mvp",
-    "version": "1.2",
+    "slug": "pitchgym",
+    "version": "1.3",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -31,8 +31,16 @@
         "foregroundImage": "./assets/android-icon-foreground.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
+      "splash": {
+        "image": "./assets/splash.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#08070C"
+      },
       "predictiveBackGestureEnabled": false,
-      "googleServicesFile": "./assets/google-services.json"
+      "googleServicesFile": "./assets/google-services.json",
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "scheme": "app.anya.eargym",
     "experiments": {
@@ -76,6 +84,12 @@
       "@react-native-firebase/app",
       "@react-native-firebase/crashlytics",
       "./plugins/with-firebase-disable-spm"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "8f6ed2ac-0df9-4205-bb4b-91610b1ece8e"
+      }
+    },
+    "owner": "i_vasyl"
   }
 }

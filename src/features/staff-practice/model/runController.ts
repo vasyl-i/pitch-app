@@ -52,6 +52,7 @@ import { createThrottle } from '@/features/pitch-detection';
 import { NativeVoiceGate } from '../../../../modules/pitch-native/src';
 import { freqToMidi } from '@/shared/lib/music';
 import { centsToGlowTier, micActive, micGlowTier, micRms } from '@/shared/lib/micRmsBus';
+import { SKIP_ACCOMPANIED_STAGE } from '@/shared/lib/featureFlags';
 import type { MelodyPlayer } from '../lib/melodyPlayer';
 import type { StaffStatus, SungSample } from './staffStore';
 
@@ -331,6 +332,17 @@ export function createRunController({
     referenceFinished() {
       if (disposed || stage !== 'listen') return;
       demo.stop();
+
+      if (SKIP_ACCOMPANIED_STAGE) {
+        // Skip the accompanied stage — go straight to solo via transition
+        stageTimer = setTimeout(() => {
+          stageTimer = null;
+          if (disposed) return;
+          beginTransition();
+        }, DEMO_GAP_MS);
+        return;
+      }
+
       // a beat of silence so the last reference note's decay is fully gone
       // before the sing-along opens
       stageTimer = setTimeout(() => {

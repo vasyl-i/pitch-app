@@ -123,10 +123,28 @@ export const useAuthStore = create<AuthState>((set) => ({
   signInWithGoogle: async () => {
     await GoogleSignin.hasPlayServices();
 
-    // Generate a nonce: Supabase will sha256-hash the raw nonce and compare
-    // it against the nonce claim in the ID token. Google Sign-In SDK embeds
-    // the nonce we provide as-is, so we must pass the HASH to Google and
-    // the RAW value to Supabase.
+    if (Platform.OS === 'android') {
+      // Android Google Sign-In SDK does not support embedding a nonce in the
+      // ID token, so we skip nonce verification on Android.
+      const response = await GoogleSignin.signIn();
+
+      if (!response.data?.idToken) {
+        throw new Error('Google sign-in failed: no ID token returned');
+      }
+
+      const { error } = await supabase.auth.signInWithIdToken({
+        provider: 'google',
+        token: response.data.idToken,
+      });
+
+      if (error) throw error;
+      return;
+    }
+
+    // iOS: Generate a nonce for extra security. Supabase will sha256-hash the
+    // raw nonce and compare it against the nonce claim in the ID token. Google
+    // Sign-In SDK embeds the nonce we provide as-is, so we must pass the HASH
+    // to Google and the RAW value to Supabase.
     const rawNonce = Crypto.getRandomValues(new Uint8Array(16))
       .reduce((s, b) => s + b.toString(16).padStart(2, '0'), '');
     const hashedNonce = await Crypto.digestStringAsync(

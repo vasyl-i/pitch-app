@@ -7,16 +7,31 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:82746638442:android:placeholder",
+        "mobilesdk_app_id": "1:82746638442:android:06d5623fe08c5f8dc50a13",
         "android_client_info": {
           "package_name": "app.anya.eargym"
         }
       },
+      "oauth_client": [
+        {
+          "client_id": "82746638442-9dgkb6gt87m7p45c9bvphb8dfkbv7vcu.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "app.anya.eargym",
+            "certificate_hash": "3cf291bbe6c22f5cd0123bdb849fc81dd05e80ad"
+          }
+        }
+      ],
       "api_key": [
         {
-          "current_key": "AIzaSyAsA784aM3VPCznAkKVj41orqS5KCdXzWo"
+          "current_key": "AIzaSyASDPsZ1EjEQHDQyap9iO_hWAilv5H2hiw"
         }
-      ]
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
     }
   ],
   "configuration_version": "1"

@@ -6,7 +6,7 @@
 import { Dimensions, Image, StyleSheet, View } from 'react-native';
 import { exerciseById, type NoteOutcome, useEarTrainingStore, } from '@/features/ear-training';
 import { colorForCents } from '@/shared/lib/music';
-import { typography, useTheme } from '@/shared/theme';
+import { spacing, typography, useTheme } from '@/shared/theme';
 import { AppText, Button } from '@/shared/ui';
 import { VoiceWaveform } from '@/shared/ui/VoiceWaveform';
 
@@ -127,8 +127,8 @@ export function ActiveRound({ session }: { session: SessionControls }) {
                     : live.note ? palette.accent : palette.textPrimary;
                 centerContent = (
                     <View style={styles.singContent}>
-                        <View style={{ height: 80, justifyContent: "space-between", gap: 4, alignItems: "center" }}>
-                            <View style={{ height: 50 }}>
+                        <View style={{ justifyContent: "flex-start", gap: 4, alignItems: "center" }}>
+                            <View style={{ height: 60, overflow: "visible" }}>
                             <AppText variant="display" color={noteColor} style={styles.noteDisplay}>
                                 {live.note ?? '♪'}
                             </AppText>
@@ -272,6 +272,7 @@ const styles = StyleSheet.create({
     },
     noteDisplay: {
         fontSize: 48,
+        lineHeight: 52,
         textAlign: 'center',
     },
     resultContent: {
@@ -290,6 +291,6 @@ const styles = StyleSheet.create({
     row: { flexDirection: 'row' },
     footer: {
         gap: 12,
-        paddingBottom: 8,
+        paddingBottom: spacing.lg,
     },
 });

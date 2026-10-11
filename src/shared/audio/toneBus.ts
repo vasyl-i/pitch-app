@@ -13,10 +13,18 @@
  * preserves "stop kills pending audio" without tearing down the output for
  * everyone else.
  */
+import { Platform } from 'react-native';
 import { AudioContext } from 'react-native-audio-api';
 import { trackSounding } from './referenceMonitor';
 import { getSoundPrefs } from './soundStore';
 import { schedulePianoNote, type PianoVoice } from './pianoSampler';
+
+/**
+ * On iOS the audio session switches to `playback` category for full speaker
+ * volume during demo/listen stages. Android has no equivalent session category
+ * management, so its output is noticeably quieter. This multiplier compensates.
+ */
+const PLATFORM_GAIN = Platform.OS === 'android' ? 1.8 : 1;
 
 let sharedCtx: AudioContext | null = null;
 
@@ -88,7 +96,7 @@ export function createToneGroup({ claimsSpeaker = true }: ToneGroupOptions = {})
   return {
     schedule({ midi, at, duration, volume, attack = 0.04, release = 0.12 }) {
       const prefs = getSoundPrefs();
-      const scaledVolume = volume * prefs.volume;
+      const scaledVolume = Math.min(volume * prefs.volume * PLATFORM_GAIN, 1);
 
       const pv = schedulePianoNote(midi, at, duration, scaledVolume, attack, release, prefs.soundType);
       if (pv) {

@@ -227,7 +227,7 @@ function StaffSession({
             We didn't hear any singing.
           </AppText>
           <AppText variant="caption" color={palette.textSecondary} style={{ textAlign: 'center', marginTop: 8 }}>
-            Check your mic, then give it a try — you'll hear the melody, sing it with the guide, then on your own.
+            Check your mic, then give it a try — you'll hear the melody first, then sing it on your own.
           </AppText>
           <View style={{ marginTop: spacing.lg, gap: spacing.md }}>
             <Button title="Try again" onPress={() => restart()} />

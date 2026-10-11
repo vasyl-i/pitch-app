@@ -1,0 +1,59 @@
+# Dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native build output
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+.kotlin/
+modules/*/android/build/
+modules/*/android/.cxx/
+*.aab
+*.apk
+
+# Generated native folders (root-level only, not modules/*/ios or modules/*/android)
+/ios/
+/android/
+
+# Metro
+.metro-health-check*
+
+# Debug logs
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# NOTE: .env is NOT excluded here — EAS builds need it
+# .env
+
+# Google OAuth credential files
+*.plist
+!assets/GoogleService-Info.plist
+client_secret_*.json
+
+# Google Play service account keys
+play-store-service-account.json
+pitchgym-anya-*.json
+eargym-*.json
+
+# TypeScript
+*.tsbuildinfo
+
+# IDE
+.idea/
+
+# Benchmark byproducts
+benchmark-corpus/**/*.verify.wav

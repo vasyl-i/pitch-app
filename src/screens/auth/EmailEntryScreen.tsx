@@ -51,8 +51,10 @@ export function EmailEntryScreen({ navigation }: AuthScreenProps<'EmailEntry'>) 
 
     return (
         <Screen dismissKeyboard avoidKeyboard>
-          <AmpMaskView mask="amp-block" style={{ flex: 1 }}>
+          <View style={{ paddingBottom: 16 }}>
             <BackButton onPress={() => navigation.goBack()} />
+          </View>
+          <AmpMaskView mask="amp-block" style={{ flex: 1 }}>
             <View style={styles.content}>
                 <View style={styles.header}>
                     <AppText variant="title" style={{ fontSize: 26, textAlign: 'center' }}>

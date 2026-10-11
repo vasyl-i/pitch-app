@@ -37,7 +37,11 @@ import { AuthNavigator } from './navigation/AuthNavigator';
 
 SplashScreen.preventAutoHideAsync();
 setupNotificationHandler();
-initRevenueCat('appl_kFBGeARTxhvdqgULiBoIIAvmvUF');
+initRevenueCat(
+  Platform.OS === 'android'
+    ? 'goog_zZKmLeLnBdTHvIfJYGpsHEIHrUo'
+    : 'appl_kFBGeARTxhvdqgULiBoIIAvmvUF',
+);
 initAnalytics();
 
 /**

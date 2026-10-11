@@ -15,10 +15,14 @@ expo-env.d.ts
 *.key
 *.mobileprovision
 .kotlin/
+modules/*/android/build/
+modules/*/android/.cxx/
+*.aab
+*.apk
 
-# Generated native folders
-ios/
-android/
+# Generated native folders (root-level only, not modules/*/ios or modules/*/android)
+/ios/
+/android/
 
 # Metro
 .metro-health-check*
@@ -41,6 +45,11 @@ yarn-error.*
 *.plist
 client_secret_*.json
 
+# Google Play service account keys
+play-store-service-account.json
+pitchgym-anya-*.json
+eargym-*.json
+
 # TypeScript
 *.tsbuildinfo
 
@@ -49,3 +58,7 @@ client_secret_*.json
 
 # Benchmark byproducts
 benchmark-corpus/**/*.verify.wav
+
+# AI agent tooling
+.agents/
+skills-lock.json

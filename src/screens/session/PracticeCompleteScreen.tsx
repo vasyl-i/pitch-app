@@ -144,6 +144,7 @@ export function PracticeCompleteScreen({ navigation }: RootScreenProps<'Practice
                 gap: 20,
                 paddingTop: spacing.md,
                 position: 'absolute',
+                alignSelf: "center",
                 width: '100%',
                 bottom: 0,
                 paddingHorizontal: spacing.lg,
