@@ -4,6 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Image } from 'react-native';
 import { FloatingTabBar } from './FloatingTabBar';
+import { TabBlurTarget, TabBlurTargetsProvider } from './tabBlurTargets';
 import { TodayScreen } from '@/screens/home';
 import { SingHubScreen, InstrumentalUploadScreen, InstrumentalAnalyzingScreen, InstrumentalSingScreen } from '@/screens/sing';
 import { ExercisesHubScreen } from '@/screens/exercises';
@@ -126,8 +127,14 @@ function MainTabs() {
   const { palette } = useTheme();
 
   return (
+    <TabBlurTargetsProvider>
     <Tab.Navigator
       tabBar={(props) => <FloatingTabBar {...props} />}
+      screenLayout={({ route, children }) => (
+        <TabBlurTarget routeKey={route.key} backgroundColor={palette.background}>
+          {children}
+        </TabBlurTarget>
+      )}
       screenOptions={{
         headerShown: false,
         sceneStyle: { backgroundColor: palette.background },
@@ -175,6 +182,7 @@ function MainTabs() {
         }}
       />
     </Tab.Navigator>
+    </TabBlurTargetsProvider>
   );
 }
 

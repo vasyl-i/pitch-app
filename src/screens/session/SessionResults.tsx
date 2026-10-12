@@ -2,7 +2,7 @@
  * The one results screen every exercise ends on: Score.png cat mascot with
  * score overlay, round-by-round breakdown, coaching, and action buttons.
  */
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Dimensions, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import {
     exerciseById,
@@ -14,7 +14,7 @@ import { PremiumGate } from '@/features/subscription';
 import { typography, useTheme } from '@/shared/theme';
 import { AppText, Button, Card } from '@/shared/ui';
 import { MelodyOverlay } from './MelodyOverlay';
-import { BlurView } from 'expo-blur';
+import { BlurTargetView, BlurView } from 'expo-blur';
 
 interface SessionControls {
     retry(): void;
@@ -110,6 +110,7 @@ const isSmallScreen = Dimensions.get('screen').height < 700;
 export function SessionResults({ session, actions }: { session: SessionControls; actions: ResultsActions }) {
     const { palette, spacing } = useTheme();
     const [expanded, setExpanded] = useState<number | null>(null);
+    const blurTargetRef = useRef<View>(null);
 
     const exerciseId = useEarTrainingStore((s) => s.exerciseId);
     const results = useEarTrainingStore((s) => s.results);
@@ -121,6 +122,7 @@ export function SessionResults({ session, actions }: { session: SessionControls;
 
     return (
         <View style={styles.container}>
+            <BlurTargetView ref={blurTargetRef} collapsable={false} style={{ flex: 1 }}>
             <ScrollView style={{ height: "100%" }} contentContainerStyle={{ paddingBottom: 300, paddingHorizontal: spacing.lg }} showsVerticalScrollIndicator={false}>
                 {/* Score hero with cat mascot */}
                 <View style={styles.scoreHero}>
@@ -209,9 +211,10 @@ export function SessionResults({ session, actions }: { session: SessionControls;
                     })}
                 </Card>
             </ScrollView>
+            </BlurTargetView>
 
             {/* Action buttons */}
-            <BlurView intensity={10} tint="dark" style={{ gap: 20, paddingTop: spacing.md, position: "absolute", width: "100%", bottom: 0, paddingHorizontal: spacing.lg }}>
+            <BlurView intensity={10} tint="dark" blurTarget={blurTargetRef} blurMethod="dimezisBlurViewSdk31Plus" style={{ gap: 20, paddingTop: spacing.md, position: "absolute", width: "100%", bottom: 0, paddingHorizontal: spacing.lg }}>
                 <Button title={actions.primary.title} onPress={actions.primary.onPress}/>
                 {actions.secondary && (
                     <Button title={actions.secondary.title} variant="ghost" onPress={actions.secondary.onPress}/>

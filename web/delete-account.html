@@ -3,10 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Delete account - PitchGym</title>
+  <title>Delete account – PitchGym</title>
+  <meta name="description" content="How to delete your PitchGym account and what data is removed.">
+  <link rel="canonical" href="https://pitchgym.anyabedrytska.com/delete-account.html">
+  <meta name="theme-color" content="#08070C">
+  <link rel="icon" href="favicon.ico" sizes="48x48">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <style>
+    @font-face { font-family: 'Satoshi'; src: url('assets/fonts/Satoshi-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+    @font-face { font-family: 'Satoshi'; src: url('assets/fonts/Satoshi-Medium.woff2') format('woff2'); font-weight: 500; font-display: swap; }
+    @font-face { font-family: 'Satoshi'; src: url('assets/fonts/Satoshi-Bold.woff2') format('woff2'); font-weight: 700; font-display: swap; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #08070C; color: #E0DFE3; line-height: 1.7; padding: 24px; }
+    body { font-family: 'Satoshi', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #08070C; color: #E0DFE3; line-height: 1.7; padding: 24px; }
     .container { max-width: 720px; margin: 0 auto; padding: 40px 0; }
     h1 { font-size: 32px; color: #FFFFFF; margin-bottom: 8px; }
     h2 { font-size: 20px; color: #FFFFFF; margin-top: 32px; margin-bottom: 12px; }
@@ -39,9 +48,20 @@
     }
     .success-message p { margin-bottom: 0; color: #C8DA59; }
     .form-section { margin-top: 32px; }
+    h1, h2, strong, .btn { font-weight: 700; }
+    .site-nav { max-width: 720px; margin: 0 auto; display: flex; align-items: center; gap: 10px; padding-top: 8px; }
+    .site-nav a { display: inline-flex; align-items: center; gap: 10px; color: #FFFFFF; font-weight: 700; font-size: 16px; line-height: 22px; }
+    .site-nav a:hover { text-decoration: none; opacity: 0.8; }
+    .site-nav img { width: 32px; height: 32px; border-radius: 8px; }
+    .site-footer { max-width: 720px; margin: 0 auto; padding: 24px 0 16px; display: flex; flex-wrap: wrap; gap: 8px 24px; font-size: 14px; line-height: 20px; }
+    .site-footer a { color: rgba(255, 255, 255, 0.64); }
+    .site-footer a:hover { color: #FFFFFF; }
   </style>
 </head>
 <body>
+  <nav class="site-nav">
+    <a href="index.html"><img src="assets/img/app-icon.webp" width="32" height="32" alt="" />PitchGym</a>
+  </nav>
   <div class="container">
     <h1>Delete your account</h1>
     <p style="color: #6E6D73; margin-bottom: 32px;">PitchGym account deletion</p>
@@ -88,13 +108,21 @@
         <button type="submit" class="btn btn-danger" id="submitBtn">Request account deletion</button>
       </form>
       <div class="success-message" id="successMessage">
-        <p>Your deletion request has been received. We will process it and permanently remove your account data within 30 days. You will receive a confirmation email once the deletion is complete.</p>
+        <p>Your email app should open with a prepared request. Send it, and we will permanently remove your account data within 30 days and confirm by email. If no email app opened, write to <a href="mailto:legal@anyabedrytska.com">legal@anyabedrytska.com</a> from the address linked to your account.</p>
       </div>
     </div>
 
     <h2>Contact</h2>
     <p>If you have questions about account deletion or your data, contact us at <a href="mailto:legal@anyabedrytska.com">legal@anyabedrytska.com</a>.</p>
   </div>
+
+  <footer class="site-footer">
+    <a href="index.html">Home</a>
+    <a href="privacy-policy.html">Privacy policy</a>
+    <a href="terms-of-service.html">Terms of service</a>
+    <a href="delete-account.html">Delete account</a>
+    <a href="mailto:legal@anyabedrytska.com">Contact</a>
+  </footer>
 
   <script>
     function handleSubmit(e) {

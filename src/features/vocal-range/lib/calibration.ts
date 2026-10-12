@@ -24,12 +24,31 @@ export type CalibrationStatus =
   | 'error';
 
 const QUIET_STAGE_MS = 2000;
-const LEVEL_STAGE_MS = 1800;
+/**
+ * Upper bound for the "hum a note" stage. The stage ends as soon as the voice
+ * is heard, so this only matters for people who need a moment to start —
+ * reading the prompt and taking a breath easily eats the first second.
+ */
+const LEVEL_STAGE_MS = 3500;
 /** ambient rms above this reads as a noisy room, not just quiet electronics hiss */
 const NOISY_FLOOR_RMS = 0.02;
-/** the level stage must clear the ambient floor by at least this multiple */
-const MIN_LEVEL_MARGIN = 2.5;
-const ABS_MIN_LEVEL_RMS = 0.01;
+/**
+ * Loudness pass: the level stage must clear the ambient floor by this
+ * multiple, and never sit below the absolute minimum. Kept just above the
+ * detector's own voice gate (`signal.ts`: max(0.004, floor × 1.7)) — the check
+ * exists to catch a muted or blocked mic, not to demand more volume than
+ * detection needs. Soft, high voices (kids especially) hum well under 0.01.
+ */
+const MIN_LEVEL_MARGIN = 2;
+const ABS_MIN_LEVEL_RMS = 0.005;
+/**
+ * Pitch pass: this many frames (~12ms each, so ≈170ms) where the detector
+ * found a pitch above its voice gate prove the voice is usable even if the
+ * loudness pass hasn't fired.
+ */
+const VOICED_FRAMES_TO_PASS = 15;
+const VOICE_GATE_ABS_RMS = 0.004;
+const VOICE_GATE_FLOOR_MULT = 1.7;
 
 export interface CalibrationState {
   status: CalibrationStatus;
@@ -58,6 +77,9 @@ export function useMicCalibration(opts?: { skip?: boolean }): CalibrationState {
     let ambientCount = 0;
     let ambientFloor = 0;
     let peakLevel = 0;
+    let levelThreshold = ABS_MIN_LEVEL_RMS;
+    let voiceGate = VOICE_GATE_ABS_RMS;
+    let voicedFrames = 0;
     const startedAt = Date.now();
 
     acquireMic({
@@ -76,6 +98,8 @@ export function useMicCalibration(opts?: { skip?: boolean }): CalibrationState {
             void leaseRef.current?.release();
             return;
           }
+          levelThreshold = Math.max(ABS_MIN_LEVEL_RMS, ambientFloor * MIN_LEVEL_MARGIN);
+          voiceGate = Math.max(VOICE_GATE_ABS_RMS, ambientFloor * VOICE_GATE_FLOOR_MULT);
           stage = 'level';
           setStatus('listen-level');
           micActive.value = true;
@@ -85,14 +109,17 @@ export function useMicCalibration(opts?: { skip?: boolean }): CalibrationState {
 
         // stage === 'level'
         peakLevel = Math.max(peakLevel, frame.rms);
+        if (frame.frequency != null && frame.rms > voiceGate) voicedFrames++;
         micRms.value = frame.rms;
-        setLevel(Math.min(1, peakLevel / (ABS_MIN_LEVEL_RMS * MIN_LEVEL_MARGIN)));
-        if (elapsed < QUIET_STAGE_MS + LEVEL_STAGE_MS) return;
+        // full bar == loud enough to pass
+        setLevel(Math.min(1, peakLevel / levelThreshold));
+        const heard = peakLevel >= levelThreshold || voicedFrames >= VOICED_FRAMES_TO_PASS;
+        if (!heard && elapsed < QUIET_STAGE_MS + LEVEL_STAGE_MS) return;
         stage = 'done';
         micActive.value = false;
         micRms.value = 0;
         void leaseRef.current?.release();
-        setStatus(peakLevel < Math.max(ABS_MIN_LEVEL_RMS, ambientFloor * MIN_LEVEL_MARGIN) ? 'too-quiet' : 'ok');
+        setStatus(heard ? 'ok' : 'too-quiet');
       },
     })
       .then((lease) => {

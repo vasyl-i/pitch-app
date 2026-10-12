@@ -34,6 +34,15 @@ import type { ProfileScreenProps } from '@/app/navigation/types';
 import { Ionicons } from '@expo/vector-icons';
 import { todayColor } from '@/screens/home/todayPalette';
 
+const FEEDBACK_EMAIL = 'legal@anyabedrytska.com';
+
+/** No mail app installed (always the case on the iOS Simulator) — show the address instead. */
+function openFeedbackEmail() {
+  Linking.openURL(`mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent('PitchGym Feedback')}`).catch(() => {
+    Toast.show({ type: 'info', text1: 'No email app found', text2: `Write to us at ${FEEDBACK_EMAIL}` });
+  });
+}
+
 const UNLOCK_BG = require('../../../assets/background-unlock.png');
 
 function reminderSubtitle(hour: number | null, minute: number): string {
@@ -288,7 +297,7 @@ export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>)
             title="Share your thoughts about PitchGym"
             subtitle="We'll be happy to hear from you"
             last
-            onPress={() => Linking.openURL('mailto:support@pitchgym.app?subject=PitchGym Feedback')}
+            onPress={openFeedbackEmail}
           />
         </View>
 

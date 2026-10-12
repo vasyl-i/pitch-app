@@ -11,7 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import { usePreferencesStore } from '@/features/learning';
 import { requestNotificationPermissions, schedulePracticeReminder, cancelPracticeReminder } from '@/shared/lib/notifications';
-import { AppText, BackButton, Button, Screen } from '@/shared/ui';
+import { AppText, BackButton, Button, Screen, TimeDropdown } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
 import type { RootScreenProps } from '@/app/navigation/types';
 
@@ -145,15 +145,19 @@ export function ReminderSettingsScreen({ navigation }: RootScreenProps<'Reminder
                 Set reminder time
               </AppText>
             </View>
-            <DateTimePicker
-              style={{ alignSelf: 'center' }}
-              value={date}
-              mode="time"
-              display="spinner"
-              onChange={handleTimeChange}
-              minuteInterval={5}
-              themeVariant="dark"
-            />
+            {Platform.OS === 'ios' ? (
+              <DateTimePicker
+                style={{ alignSelf: 'center' }}
+                value={date}
+                mode="time"
+                display="spinner"
+                onChange={handleTimeChange}
+                minuteInterval={5}
+                themeVariant="dark"
+              />
+            ) : (
+              <TimeDropdown value={date} onChange={setDate} minuteInterval={5} />
+            )}
           </View>
         )}
 

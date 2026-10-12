@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AppText, Button } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
@@ -82,7 +82,7 @@ export function DetectionFlow({
                 color={palette.white}
                 style={{
                     fontSize: 32,
-                    lineHeight: 34,
+                    lineHeight: Platform.OS === 'android' ? 40 : 34,
                     paddingTop: 10,
                     fontFamily: typography.family.bold,
                     textAlign: 'center'

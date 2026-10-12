@@ -2,7 +2,7 @@
  * The end of today's guided practice: a warm close-out with what you did,
  * your streak, and one exit back Home. No decisions, just the win.
  */
-import { type ReactNode, useMemo } from 'react';
+import { type ReactNode, useMemo, useRef } from 'react';
 import { Image, ImageBackground, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useLessonSessionStore } from '@/features/learning';
@@ -12,7 +12,7 @@ import { AppText, Button, Card, Screen } from '@/shared/ui';
 import { spacing, typography, useTheme } from '@/shared/theme';
 import type { RootScreenProps } from '@/app/navigation/types';
 import { resetToTab } from '@/app/navigation/resetToTab';
-import { BlurView } from 'expo-blur';
+import { BlurTargetView, BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const UNLOCK_BG = require('../../../assets/background-unlock.png');
@@ -66,6 +66,7 @@ export function PracticeCompleteScreen({ navigation }: RootScreenProps<'Practice
     const { isPremium } = usePremiumStatus();
     const openPaywall = usePaywall('practice-complete');
     const insets = useSafeAreaInsets();
+    const blurTargetRef = useRef<View>(null);
 
 
     const streak = useMemo(() => currentStreak(sessions), [sessions]);
@@ -77,7 +78,8 @@ export function PracticeCompleteScreen({ navigation }: RootScreenProps<'Practice
     }, [sessions]);
 
     return (
-        <Screen noBottomPadding>
+        <Screen noHorizontalPadding noBottomPadding>
+            <BlurTargetView ref={blurTargetRef} collapsable={false} style={{ flex: 1 }}>
             <ScrollView contentContainerStyle={styles.center}>
                 <Image source={require('../../../assets/practice-complete.png')}/>
                 <AppText variant="title" style={{ fontSize: 40, textAlign: 'center' }}>
@@ -139,8 +141,9 @@ export function PracticeCompleteScreen({ navigation }: RootScreenProps<'Practice
                     </Pressable>
                 )}
             </ScrollView>
+            </BlurTargetView>
 
-            <BlurView intensity={10} tint="dark" style={{
+            <BlurView intensity={10} tint="dark" blurTarget={blurTargetRef} blurMethod="dimezisBlurViewSdk31Plus" style={{
                 gap: 20,
                 paddingTop: spacing.md,
                 position: 'absolute',
@@ -187,7 +190,7 @@ function Tile({ icon, value, label }: { icon: ReactNode; value: string; label: s
 }
 
 const styles = StyleSheet.create({
-    center: { flex: 1, alignItems: 'center', justifyContent: 'flex-start', paddingTop: 80 },
+    center: { flex: 1, alignItems: 'center', justifyContent: 'flex-start', paddingTop: 80, paddingHorizontal: spacing.lg },
     tiles: { flexDirection: 'row', gap: 10 },
     tile: {
         flex: 1,

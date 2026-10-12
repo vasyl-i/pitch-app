@@ -116,17 +116,18 @@ export function SignInScreen() {
                     </Pressable>
                     <Pressable
                         accessibilityRole="button"
+                        disabled={loading}
                         onPress={() => navigation.navigate('EmailEntry')}
                         style={({ pressed }) => [
                             styles.authButton,
                             { borderRadius: radii.pill, overflow: 'hidden' as const },
-                            pressed && { opacity: 0.8 },
+                            (pressed || loading) && { opacity: loading ? 0.3 : 0.8 },
                         ]}
                     >
                         <BlurView intensity={blur.card} tint="dark" style={StyleSheet.absoluteFill}/>
                         <View style={[StyleSheet.absoluteFill, { backgroundColor: palette.surface }]}/>
                         <Ionicons name="mail" size={14} color={palette.textPrimary}/>
-                        <AppText variant="label" color={palette.textPrimary}>Continue with email</AppText>
+                        <AppText variant="label" color={palette.textPrimary}>{loading ? 'Signing in...' : 'Continue with email'}</AppText>
                     </Pressable>
                     <View style={styles.noSignInTextContainer}>
                         <Text style={styles.noSignInText}>{'Want to try first? '}</Text>

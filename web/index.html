@@ -2,202 +2,530 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>PitchGym — Train your ear. Find your pitch.</title>
-  <meta name="description" content="PitchGym helps beginner-to-intermediate singers train their ear, find their pitch, and sing with confidence." />
-  <meta property="og:title" content="PitchGym" />
-  <meta property="og:description" content="Train your ear. Find your pitch. Sing with confidence." />
-  <meta property="og:image" content="https://pitchgym.anyabedrytska.com/assets/app-icon.webp" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>PitchGym: Sing in tune – ear training & vocal pitch monitor</title>
+  <meta name="description" content="PitchGym is a singing app and pocket vocal coach. A real-time vocal pitch monitor, ear training and music theory exercises help you sing in tune. Free on iPhone." />
+  <meta name="keywords" content="ear training, vocal pitch monitor, singing pitch, sing in tune, music theory, vocal coach, singing app, pitch trainer, relative pitch, perfect pitch, interval training, vocal warm up, voice training, vocal range test" />
+  <meta name="author" content="Anya Bedrytska, Vasyl Iliuchenko" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="theme-color" content="#08070C" />
+  <meta name="color-scheme" content="dark" />
+  <link rel="canonical" href="https://pitchgym.anyabedrytska.com/" />
+
+  <!-- iOS Safari smart app banner -->
+  <meta name="apple-itunes-app" content="app-id=6799694369" />
+
+  <!-- Icons -->
+  <link rel="icon" href="favicon.ico" sizes="48x48" />
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="manifest" href="site.webmanifest" />
+
+  <!-- Open Graph / Twitter -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="PitchGym" />
+  <meta property="og:url" content="https://pitchgym.anyabedrytska.com/" />
+  <meta property="og:title" content="PitchGym: Sing in tune – ear training & vocal pitch monitor" />
+  <meta property="og:description" content="Train your ear, hit notes accurately and see real progress. Real-time pitch feedback, on-device and private." />
+  <meta property="og:image" content="https://pitchgym.anyabedrytska.com/og-image.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="PitchGym app icon with the tagline: sing in tune, train your ear" />
+  <meta property="og:locale" content="en_US" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="PitchGym: Sing in tune – ear training & vocal pitch monitor" />
+  <meta name="twitter:description" content="Train your ear, hit notes accurately and see real progress." />
+  <meta name="twitter:image" content="https://pitchgym.anyabedrytska.com/og-image.jpg" />
+
+  <link rel="preload" href="assets/fonts/Satoshi-Bold.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="assets/fonts/Satoshi-Regular.woff2" as="font" type="font/woff2" crossorigin />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://pitchgym.anyabedrytska.com/#website",
+        "url": "https://pitchgym.anyabedrytska.com/",
+        "name": "PitchGym",
+        "inLanguage": "en"
+      },
+      {
+        "@type": "MobileApplication",
+        "@id": "https://pitchgym.anyabedrytska.com/#app",
+        "name": "PitchGym – Sing in tune",
+        "description": "Singing app with a real-time vocal pitch monitor, ear training and music theory exercises. A vocal coach in your pocket for beginner and intermediate singers.",
+        "operatingSystem": "iOS",
+        "applicationCategory": "EducationalApplication",
+        "applicationSubCategory": "Music",
+        "image": "https://pitchgym.anyabedrytska.com/icon-512.png",
+        "url": "https://pitchgym.anyabedrytska.com/",
+        "installUrl": "https://apps.apple.com/app/id6799694369",
+        "sameAs": ["https://apps.apple.com/app/id6799694369"],
+        "author": [
+          { "@type": "Person", "name": "Anya Bedrytska", "url": "https://anyabedrytska.com/" },
+          { "@type": "Person", "name": "Vasyl Iliuchenko", "url": "https://www.linkedin.com/in/vasyl-iliuchenko" }
+        ],
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "keywords": "ear training, vocal pitch monitor, singing pitch, music theory, vocal coach, sing in tune"
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Is PitchGym free?",
+            "acceptedAnswer": { "@type": "Answer", "text": "PitchGym is free to download and includes free daily practice. Premium adds personalized feedback, adaptive daily lessons, weak spot training and advanced exercises, with a 7-day free trial." }
+          },
+          {
+            "@type": "Question",
+            "name": "Does PitchGym record or upload my voice?",
+            "acceptedAnswer": { "@type": "Answer", "text": "No. Your voice is analysed on your device in real time. Raw microphone audio is never uploaded, stored on our servers or shared with anyone." }
+          },
+          {
+            "@type": "Question",
+            "name": "Do I need to know music theory?",
+            "acceptedAnswer": { "@type": "Answer", "text": "No. PitchGym is made for beginner and intermediate singers. Exercises start simple and adapt to your vocal range and level as you improve." }
+          },
+          {
+            "@type": "Question",
+            "name": "How do I cancel my subscription?",
+            "acceptedAnswer": { "@type": "Answer", "text": "On iPhone, open Settings, tap your name, then Subscriptions, choose PitchGym and tap Cancel subscription. You keep premium until the end of the paid period." }
+          },
+          {
+            "@type": "Question",
+            "name": "How do I delete my account?",
+            "acceptedAnswer": { "@type": "Answer", "text": "In the app, go to Profile and choose Delete account. You can also follow the steps at https://pitchgym.anyabedrytska.com/delete-account.html." }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
   <style>
+    @font-face { font-family: 'Satoshi'; src: url('assets/fonts/Satoshi-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+    @font-face { font-family: 'Satoshi'; src: url('assets/fonts/Satoshi-Medium.woff2') format('woff2'); font-weight: 500; font-display: swap; }
+    @font-face { font-family: 'Satoshi'; src: url('assets/fonts/Satoshi-Bold.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+    @font-face { font-family: 'Satoshi'; src: url('assets/fonts/Satoshi-Black.woff2') format('woff2'); font-weight: 900; font-display: swap; }
+
+    /* Mirrors src/shared/theme/tokens.ts */
+    :root {
+      --background: #08070C;
+      --surface: rgba(255, 255, 255, 0.06);
+      --surface-hover: rgba(255, 255, 255, 0.1);
+      --surface-solid: #131319;
+      --text-primary: #ffffff;
+      --text-secondary: rgba(255, 255, 255, 0.64);
+      --text-faint: #A1A0A5;
+      --accent: #C8DA59;
+      --accent-secondary: #8B7CFF;
+      --on-accent: #000000;
+      --glow-indigo: #7B7FE0;
+      --glow-lavender: #B79FE8;
+      --glow-blue: #6FA0E8;
+      --glow-coral: #EE8672;
+
+      --space-xs: 4px;
+      --space-sm: 8px;
+      --space-md: 12px;
+      --space-lg: 16px;
+      --space-xl: 24px;
+      --space-xxl: 32px;
+
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 24px;
+      --radius-pill: 220px;
+
+      --font: 'Satoshi', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --shadow-soft: 0 12px 40px rgba(0, 0, 0, 0.35);
+    }
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #08070C;
-      color: #fff;
+      font-family: var(--font);
+      font-weight: 400;
+      font-size: 16px;
+      line-height: 24px;
+      background: var(--background);
+      color: var(--text-primary);
       min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-      overflow: hidden;
+      padding: env(safe-area-inset-top, 0px) var(--space-xl) env(safe-area-inset-bottom, 0px);
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* Background gradient — radial lime burst from top-right, fading through violet */
-    body::before {
-      content: '';
+    /* Screen backdrop: lime burst from top-right fading through violet (gradient.screenBg) */
+    .backdrop {
       position: fixed;
       inset: 0;
-      background:
-        radial-gradient(ellipse 102% 118% at 107% -19%, rgba(242, 255, 194, 0.18) 0%, rgba(121, 134, 255, 0.12) 40%, transparent 70%);
       pointer-events: none;
       z-index: 0;
+      background: radial-gradient(ellipse 102% 118% at 107% -19%, rgba(242, 255, 194, 0.22) 0%, rgba(121, 134, 255, 0.14) 31%, transparent 70%);
     }
+    .glow { position: absolute; border-radius: 50%; filter: blur(100px); }
+    .glow-indigo { width: 380px; height: 380px; background: var(--glow-indigo); top: -100px; right: -80px; opacity: 0.25; }
+    .glow-lavender { width: 280px; height: 280px; background: var(--glow-lavender); top: 55%; left: -100px; opacity: 0.16; }
+    .glow-blue { width: 220px; height: 220px; background: var(--glow-blue); top: 35%; right: -60px; opacity: 0.1; }
+    .glow-coral { width: 200px; height: 200px; background: var(--glow-coral); bottom: -60px; right: 20%; opacity: 0.12; }
 
-    /* Atmospheric glow blobs */
-    .glow {
-      position: fixed;
-      border-radius: 50%;
-      filter: blur(100px);
-      pointer-events: none;
-      z-index: 0;
-    }
-    .glow-indigo {
-      width: 380px; height: 380px;
-      background: #7B7FE0;
-      top: -100px; right: -80px;
-      opacity: 0.25;
-    }
-    .glow-lavender {
-      width: 280px; height: 280px;
-      background: #B79FE8;
-      bottom: 8%; left: -60px;
-      opacity: 0.2;
-    }
-    .glow-blue {
-      width: 200px; height: 200px;
-      background: #6FA0E8;
-      top: 40%; left: 60%;
-      opacity: 0.1;
-    }
-    .glow-coral {
-      width: 160px; height: 160px;
-      background: #EE8672;
-      bottom: -30px; right: 15%;
-      opacity: 0.15;
-    }
+    main, footer { position: relative; z-index: 1; max-width: 960px; margin: 0 auto; }
 
-    .content {
-      position: relative;
-      z-index: 1;
-      text-align: center;
-      max-width: 440px;
-      width: 100%;
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: var(--radius-sm); }
+
+    /* Hero */
+    .hero {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 0;
+      text-align: center;
+      padding: 72px 0 56px;
     }
-
     .app-icon {
       width: 140px;
       height: 140px;
       border-radius: 32px;
-      object-fit: cover;
-      margin-bottom: 28px;
+      margin-bottom: var(--space-xl);
+      box-shadow: 0 12px 40px rgba(123, 127, 224, 0.35);
       animation: float 4s ease-in-out infinite;
-      filter: drop-shadow(0 12px 40px rgba(123, 127, 224, 0.3));
     }
+    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+    @media (prefers-reduced-motion: reduce) { .app-icon { animation: none; } html { scroll-behavior: auto; } }
 
-    @keyframes float {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-10px); }
+    .eyebrow {
+      font-weight: 500;
+      font-size: 14px;
+      line-height: 20px;
+      color: var(--accent);
+      margin-bottom: var(--space-md);
     }
-
-    .title {
-      font-size: 42px;
-      font-weight: 800;
-      letter-spacing: -1px;
-      margin-bottom: 12px;
-      background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.75) 100%);
+    h1 {
+      font-weight: 900;
+      font-size: 56px;
+      line-height: 68px;
+      padding-bottom: 4px;
+      letter-spacing: -1.2px;
+      margin-bottom: var(--space-lg);
+      background: linear-gradient(135deg, #fff 0%, rgba(255, 255, 255, 0.75) 100%);
       -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
       background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .lede {
+      font-size: 18px;
+      line-height: 28px;
+      color: var(--text-secondary);
+      max-width: 520px;
+      margin-bottom: var(--space-xxl);
+    }
+    .store-badge { display: inline-block; line-height: 0; transition: transform 0.2s; }
+    .store-badge:hover { transform: translateY(-2px); }
+    .store-badge img { height: 56px; width: auto; }
+    .store-note { margin-top: var(--space-md); font-size: 14px; line-height: 20px; color: var(--text-faint); }
+
+    /* Sections */
+    section { padding: 48px 0; }
+    h2 {
+      font-weight: 700;
+      font-size: 32px;
+      line-height: 40px;
+      letter-spacing: -0.3px;
+      margin-bottom: var(--space-md);
+    }
+    .section-lede {
+      font-size: 16px;
+      line-height: 24px;
+      color: var(--text-secondary);
+      max-width: 620px;
+      margin-bottom: var(--space-xl);
     }
 
-    .tagline {
-      font-size: 17px;
-      line-height: 1.6;
-      color: rgba(255, 255, 255, 0.5);
-      margin-bottom: 40px;
-    }
+    .grid { display: grid; gap: var(--space-lg); grid-template-columns: repeat(2, 1fr); }
 
-    .badge-row {
+    /* Cards: translucent fill + soft shadow, no borders */
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      padding: var(--space-xl);
+      box-shadow: var(--shadow-soft);
+      backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
+    }
+    .card h3 {
+      font-weight: 700;
+      font-size: 18px;
+      line-height: 24px;
+      margin: var(--space-lg) 0 var(--space-sm);
+    }
+    .card p { font-size: 16px; line-height: 24px; color: var(--text-secondary); }
+
+    /* Mirrors the exercise icon tile in ExerciseRow.tsx */
+    .bubble {
+      flex-shrink: 0;
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      background: #1E1D1F;
       display: flex;
-      gap: 12px;
+      align-items: flex-end;
       justify-content: center;
-      flex-wrap: wrap;
+      overflow: hidden;
     }
+    .bubble img { display: block; width: 56px; height: 56px; object-fit: contain; }
+    .bubble.inset img { width: 48px; height: 48px; }
 
-    .badge {
+    .exercise-list { list-style: none; display: grid; gap: var(--space-md); grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+    .exercise {
+      display: flex;
+      align-items: center;
+      gap: var(--space-lg);
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      box-shadow: var(--shadow-soft);
+    }
+    .exercise strong { display: block; font-weight: 700; font-size: 16px; line-height: 22px; }
+    .exercise span { display: block; font-size: 14px; line-height: 20px; color: var(--text-secondary); }
+
+    .privacy {
+      display: flex;
+      gap: var(--space-xl);
+      align-items: center;
+      background: rgba(200, 218, 89, 0.08);
+      border-radius: var(--radius-lg);
+      padding: var(--space-xxl);
+    }
+    .privacy p { color: var(--text-secondary); }
+    .privacy h2 { font-size: 26px; line-height: 32px; }
+
+    /* FAQ */
+    .faq { display: grid; gap: var(--space-md); }
+    .faq details {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg) var(--space-xl);
+    }
+    .faq summary {
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--space-lg);
+      font-weight: 500;
+      font-size: 18px;
+      line-height: 26px;
+    }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary::after {
+      content: '';
+      flex-shrink: 0;
+      width: 10px;
+      height: 10px;
+      border-right: 2px solid var(--text-secondary);
+      border-bottom: 2px solid var(--text-secondary);
+      transform: rotate(45deg) translateY(-3px);
+      transition: transform 0.2s;
+    }
+    .faq details[open] summary::after { transform: rotate(-135deg) translateY(-3px); }
+    .faq details p { margin-top: var(--space-md); color: var(--text-secondary); }
+
+    /* Contact */
+    .contact { text-align: center; }
+    .contact .section-lede { margin-left: auto; margin-right: auto; }
+    .button {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      background: rgba(255, 255, 255, 0.06);
-      padding: 12px 22px;
-      border-radius: 999px;
+      justify-content: center;
+      gap: var(--space-sm);
+      height: 58px;
+      padding: 0 var(--space-xxl);
+      border-radius: var(--radius-pill);
+      background: var(--text-primary);
+      color: var(--on-accent);
+      font-weight: 700;
+      font-size: 16px;
+      line-height: 22px;
+      transition: transform 0.2s, opacity 0.2s;
+    }
+    .button:hover { text-decoration: none; transform: translateY(-2px); }
+    .button:active { opacity: 0.8; }
+    .contact-address { margin-top: var(--space-md); font-size: 14px; line-height: 20px; color: var(--text-faint); }
+
+    /* Footer */
+    footer {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-lg);
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--space-xxl) 0 40px;
+      margin-top: var(--space-xl);
       font-size: 14px;
-      font-weight: 600;
-      color: rgba(255, 255, 255, 0.65);
-      transition: background 0.2s;
+      line-height: 20px;
+      color: var(--text-faint);
     }
-    .badge:hover {
-      background: rgba(255, 255, 255, 0.1);
-    }
-    .badge svg {
-      flex-shrink: 0;
-    }
+    footer nav { display: flex; flex-wrap: wrap; gap: var(--space-lg) var(--space-xl); }
+    footer nav a { color: var(--text-secondary); }
+    footer nav a:hover { color: var(--text-primary); }
+    .footer-meta { display: flex; flex-direction: column; gap: var(--space-xs); }
+    .credits a { color: var(--text-secondary); }
+    .credits a:hover { color: var(--text-primary); }
 
-    .divider {
-      width: 48px;
-      height: 2px;
-      background: rgba(255, 255, 255, 0.08);
-      border-radius: 1px;
-      margin: 32px 0;
-    }
-
-    .coming-soon {
-      font-size: 13px;
-      color: rgba(255, 255, 255, 0.3);
-      letter-spacing: 0.5px;
-    }
-
-    .footer {
-      position: fixed;
-      bottom: 24px;
-      left: 0; right: 0;
-      text-align: center;
-      z-index: 1;
-      font-size: 12px;
-      color: rgba(255, 255, 255, 0.15);
+    @media (max-width: 600px) {
+      .hero { padding: 48px 0 32px; }
+      .grid { grid-template-columns: 1fr; }
+      h1 { font-size: 40px; line-height: 50px; }
+      .lede { font-size: 16px; line-height: 24px; }
+      h2 { font-size: 26px; line-height: 32px; }
+      section { padding: 32px 0; }
+      .privacy { flex-direction: column; align-items: flex-start; padding: var(--space-xl); }
+      footer { flex-direction: column; align-items: flex-start; }
     }
   </style>
 </head>
 <body>
-  <!-- Glow blobs -->
-  <div class="glow glow-indigo"></div>
-  <div class="glow glow-lavender"></div>
-  <div class="glow glow-blue"></div>
-  <div class="glow glow-coral"></div>
-
-  <div class="content">
-    <img class="app-icon" src="assets/app-icon.webp" alt="PitchGym" />
-    <h1 class="title">PitchGym</h1>
-    <p class="tagline">
-      Train your ear. Find your pitch.<br />
-      Sing with confidence.
-    </p>
-
-    <div class="badge-row">
-      <span class="badge">
-        <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 1 0 6 0V5a3 3 0 0 0-3-3Z" fill="rgba(200,218,89,0.8)"/><path d="M19 10v1a7 7 0 1 1-14 0v-1M12 18v4m-3 0h6" stroke="rgba(200,218,89,0.8)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Real-time pitch
-      </span>
-      <span class="badge">
-        <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13" stroke="rgba(139,124,255,0.8)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6" cy="18" r="3" fill="rgba(139,124,255,0.8)"/><circle cx="18" cy="16" r="3" fill="rgba(139,124,255,0.8)"/></svg>
-        Ear training
-      </span>
-      <span class="badge">
-        <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Z" stroke="rgba(238,134,114,0.8)" stroke-width="1.5"/><path d="M8 12h.01M12 12h.01M16 12h.01" stroke="rgba(238,134,114,0.8)" stroke-width="2" stroke-linecap="round"/></svg>
-        Sing along
-      </span>
-    </div>
-
-    <div class="divider"></div>
-    <p class="coming-soon">Coming soon to iOS and Android</p>
+  <div class="backdrop" aria-hidden="true">
+    <div class="glow glow-indigo"></div>
+    <div class="glow glow-lavender"></div>
+    <div class="glow glow-blue"></div>
+    <div class="glow glow-coral"></div>
   </div>
 
-  <div class="footer">&copy; 2026 PitchGym</div>
+  <main>
+    <header class="hero">
+      <img class="app-icon" src="assets/img/app-icon.webp" width="140" height="140" alt="PitchGym app icon: a smiling purple cat with a music note" fetchpriority="high" />
+      <p class="eyebrow">Singing app for iPhone</p>
+      <h1>Sing in tune with PitchGym</h1>
+      <p class="lede">
+        Your vocal coach in your pocket. A real-time vocal pitch monitor, ear training and bite-sized music theory help you hit every note and see real progress.
+      </p>
+      <a class="store-badge" href="https://apps.apple.com/app/id6799694369" aria-label="Download PitchGym on the App Store">
+        <img src="assets/img/app-store-badge.svg" width="189" height="56" alt="Download on the App Store" />
+      </a>
+      <p class="store-note">Free to download · 7-day free trial of premium</p>
+    </header>
+
+    <section id="features" aria-labelledby="features-title">
+      <h2 id="features-title">Everything you need to sing on pitch</h2>
+      <p class="section-lede">Built for beginner and intermediate singers. Practise a few minutes a day and hear the difference.</p>
+      <div class="grid">
+        <article class="card">
+          <div class="bubble"><img src="assets/img/SingTheScale.webp" width="56" height="56" alt="" /></div>
+          <h3>Real-time vocal pitch monitor</h3>
+          <p>See your singing pitch as you sing. Instant visual feedback shows if you're sharp, flat or right on the note.</p>
+        </article>
+        <article class="card">
+          <div class="bubble"><img src="assets/img/EchoTheNote.webp" width="56" height="56" alt="" /></div>
+          <h3>Ear training that sticks</h3>
+          <p>Listen, then sing it back. Train relative pitch with notes, intervals and melodies until hearing a note means hitting it.</p>
+        </article>
+        <article class="card">
+          <div class="bubble"><img src="assets/img/ChordTones.webp" width="56" height="56" alt="" /></div>
+          <h3>Music theory you can sing</h3>
+          <p>Scales, arpeggios, chord tones and modes, learned with your voice instead of a textbook.</p>
+        </article>
+        <article class="card">
+          <div class="bubble"><img src="assets/img/SingTheInterval.webp" width="56" height="56" alt="" /></div>
+          <h3>A plan that fits your voice</h3>
+          <p>A quick vocal range test sets up exercises in your range. Daily plans adapt as you improve, and progress stats keep you motivated.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="exercises" aria-labelledby="exercises-title">
+      <h2 id="exercises-title">Ear training and singing exercises</h2>
+      <p class="section-lede">Short drills that build a reliable ear and an accurate voice.</p>
+      <ul class="exercise-list">
+        <li class="exercise">
+          <div class="bubble"><img src="assets/img/EchoTheNote.webp" width="56" height="56" alt="" /></div>
+          <div><strong>Echo the note</strong><span>Hear a note and sing it back in any octave</span></div>
+        </li>
+        <li class="exercise">
+          <div class="bubble"><img src="assets/img/SingTheInterval.webp" width="56" height="56" alt="" /></div>
+          <div><strong>Sing the interval</strong><span>Build intervals above and below a starting note</span></div>
+        </li>
+        <li class="exercise">
+          <div class="bubble"><img src="assets/img/ChordTones.webp" width="56" height="56" alt="" /></div>
+          <div><strong>Chord tones</strong><span>Sing the notes of major and minor chords</span></div>
+        </li>
+        <li class="exercise">
+          <div class="bubble inset"><img src="assets/img/PitchMemory.webp" width="56" height="56" alt="" /></div>
+          <div><strong>Pitch memory</strong><span>Hold a note in your head and find it again</span></div>
+        </li>
+        <li class="exercise">
+          <div class="bubble"><img src="assets/img/SingTheScale.webp" width="56" height="56" alt="" /></div>
+          <div><strong>Echo the melody</strong><span>Repeat short melodies, scales and arpeggios</span></div>
+        </li>
+        <li class="exercise">
+          <div class="bubble"><img src="assets/img/ChordTones.webp" width="56" height="56" alt="" /></div>
+          <div><strong>Major or minor?</strong><span>Tell chord qualities apart by ear</span></div>
+        </li>
+      </ul>
+    </section>
+
+    <section aria-labelledby="privacy-title">
+      <div class="privacy">
+        <div>
+          <h2 id="privacy-title">Your voice stays on your device</h2>
+          <p>Pitch detection runs on your iPhone in real time. Raw microphone audio is never uploaded, stored on our servers or shared. Read the <a href="privacy-policy.html">privacy policy</a>.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">Frequently asked questions</h2>
+      <div class="faq">
+        <details>
+          <summary>Is PitchGym free?</summary>
+          <p>PitchGym is free to download and includes free daily practice. Premium adds personalized feedback, adaptive daily lessons, weak spot training and advanced exercises, with a 7-day free trial.</p>
+        </details>
+        <details>
+          <summary>Does PitchGym record or upload my voice?</summary>
+          <p>No. Your voice is analysed on your device in real time. Raw microphone audio is never uploaded, stored on our servers or shared with anyone.</p>
+        </details>
+        <details>
+          <summary>Do I need to know music theory?</summary>
+          <p>No. PitchGym is made for beginner and intermediate singers. Exercises start simple and adapt to your vocal range and level as you improve.</p>
+        </details>
+        <details>
+          <summary>How do I cancel my subscription?</summary>
+          <p>On iPhone, open Settings, tap your name, then Subscriptions, choose PitchGym and tap Cancel subscription. You keep premium until the end of the paid period.</p>
+        </details>
+        <details>
+          <summary>How do I delete my account?</summary>
+          <p>In the app, go to Profile and choose Delete account. You can also follow <a href="delete-account.html">these steps</a>.</p>
+        </details>
+      </div>
+    </section>
+
+    <section id="support" class="contact" aria-labelledby="support-title">
+      <h2 id="support-title">Need help?</h2>
+      <p class="section-lede">Questions, feedback or a bug to report? Write to us and we'll get back to you.</p>
+      <a class="button" href="mailto:legal@anyabedrytska.com?subject=PitchGym%20support">Email support</a>
+      <p class="contact-address">legal@anyabedrytska.com</p>
+    </section>
+  </main>
+
+  <footer>
+    <div class="footer-meta">
+      <span>&copy; 2026 PitchGym by Anya Bedrytska</span>
+      <p class="credits">
+        Made by <a href="https://anyabedrytska.com/" target="_blank" rel="noopener">Anya Bedrytska</a>, <a href="https://www.linkedin.com/in/vasyl-iliuchenko" target="_blank" rel="noopener">Vasyl Iliuchenko</a>
+      </p>
+    </div>
+    <nav aria-label="Legal">
+      <a href="privacy-policy.html">Privacy policy</a>
+      <a href="terms-of-service.html">Terms of service</a>
+      <a href="delete-account.html">Delete account</a>
+      <a href="mailto:legal@anyabedrytska.com">Contact</a>
+    </nav>
+  </footer>
 </body>
 </html>

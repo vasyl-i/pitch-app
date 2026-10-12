@@ -12,7 +12,7 @@ import { track } from '@/shared/lib/analytics';
 import { usePreferencesStore } from '@/features/learning';
 import { useProfileStore } from '@/entities/profile';
 import { requestNotificationPermissions, schedulePracticeReminder } from '@/shared/lib/notifications';
-import { AppText, BackButton, Button, Screen } from '@/shared/ui';
+import { AppText, BackButton, Button, Screen, TimeDropdown } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
 import type { OnboardingScreenProps } from '@/app/navigation/types';
 
@@ -86,15 +86,19 @@ export function ReminderOnboardingScreen({ navigation }: OnboardingScreenProps<'
                 Set reminder time
               </AppText>
             </View>
-            <DateTimePicker
-                style={{ alignSelf: 'center' }}
-                value={date}
-                mode="time"
-                display="spinner"
-                onChange={handleTimeChange}
-                minuteInterval={5}
-                themeVariant="dark"
-            />
+            {Platform.OS === 'ios' ? (
+              <DateTimePicker
+                  style={{ alignSelf: 'center' }}
+                  value={date}
+                  mode="time"
+                  display="spinner"
+                  onChange={handleTimeChange}
+                  minuteInterval={5}
+                  themeVariant="dark"
+              />
+            ) : (
+              <TimeDropdown value={date} onChange={setDate} minuteInterval={5} />
+            )}
           </View>
         </View>
 
@@ -132,6 +136,7 @@ const styles = StyleSheet.create({
     height: 118,
   },
   pickerSection: {
+    alignSelf: 'stretch',
     alignItems: 'center',
     marginTop: 40,
   },

@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { BlurView } from 'expo-blur';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { useTabBlurTarget } from './tabBlurTargets';
 
 const BAR_HEIGHT = 80;
 const BAR_RADIUS = 160;
@@ -39,6 +40,8 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
     const insets = useSafeAreaInsets();
     const [width, setWidth] = useState(0);
     const translateX = useRef(new Animated.Value(state.index)).current;
+    const activeRouteKey = state.routes[state.index].key;
+    const blurTarget = useTabBlurTarget(activeRouteKey);
 
     useEffect(() => {
         Animated.spring(translateX, {
@@ -128,7 +131,15 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
         <View style={wrapperStyle}>
             <View onLayout={onLayout} style={{ ...barStyle, borderWidth: 1, borderColor: BORDER_COLOR }}>
                 <View style={[StyleSheet.absoluteFill, { borderRadius: BAR_RADIUS, overflow: 'hidden' }]}>
-                    <BlurView intensity={40} tint="systemMaterialDark" style={StyleSheet.absoluteFill} />
+                    <BlurView
+                        // Remount per tab so the native view binds to the newly focused target
+                        key={activeRouteKey}
+                        intensity={40}
+                        tint="systemMaterialDark"
+                        blurTarget={blurTarget}
+                        blurMethod={blurTarget ? 'dimezisBlurViewSdk31Plus' : 'none'}
+                        style={StyleSheet.absoluteFill}
+                    />
                 </View>
                 {content}
             </View>

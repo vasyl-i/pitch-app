@@ -67,6 +67,7 @@ export function CheckEmailScreen({ navigation, route }: AuthScreenProps<'CheckEm
                             style={{
                                 fontSize: 20,
                                 color: palette.textSecondaryElevated,
+                                textAlign: "center",
                             }}
                         >
                             We sent a confirmation link to</AppText>
@@ -74,7 +75,8 @@ export function CheckEmailScreen({ navigation, route }: AuthScreenProps<'CheckEm
                                  style={{
                                      fontSize: 20,
                                      color: palette.textPrimary,
-                                     fontFamily: typography.family.bold
+                                     fontFamily: typography.family.bold,
+                                     textAlign: "center",
                                  }}>
                             {email}
                         </AppText>
@@ -82,6 +84,7 @@ export function CheckEmailScreen({ navigation, route }: AuthScreenProps<'CheckEm
                                  style={{
                                      fontSize: 20,
                                      color: palette.textSecondaryElevated,
+                                     textAlign: "center",
                                  }}>
                             Tap the link to activate your account.
                         </AppText>

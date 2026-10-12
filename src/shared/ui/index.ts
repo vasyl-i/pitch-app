@@ -8,4 +8,5 @@ export type { ChipOption } from './ChipGroup';
 export { IconBubble } from './IconBubble';
 export { ProgressCircle } from './ProgressCircle';
 export { Screen } from './Screen';
+export { TimeDropdown } from './TimeDropdown';
 export { VoiceWaveform } from './VoiceWaveform';
