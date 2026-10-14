@@ -3,7 +3,7 @@
  * preferences, the practice library, and (moved here from their former
  * top-level tabs) Progress and Journey.
  */
-import { Alert, Image, ImageBackground, type ImageSourcePropType, Linking, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Image, type ImageSourcePropType, Linking, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Toast from 'react-native-toast-message';
 
 const ICONS = {
@@ -24,7 +24,7 @@ const ICONS = {
 import { useProfileStore, voiceType } from '@/entities/profile';
 import { useAuthStore } from '@/features/auth';
 import { GOAL_LABELS, usePreferencesStore } from '@/features/learning';
-import { usePremiumStatus, usePaywall } from '@/features/subscription';
+import { usePremiumStatus } from '@/features/subscription';
 import { useSoundStore, SOUND_TYPE_LABELS } from '@/shared/audio';
 import { midiToName } from '@/shared/lib/music';
 import { AppText, Screen } from '@/shared/ui';
@@ -33,6 +33,7 @@ import { useFloatingTabBarClearance } from '@/app/navigation/FloatingTabBar';
 import type { ProfileScreenProps } from '@/app/navigation/types';
 import { Ionicons } from '@expo/vector-icons';
 import { todayColor } from '@/screens/home/todayPalette';
+import { PremiumBanner } from '@/screens/subscription';
 
 const FEEDBACK_EMAIL = 'legal@anyabedrytska.com';
 
@@ -43,8 +44,6 @@ function openFeedbackEmail() {
   });
 }
 
-const UNLOCK_BG = require('../../../assets/background-unlock.png');
-
 function reminderSubtitle(hour: number | null, minute: number): string {
   if (hour == null) return 'Off — tap to set a daily reminder';
   const period = hour < 12 ? 'AM' : 'PM';
@@ -53,24 +52,12 @@ function reminderSubtitle(hour: number | null, minute: number): string {
   return `Daily at ${h}:${m} ${period}`;
 }
 
-function formatTimeLeft(endMs: number): string {
-  const diff = endMs - Date.now();
-  if (diff <= 0) return 'Expired';
-  const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-  if (days > 60) {
-    const months = Math.round(days / 30);
-    return `${months} month${months === 1 ? '' : 's'} left`;
-  }
-  return `${days} day${days === 1 ? '' : 's'} left`;
-}
-
 export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>) {
   const { palette, spacing, radii } = useTheme();
   const tabBarClearance = useFloatingTabBarClearance(spacing.xl);
   const profile = useProfileStore((s) => s.profile);
   const prefs = usePreferencesStore((s) => s.preferences);
   const premium = usePremiumStatus();
-  const openPaywall = usePaywall('profile');
   const soundType = useSoundStore((s) => s.soundType);
   const signOut = useAuthStore((s) => s.signOut);
   const deleteAccount = useAuthStore((s) => s.deleteAccount);
@@ -133,35 +120,6 @@ export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>)
     );
   };
 
-  const handleBannerPress = () => {
-    if (guest) {
-      Alert.alert(
-        'Sign in required',
-        'Create an account or sign in to unlock Premium and keep your progress safe across devices.',
-        [
-          { text: 'Not now', style: 'cancel' },
-          { text: 'Sign in', onPress: () => signOut() },
-        ],
-      );
-    } else if (premium.isPremium) {
-      navigation.navigate('ManageSubscription');
-    } else {
-      openPaywall();
-    }
-  };
-
-  const bannerTitle = premium.isPremium
-    ? 'PitchGym Premium'
-    : 'Unlock all exercises';
-
-  const bannerSubtitle = premium.isPremium
-    ? premium.status === 'trialing'
-      ? `Free trial · ${premium.trialDaysLeft ?? 0} day${premium.trialDaysLeft === 1 ? '' : 's'} left`
-      : premium.currentPeriodEnd
-        ? `${premium.plan?.name ?? 'Premium'} · ${formatTimeLeft(premium.currentPeriodEnd)}`
-        : `${premium.plan?.name ?? 'Premium'} · Active`
-    : 'Get unlimited access to improve your voice';
-
   return (
     <Screen noHorizontalPadding noBottomPadding>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: tabBarClearance }}>
@@ -174,21 +132,7 @@ export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>)
 
         {/* Premium banner */}
         <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.md }}>
-          <Pressable onPress={handleBannerPress} style={[styles.banner, { borderRadius: 10 }]}>
-            <ImageBackground source={UNLOCK_BG} style={styles.bannerBg} imageStyle={{ borderRadius: 10 }}>
-              <Image source={require('../../../assets/unlock-cat.png')} style={styles.bannerCat} resizeMode="contain" />
-              <View style={styles.bannerTextWrap}>
-                <AppText variant="body" style={{ fontSize: 16, lineHeight: 20, color: '#0D022F', fontFamily: typography.family.medium }}>
-                  {bannerTitle}
-                </AppText>
-                <AppText variant="body" style={{ fontSize: 12, lineHeight: 16, color: '#3D3E42', fontFamily: typography.family.regular }}>
-                  {bannerSubtitle}
-                </AppText>
-              </View>
-              <Image source={ICONS.arrowRight} style={[styles.chevron, { marginRight: 16 }]} tintColor={"#21222C"} />
-
-            </ImageBackground>
-          </Pressable>
+          <PremiumBanner source="profile" />
         </View>
 
         {/* Settings */}
@@ -368,10 +312,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     lineHeight: 28,
   },
-  banner: { width: '100%', overflow: 'hidden' },
-  bannerBg: { flexDirection: 'row', alignItems: 'center', height: 72 },
-  bannerCat: { width: 64, height: 64, marginLeft: 12, marginBottom: -8 },
-  bannerTextWrap: { flex: 1, marginLeft: 24, gap: 2 },
   card: {
     backgroundColor: 'rgba(255, 255, 255, 0.06)',
     overflow: 'hidden',

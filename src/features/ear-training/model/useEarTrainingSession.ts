@@ -26,7 +26,7 @@
 import { useEffect, useRef } from 'react';
 import { promptRange, useProfileStore } from '@/entities/profile';
 import { acquireMic, createThrottle, MicPermissionError, type MicLease, type PitchFrame } from '@/features/pitch-detection';
-import { useProgressStore } from '@/features/progress';
+import { elapsedPracticeSeconds, useProgressStore } from '@/features/progress';
 import { centsToGlowTier, micActive, micGlowTier, micRms } from '@/shared/lib/micRmsBus';
 import { hapticMicReady, playTick } from '@/shared/audio';
 import { track } from '@/shared/lib/analytics';
@@ -66,6 +66,10 @@ export function useEarTrainingSession() {
   const defRef = useRef<ExerciseDefinition | null>(null);
   const difficultyRef = useRef<string | null>(null);
   const roundsRef = useRef<EarRound[]>([]);
+  /** rounds this session runs — the drill's default unless the day's plan stretched it */
+  const totalRoundsRef = useRef(0);
+  /** wall-clock start of the current session, for its recorded practice time */
+  const startedAtRef = useRef(Date.now());
   const currentRoundRef = useRef<EarRound | null>(null);
   const listeningRef = useRef(false);
   const previousPcRef = useRef<number | undefined>(undefined);
@@ -254,7 +258,7 @@ export function useEarTrainingSession() {
     guard.later(
       gen,
       () => {
-        if (useEarTrainingStore.getState().round >= def.rounds) {
+        if (useEarTrainingStore.getState().round >= totalRoundsRef.current) {
           completeSession();
         } else {
           void runRound(gen);
@@ -306,7 +310,17 @@ export function useEarTrainingSession() {
       const newResults = results.slice(resumedCount);
       useProgressStore
         .getState()
-        .addSession(buildEarSessionRecord(def, difficultyRef.current, roundsRef.current, newResults, summary));
+        .addSession(
+          buildEarSessionRecord(
+            def,
+            difficultyRef.current,
+            roundsRef.current,
+            newResults,
+            summary,
+            Date.now(),
+            elapsedPracticeSeconds(startedAtRef.current),
+          ),
+        );
     }
     setStore({ phase: 'completed', summary });
     track('session_completed', {
@@ -319,8 +333,11 @@ export function useEarTrainingSession() {
 
   /* ---------------------------- controls --------------------------- */
 
-  /** begin a session; difficulty defaults to the exercise's own default */
-  async function start(exerciseId: string, difficultyId?: string, resume?: PartialProgress) {
+  /**
+   * begin a session; difficulty defaults to the exercise's own default and
+   * `rounds` to its own round count (a guided day may stretch it)
+   */
+  async function start(exerciseId: string, difficultyId?: string, resume?: PartialProgress, rounds?: number) {
     const def = exerciseById(exerciseId);
     if (!def) return;
     const gen = freshGeneration();
@@ -331,6 +348,8 @@ export function useEarTrainingSession() {
     defRef.current = def;
     difficultyRef.current = difficultyId ?? def.defaultDifficulty ?? null;
     roundsRef.current = [];
+    totalRoundsRef.current = rounds ?? def.rounds;
+    startedAtRef.current = Date.now();
     currentRoundRef.current = null;
     previousPcRef.current = resume?.lastAnswerPc;
     useEarTrainingStore.getState().reset();
@@ -338,10 +357,10 @@ export function useEarTrainingSession() {
       phase: 'preparing',
       exerciseId: def.id,
       difficultyId: difficultyRef.current,
-      totalRounds: def.rounds,
+      totalRounds: totalRoundsRef.current,
       ...(resume ? { round: resume.completedRounds, results: resume.results } : {}),
     });
-    track('session_started', { exercise: def.id, difficulty: difficultyRef.current, rounds: def.rounds });
+    track('session_started', { exercise: def.id, difficulty: difficultyRef.current, rounds: totalRoundsRef.current });
 
     try {
       if (!def.needsMic) {
@@ -407,7 +426,7 @@ export function useEarTrainingSession() {
       const def = defRef.current;
       if (!def) return;
       const gen = freshGeneration();
-      if (useEarTrainingStore.getState().round >= def.rounds) {
+      if (useEarTrainingStore.getState().round >= totalRoundsRef.current) {
         completeSession();
       } else {
         void runRound(gen);
@@ -426,8 +445,8 @@ export function useEarTrainingSession() {
 
     /** run the same exercise again at the same difficulty */
     retry() {
-      const { exerciseId, difficultyId } = useEarTrainingStore.getState();
-      if (exerciseId) void start(exerciseId, difficultyId ?? undefined);
+      const { exerciseId, difficultyId, totalRounds } = useEarTrainingStore.getState();
+      if (exerciseId) void start(exerciseId, difficultyId ?? undefined, undefined, totalRounds);
     },
 
     /** abandon the session; releases the mic */

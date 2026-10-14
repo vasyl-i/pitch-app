@@ -189,6 +189,11 @@ async function pushWeekSnapshots() {
 
 // ── Pull from server (on sign-in) ──────────────────────────────────
 export async function pullFromServer() {
+  // Gate every pull, not just fresh sign-ins, so consumers that care about
+  // server data (e.g. the weekly-plan rebuild) also wait on cold starts.
+  // Synchronous, before the first await, so effects that run right after
+  // the caller's already see it.
+  if (!syncReadyResolve) prepareSyncGate();
   const userId = getUserId();
   if (!userId) {
     resolveSyncGate();

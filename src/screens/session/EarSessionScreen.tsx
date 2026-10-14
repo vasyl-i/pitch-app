@@ -6,7 +6,7 @@
  * The session engine still owns all behaviour; unmounting this screen
  * releases the mic and resets the store (the engine's own cleanup).
  */
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { InteractionManager, View } from 'react-native';
 import { useEarTrainingSession, useEarTrainingStore } from '@/features/ear-training';
 import { useLessonSessionStore } from '@/features/learning';
@@ -24,6 +24,10 @@ export function EarSessionScreen({ navigation, route }: RootScreenProps<'EarSess
   const { exerciseId, difficultyId, guided } = route.params;
   const session = useEarTrainingSession();
   const activeSlot = useLessonSessionStore((s) => s.activeSlot);
+  // a guided step runs as many rounds as today's plan fitted to the time budget
+  const [rounds] = useState(() =>
+    guided ? useLessonSessionStore.getState().steps.find((s) => s.slot === activeSlot)?.totalRounds : undefined,
+  );
 
   const sessionRef = useRef(session);
   sessionRef.current = session;
@@ -35,7 +39,7 @@ export function EarSessionScreen({ navigation, route }: RootScreenProps<'EarSess
 
   useEffect(() => {
     const task = InteractionManager.runAfterInteractions(() => {
-      void sessionRef.current.start(exerciseId, difficultyId, partialRef.current);
+      void sessionRef.current.start(exerciseId, difficultyId, partialRef.current, rounds);
     });
     return () => task.cancel();
   }, [exerciseId, difficultyId]);
@@ -64,7 +68,7 @@ export function EarSessionScreen({ navigation, route }: RootScreenProps<'EarSess
           <AppText variant="body" color={palette.warning} style={{ textAlign: 'center' }}>
             {notice}
           </AppText>
-          <Button title="Try again" onPress={() => void session.start(exerciseId, difficultyId)} />
+          <Button title="Try again" onPress={() => void session.start(exerciseId, difficultyId, undefined, rounds)} />
           {guided && (
             <Button title="Skip this step" variant="ghost" onPress={() => advanceAfterStep(navigation)} />
           )}

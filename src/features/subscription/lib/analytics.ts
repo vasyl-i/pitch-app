@@ -24,6 +24,7 @@ export type PaywallSource =
   | 'practice-library'
   | 'progress-mastery'
   | 'profile'
+  | 'today'
   | 'instrumental-upload'
   | 'onboarding'
   | 'practice-complete'

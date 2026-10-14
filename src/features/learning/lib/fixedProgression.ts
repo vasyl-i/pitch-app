@@ -1,9 +1,9 @@
 /**
  * The free tier's daily practice.
  *
- * Free users get a real, complete session every day — warm-up, two focus
- * exercises, cool down — drawn from a fixed beginner progression that rotates
- * by day. What it does *not* do is look at the singer: no skill profile, no
+ * Free users get a real, complete session every day — warm-up, focus
+ * exercises, cool down — drawn from the whole free catalog and rotated so
+ * consecutive days don't repeat each other (see `planVariedWeek`). What it does *not* do is look at the singer: no skill profile, no
  * spaced repetition, no adaptive difficulty, no tendency correction. Everyone
  * on the same day gets the same plan.
  *
@@ -16,45 +16,22 @@
  *
  * Pure — runs under `node --test`.
  */
-import type { Activity, DailyLesson, LessonSlot, LessonStep } from '../model/types';
-import { FREE_CATALOG } from './catalog';
+import type { DailyLesson, LessonSlot, LessonStep } from '../model/types';
 import { hashSeed, mulberry32 } from './seeded';
+import { jsDateToWeekdayIndex, planVariedWeek, type VariedDayRole } from './weeklyPlan';
 
-/**
- * The shape of a free day. Fewer slots than the adaptive lesson — no review
- * slot (that needs spaced repetition) and no challenge slot (that needs a
- * difficulty estimate) — but still a complete, sensibly-paced session.
- */
-const FREE_SLOTS: LessonSlot[] = ['warmup', 'core-1', 'core-2', 'cooldown'];
-
-/** why each slot is here — fixed copy, because there is no personal reason to give */
-const FREE_REASONS: Record<LessonSlot, string> = {
+/** why each step is here — fixed copy, because there is no personal reason to give */
+const FREE_REASONS: Record<VariedDayRole, string> = {
   warmup: 'gentle start to wake up your voice and ear',
-  'core-1': 'core practice from the beginner progression',
-  'core-2': 'a second focus, for variety across the week',
-  review: 'revisiting earlier material',
-  challenge: 'a step beyond your comfort zone',
+  core: 'core practice from the free library',
   cooldown: 'finish relaxed — an easy rep you can nail',
 };
 
 export interface FixedLessonInput {
-  /** local calendar day key — the determinism anchor */
+  /** local calendar day key (`YYYY-MM-DD`) — the determinism anchor */
   dayKey: string;
   /** how long the user said they want to practise; trims the plan */
   dailyMinutes?: number;
-}
-
-function slotsForBudget(minutes: number): LessonSlot[] {
-  if (minutes <= 5) return ['warmup', 'core-1'];
-  if (minutes <= 10) return ['warmup', 'core-1', 'cooldown'];
-  return FREE_SLOTS;
-}
-
-/** pick from a pool with a day-seeded rotation, skipping anything already used */
-function rotate(pool: Activity[], seed: number, used: Set<string>): Activity | undefined {
-  const available = pool.filter((a) => !used.has(a.id));
-  if (available.length === 0) return undefined;
-  return available[seed % available.length];
 }
 
 /**
@@ -64,40 +41,31 @@ function rotate(pool: Activity[], seed: number, used: Set<string>): Activity | u
  * `DailyLesson` — so the guided flow, the lesson snapshot store and the Home
  * screen consume either one without knowing which tier produced it. Swapping
  * tiers changes the *content* of Home, never its structure.
+ *
+ * The week is planned as a whole (seeded by its Monday) and today is read off
+ * it, which keeps each day deterministic while still varying day to day.
  */
 export function generateFixedLesson(input: FixedLessonInput): DailyLesson {
-  const rand = mulberry32(hashSeed(`fixed:${input.dayKey}`));
-  const seed = Math.floor(rand() * 10_000);
+  const [y, m, d] = input.dayKey.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  const weekday = jsDateToWeekdayIndex(date);
+  const monday = new Date(y, m - 1, d - weekday);
+  const rand = mulberry32(hashSeed(`fixed:${monday.getFullYear()}-${monday.getMonth() + 1}-${monday.getDate()}`));
+  const day = planVariedWeek(input.dailyMinutes ?? 15, 'free', rand)[weekday];
 
-  const easy = FREE_CATALOG.filter((a) => a.challenge <= 0.3);
-  const warmups = easy.filter((a) =>
-    a.skills.some((s) => s === 'voice-control' || s === 'pitch-stability' || s === 'pitch-accuracy')
-  );
-  // ordered easiest-first so the fixed progression stays beginner-appropriate
-  const cores = [...FREE_CATALOG].sort((a, b) => a.challenge - b.challenge);
-
-  const slots = slotsForBudget(input.dailyMinutes ?? 15);
-  const used = new Set<string>();
-  const steps: LessonStep[] = [];
-
-  const push = (slot: LessonSlot, activity: Activity | undefined) => {
-    if (!activity) return;
-    used.add(activity.id);
-    steps.push({
+  let cores = 0;
+  const steps: LessonStep[] = day.map(({ role, activity }) => {
+    const slot: LessonSlot = role === 'core' ? `core-${++cores}` : role;
+    return {
       slot,
       activity,
       // first (easiest) tier: without a skill profile there is nothing to
       // adapt to, and guessing high on a beginner is how people quit
       difficultyId: activity.difficulties?.[0],
-      reason: FREE_REASONS[slot],
+      reason: FREE_REASONS[role],
       estMinutes: activity.minutes,
-    });
-  };
-
-  if (slots.includes('warmup')) push('warmup', rotate(warmups.length > 0 ? warmups : easy, seed, used));
-  if (slots.includes('core-1')) push('core-1', rotate(cores, seed + 1, used));
-  if (slots.includes('core-2')) push('core-2', rotate(cores, seed + 2, used));
-  if (slots.includes('cooldown')) push('cooldown', rotate(easy, seed + 3, used));
+    };
+  });
 
   return {
     dayKey: input.dayKey,

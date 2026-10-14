@@ -6,6 +6,7 @@
  */
 import {
   catalogForTier,
+  fitLessonToBudget,
   generateDailyLesson,
   generateFixedLesson,
   nextGuidedStep,
@@ -19,6 +20,7 @@ import {
 import type { GuidedStep, LessonStep, WeeklyExerciseEntry } from '@/features/learning';
 import { currentStreak, localDayKey, noteHeatmap, useProgressStore } from '@/features/progress';
 import { resolveEntitlements, useSubscriptionStore } from '@/features/subscription';
+import { useProfileStore } from '@/entities/profile';
 
 export function todayKey(now = new Date()): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -39,14 +41,28 @@ function adaptiveUnlocked(): boolean {
  *
  * The weekly plan hash is included so that editing the weekly plan in
  * Account → Weekly plan immediately refreshes Today's plan on Home.
+ *
+ * Other preferences go in by value, and only those the generators read.
+ * Keying on `prefs.updatedAt` instead regenerated the plan — wiping today's
+ * progress — on every unrelated write, including the server pull that
+ * rewrites identical preferences on each launch.
  */
 export function planKey(now = new Date()): string {
   const prefs = usePreferencesStore.getState().preferences;
   const weekday = jsDateToWeekdayIndex(now);
   const dayEntries = prefs?.weeklyPlan?.[weekday];
   const wpHash = dayEntries ? dayEntries.map((e) => e.activityId).join(',') : '';
-  const ts = prefs?.updatedAt ?? 0;
-  return `${todayKey(now)}:${adaptiveUnlocked() ? 'adaptive' : 'fixed'}:${wpHash}:${ts}`;
+  const prefsHash = prefs
+    ? [
+        prefs.primaryGoal,
+        prefs.secondaryGoal,
+        prefs.dailyMinutes,
+        prefs.exerciseBalance,
+        prefs.preferredDifficulty,
+        [...(prefs.disabledExercises ?? [])].sort().join('+'),
+      ].join('|')
+    : '';
+  return `${todayKey(now)}:${adaptiveUnlocked() ? 'adaptive' : 'fixed'}:${wpHash}:${prefsHash}`;
 }
 
 /**
@@ -55,10 +71,18 @@ export function planKey(now = new Date()): string {
  * Free gets the fixed beginner progression; Premium gets the adaptive
  * generator over the full catalog. Both return a `DailyLesson`, so everything
  * downstream — the snapshot store, the guided flow, Home — is identical
- * either way.
+ * either way. Whichever picked the exercises, the day is then stretched to
+ * the user's daily minutes with repetitions.
  */
-
 function generateToday() {
+  const dailyMinutes = usePreferencesStore.getState().preferences?.dailyMinutes ?? 15;
+  // scales and arpeggios climb a key per round, only as far as the voice goes
+  const { profile, autoTranspose } = useProfileStore.getState();
+  const range = autoTranspose ? (profile?.trainingRange ?? null) : null;
+  return fitLessonToBudget(pickTodaysExercises(), dailyMinutes, range);
+}
+
+function pickTodaysExercises() {
   const sessions = useProgressStore.getState().sessions;
   const learning = useLearningStore.getState();
   const prefs = usePreferencesStore.getState().preferences;
@@ -128,6 +152,7 @@ export function ensureTodaysLesson(ready?: () => void) {
     usePreferencesStore,
     useLessonSessionStore,
     useSubscriptionStore,
+    useProfileStore,
   ] as const;
   let remaining = stores.length;
   const arrive = () => {

@@ -32,7 +32,7 @@ function clearUserStores() {
   useLearningStore.persist.clearStorage();
   usePreferencesStore.getState().clearPreferences();
   usePreferencesStore.persist.clearStorage();
-  useLessonSessionStore.setState({ dayKey: null, steps: [], estMinutes: 0, completedSlots: [], activeSlot: null });
+  useLessonSessionStore.setState({ dayKey: null, planDate: null, steps: [], estMinutes: 0, completedSlots: [], activeSlot: null });
   useLessonSessionStore.persist.clearStorage();
   useInstrumentalStore.setState({ tracks: [] });
   useInstrumentalStore.persist.clearStorage();

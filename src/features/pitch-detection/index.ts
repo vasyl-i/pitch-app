@@ -9,7 +9,7 @@
  * them. Frames that could contain the app's own playback never reach a
  * feature's `onFrame`.
  */
-export { acquireMic, releaseMic, MicPermissionError } from './lib/micBroker';
+export { acquireMic, micSettled, releaseMic, MicPermissionError } from './lib/micBroker';
 export type { MicLease, PitchFrame, PitchEngineOptions } from './lib/micBroker';
 
 /**

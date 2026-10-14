@@ -1,5 +1,5 @@
 /** Staff-based melody practice: the session runtime and its renderer. */
-export { useStaffSession } from './model/useStaffSession';
+export { cuesStartingNote, useStaffSession } from './model/useStaffSession';
 export { useStaffStore } from './model/staffStore';
 export { StaffView } from './ui/StaffView';
 export { LiveReadout } from './ui/LiveReadout';

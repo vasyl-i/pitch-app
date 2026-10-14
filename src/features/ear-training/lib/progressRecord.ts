@@ -63,14 +63,19 @@ export function gradedNotesForRound(round: EarRound, result: RoundScore): Graded
   ];
 }
 
-/** Assemble the persistable record for a completed ear-training session. */
+/**
+ * Assemble the persistable record for a completed ear-training session.
+ * `durationSec` is the session's practice time (prompts and results
+ * included); when omitted it falls back to the open-mic windows alone.
+ */
 export function buildEarSessionRecord(
   def: ExerciseDefinition,
   difficultyId: string | null,
   rounds: EarRound[],
   results: RoundScore[],
   summary: SessionSummary,
-  at = Date.now()
+  at = Date.now(),
+  durationSec?: number
 ): SessionRecord {
   const graded = results.flatMap((result, i) => {
     const round = rounds[i];
@@ -103,7 +108,7 @@ export function buildEarSessionRecord(
       // and the round average are the closest honest stand-ins
       stability: summary.pitchAccuracy ?? summary.overall,
       rhythm: summary.rhythmAccuracy ?? summary.overall,
-      durationSec: singSeconds > 0 ? Math.round(singSeconds) : undefined,
+      durationSec: durationSec ?? (singSeconds > 0 ? Math.round(singSeconds) : undefined),
     },
     graded,
     at,

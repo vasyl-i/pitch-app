@@ -38,15 +38,25 @@ export interface ExerciseCategoryMeta {
   tier: ExerciseTier;
   /** ascending display order in the library */
   order: number;
+  /**
+   * How a guided lesson repeats it to fill the day's time: `once` — a single
+   * run (listen, then sing it alone), since a tune belongs in its own key;
+   * `ladder` — round after round, each a semitone higher, climbing through
+   * the singer's range like a warm-up at the piano (see `keyLadder`).
+   */
+  repeats: ExerciseRepeat;
 }
+
+export type ExerciseRepeat = 'once' | 'ladder';
 
 export const EXERCISE_CATEGORIES: readonly ExerciseCategoryMeta[] = [
   {
     id: 'warmup',
     label: 'Scales, arpeggios & warm-ups',
     tagline: 'Major and minor scales, triads, and gentle range openers.',
-    tier: 'premium',
+    tier: 'free',
     order: 10,
+    repeats: 'ladder',
   },
   {
     id: 'melody',
@@ -54,6 +64,7 @@ export const EXERCISE_CATEGORIES: readonly ExerciseCategoryMeta[] = [
     tagline: 'Full tunes to practise pitch and rhythm together.',
     tier: 'free',
     order: 20,
+    repeats: 'once',
   },
   {
     id: 'modes',
@@ -61,6 +72,7 @@ export const EXERCISE_CATEGORIES: readonly ExerciseCategoryMeta[] = [
     tagline: 'Dorian, Lydian and Mixolydian — the colours beyond major and minor.',
     tier: 'premium',
     order: 30,
+    repeats: 'ladder',
   },
   {
     id: 'jazz',
@@ -68,6 +80,7 @@ export const EXERCISE_CATEGORIES: readonly ExerciseCategoryMeta[] = [
     tagline: 'Sevenths, ninths and the arpeggios that make jazz lines sit right.',
     tier: 'premium',
     order: 40,
+    repeats: 'ladder',
   },
   {
     id: 'chromatic',
@@ -75,6 +88,7 @@ export const EXERCISE_CATEGORIES: readonly ExerciseCategoryMeta[] = [
     tagline: 'Half-step precision — the hardest intervals to pitch cleanly.',
     tier: 'premium',
     order: 50,
+    repeats: 'ladder',
   },
   {
     id: 'agility',
@@ -82,6 +96,7 @@ export const EXERCISE_CATEGORIES: readonly ExerciseCategoryMeta[] = [
     tagline: 'Fast passages, riffs and runs that build a flexible voice.',
     tier: 'premium',
     order: 60,
+    repeats: 'ladder',
   },
   {
     id: 'belt',
@@ -89,6 +104,7 @@ export const EXERCISE_CATEGORIES: readonly ExerciseCategoryMeta[] = [
     tagline: 'Power in the upper register, and a smooth path through the break.',
     tier: 'premium',
     order: 70,
+    repeats: 'ladder',
   },
   {
     id: 'harmony',
@@ -96,6 +112,7 @@ export const EXERCISE_CATEGORIES: readonly ExerciseCategoryMeta[] = [
     tagline: 'Hold your line while another part moves against it.',
     tier: 'premium',
     order: 80,
+    repeats: 'ladder',
   },
 ];
 
@@ -109,6 +126,10 @@ export function categoryMeta(id: ExerciseCategory): ExerciseCategoryMeta {
 
 export function categoryTier(id: ExerciseCategory): ExerciseTier {
   return categoryMeta(id).tier;
+}
+
+export function categoryRepeats(id: ExerciseCategory): ExerciseRepeat {
+  return categoryMeta(id).repeats;
 }
 
 /** categories in display order, optionally limited to one tier */

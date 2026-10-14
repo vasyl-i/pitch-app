@@ -12,7 +12,7 @@ import { useTheme } from '@/shared/theme';
  * the point is that the singer goes into the solo pass with the melody still
  * fresh. This is only the card; the timing lives in `runController`.
  */
-export function StageTransition() {
+export function StageTransition({ startingNote = false }: { startingNote?: boolean }) {
   const { palette, spacing } = useTheme();
   const opacity = useSharedValue(0);
   const lift = useSharedValue(12);
@@ -34,7 +34,7 @@ export function StageTransition() {
           Now it’s your turn!
         </AppText>
         <AppText variant="body" color={palette.textSecondary} style={styles.text}>
-          Sing the melody on your own.
+          {startingNote ? 'Here’s your first note — start from it.' : 'Sing the melody on your own.'}
         </AppText>
       </Animated.View>
     </View>

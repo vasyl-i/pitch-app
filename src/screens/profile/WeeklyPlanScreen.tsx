@@ -12,6 +12,7 @@ import {
   canRemoveExercise,
   resolveEntries,
   generateDefaultWeeklyPlan,
+  jsDateToWeekdayIndex,
   weeklyPlanFromSteps,
   useLessonSessionStore,
   usePreferencesStore,
@@ -42,9 +43,12 @@ export function WeeklyPlanScreen({ navigation }: RootScreenProps<'WeeklyPlan'>) 
       : 0;
     const needsPlan = !existing || filledDays < 7;
     if (needsPlan) {
-      const plan = lessonSteps.length > 0
-        ? weeklyPlanFromSteps(lessonSteps)
-        : generateDefaultWeeklyPlan(prefs.dailyMinutes, isPremium ? 'premium' : 'free');
+      const plan = generateDefaultWeeklyPlan(prefs.dailyMinutes, isPremium ? 'premium' : 'free');
+      // keep today's day matching what "Today's plan" already shows
+      if (lessonSteps.length > 0) {
+        const today = jsDateToWeekdayIndex(new Date());
+        plan[today] = weeklyPlanFromSteps(lessonSteps)[today];
+      }
       setPreferences({ weeklyPlan: plan });
     }
   }, []);

@@ -60,6 +60,12 @@ interface StaticPitchCanvasProps {
   bpm?: number;
   running?: boolean;
   showNoteLabels?: boolean;
+  /**
+   * Pitches the vertical axis must cover besides the targets. Pin it across
+   * runs of one pattern in different keys (a scale climbing a semitone per
+   * round): fitted to the targets alone, every key would look identical.
+   */
+  fitMidi?: { low: number; high: number };
 }
 
 /**
@@ -80,6 +86,7 @@ export function StaticPitchCanvas({
   bpm = 100,
   running = true,
   showNoteLabels = true,
+  fitMidi,
 }: StaticPitchCanvasProps) {
   const [size, setSize] = useState({ width: 0, height: 0 });
   const handleLayout = useCallback(
@@ -100,6 +107,7 @@ export function StaticPitchCanvas({
   const { lowMidi, highMidi, visibleSemitones, midCenter } = useMemo(() => {
     if (!targets.length) return { lowMidi: 54, highMidi: 66, visibleSemitones: 12, midCenter: 60 };
     const mids = targets.map((n) => n.midi);
+    if (fitMidi) mids.push(fitMidi.low, fitMidi.high);
     const lo = Math.min(...mids) - VERTICAL_PADDING_SEMITONES;
     const hi = Math.max(...mids) + VERTICAL_PADDING_SEMITONES;
     const span = Math.max(12, hi - lo);
@@ -109,7 +117,7 @@ export function StaticPitchCanvas({
       visibleSemitones: span,
       midCenter: (lo + lo + span) / 2,
     };
-  }, [targets]);
+  }, [targets, fitMidi?.low, fitMidi?.high]);
 
   const semiH = H > 0 ? H / visibleSemitones : 1;
 

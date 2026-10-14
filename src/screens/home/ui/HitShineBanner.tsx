@@ -3,7 +3,7 @@ import { AppText } from '@/shared/ui';
 import { SuccessCat } from '../../../../assets/svg';
 import { typography, useTheme } from '@/shared/theme';
 
-export const MainBanner = () => {
+export const HitShineBanner = () => {
     const { palette } = useTheme();
 
     return (

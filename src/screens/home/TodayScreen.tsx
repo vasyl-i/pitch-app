@@ -20,7 +20,7 @@ import type { HomeScreenProps } from '@/app/navigation/types';
 import type { GuidedStep } from '@/features/learning';
 import { ensureTodaysLesson, beginStep, continuePractice, redoStep } from '../session/lessonFlow';
 import { TodayBackground } from './TodayBackground';
-import { MainBanner } from './ui/MainBanner';
+import { PremiumBanner } from '@/screens/subscription';
 import { ProgressSection } from './ui/ProgressSection';
 import { TodayExerciseList } from './ui/TodayExerciseList';
 
@@ -132,7 +132,7 @@ export function TodayScreen({ navigation }: HomeScreenProps<'Today'>) {
                         )}
                     </View>
 
-                    <MainBanner/>
+                    <PremiumBanner source="today" style={{ marginTop: 16 }} />
 
                     <ProgressSection
                         accuracy={overall.accuracy}

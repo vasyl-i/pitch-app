@@ -3,7 +3,7 @@
  * your streak, and one exit back Home. No decisions, just the win.
  */
 import { type ReactNode, useMemo, useRef } from 'react';
-import { Image, ImageBackground, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Dimensions, Image, ImageBackground, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useLessonSessionStore } from '@/features/learning';
 import { currentStreak, formatPracticeTime, localDayKey, useProgressStore } from '@/features/progress';
@@ -16,6 +16,8 @@ import { BlurTargetView, BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const UNLOCK_BG = require('../../../assets/background-unlock.png');
+const isSmallScreen = Dimensions.get('screen').height < 700;
+
 
 function TimeIcon() {
     return (
@@ -80,7 +82,7 @@ export function PracticeCompleteScreen({ navigation }: RootScreenProps<'Practice
     return (
         <Screen noHorizontalPadding noBottomPadding>
             <BlurTargetView ref={blurTargetRef} collapsable={false} style={{ flex: 1 }}>
-            <ScrollView contentContainerStyle={styles.center}>
+            <ScrollView contentContainerStyle={[styles.center, { paddingBottom: insets.bottom + 5 * spacing.xxl }]}>
                 <Image source={require('../../../assets/practice-complete.png')}/>
                 <AppText variant="title" style={{ fontSize: 40, textAlign: 'center' }}>
                     You did it!
@@ -89,7 +91,7 @@ export function PracticeCompleteScreen({ navigation }: RootScreenProps<'Practice
                     fontSize: 20,
                     marginTop: spacing.lg,
                     textAlign: 'center',
-                    paddingHorizontal: 24,
+                    paddingHorizontal: isSmallScreen ? 0 : 24,
                     fontFamily: typography.family.regular
                 }}>
                     {steps.length} steps done. Showing up is the whole secret — see you tomorrow.
@@ -190,7 +192,7 @@ function Tile({ icon, value, label }: { icon: ReactNode; value: string; label: s
 }
 
 const styles = StyleSheet.create({
-    center: { flex: 1, alignItems: 'center', justifyContent: 'flex-start', paddingTop: 80, paddingHorizontal: spacing.lg },
+    center: { alignItems: 'center', justifyContent: 'flex-start', paddingTop: isSmallScreen ? 20 : 80, paddingHorizontal: spacing.lg },
     tiles: { flexDirection: 'row', gap: 10 },
     tile: {
         flex: 1,

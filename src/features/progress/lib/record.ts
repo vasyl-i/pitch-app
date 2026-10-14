@@ -118,6 +118,18 @@ export interface AttemptExtras {
   melodicSequences?: GradedNote[][];
 }
 
+/**
+ * Ceiling on one exercise's recorded practice time. Elapsed time is measured
+ * by wall clock, so an exercise left open in the background must not log an
+ * hour of practice.
+ */
+export const MAX_EXERCISE_SECONDS = 10 * 60;
+
+/** Elapsed practice seconds from `startedAt` to `at`, rounded and capped. */
+export function elapsedPracticeSeconds(startedAt: number, at = Date.now()): number {
+  return Math.round(Math.min(Math.max(0, (at - startedAt) / 1000), MAX_EXERCISE_SECONDS));
+}
+
 /** Assemble a persistable record from mode-agnostic parts. */
 export function buildAttemptRecord(
   subject: AttemptSubject,
@@ -157,7 +169,17 @@ export function phraseSeconds(exercise: Exercise, rate = 1): number {
  * Notes the singer never attempted ('missed') carry no tendency information,
  * so they are left out of the tallies.
  */
-export function buildSessionRecord(exercise: Exercise, summary: PhraseLike, at = Date.now(), rate = 1): SessionRecord {
+/**
+ * `durationSec` is the whole run's practice time (listening included); when
+ * omitted it falls back to the length of the sung phrase alone.
+ */
+export function buildSessionRecord(
+  exercise: Exercise,
+  summary: PhraseLike,
+  at = Date.now(),
+  rate = 1,
+  durationSec = Math.round(phraseSeconds(exercise, rate)),
+): SessionRecord {
   const graded: GradedNote[] = [];
 
   // A melody is one ordered run of true MIDI targets — the ideal source for
@@ -191,7 +213,7 @@ export function buildSessionRecord(exercise: Exercise, summary: PhraseLike, at =
 
   return buildAttemptRecord(
     { id: exercise.id, title: exercise.title },
-    { ...summary, durationSec: Math.round(phraseSeconds(exercise, rate)) },
+    { ...summary, durationSec },
     graded,
     at,
     { melodicSequences: sequences }

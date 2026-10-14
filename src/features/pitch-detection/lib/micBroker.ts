@@ -107,6 +107,17 @@ export function acquireMic({ onFrame, ...engineOptions }: AcquireMicOptions): Pr
   });
 }
 
+/**
+ * Resolves once every mic transition requested so far has landed. Releasing
+ * the mic ends by deactivating the shared audio session, so playback set up
+ * before a release lands gets silenced mid-way — and only comes back when the
+ * next recorder reactivates the session. Anything about to play sound after
+ * another screen or stage may have let go of the mic waits for this first.
+ */
+export function micSettled(): Promise<void> {
+  return chain.then(() => {});
+}
+
 /** Release whatever holds the mic, if anything. Safe to call when idle. */
 export function releaseMic(): Promise<void> {
   return serialize(async () => {

@@ -16,6 +16,7 @@
  */
 import { AudioManager } from 'react-native-audio-api';
 import { audioContext, audioNow, createToneGroup } from '@/shared/audio';
+import { micSettled } from '@/features/pitch-detection';
 
 export class PlaybackError extends Error {
   constructor(message: string) {
@@ -85,11 +86,14 @@ export function sequenceScripts(scripts: PromptScript[], gap = 0.7): PromptScrip
  * When the mic is held, the pitch engine has already configured and activated
  * a playAndRecord session — reconfiguring it here would yank the recorder's
  * settings, so only the context resume applies. Listening-only exercises get
- * their own playback session.
+ * their own playback session — once any pending mic release (this session's,
+ * or the previous exercise's) has landed, or it would switch the session off
+ * under the prompt.
  */
 export async function ensurePlaybackReady(options: { micHeld: boolean }): Promise<void> {
   try {
     if (!options.micHeld) {
+      await micSettled();
       AudioManager.setAudioSessionOptions({ iosCategory: 'playback', iosMode: 'default' });
       await AudioManager.setAudioSessionActivity(true);
     }

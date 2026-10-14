@@ -37,7 +37,7 @@ export function ReminderOnboardingScreen({ navigation }: OnboardingScreenProps<'
   const finishOnboarding = () => {
     completeOnboarding();
     track('onboarding_completed');
-    navigation.replace('Paywall', { source: 'onboarding' });
+    navigation.replace('Main', { screen: 'HomeTab', params: { screen: 'Today' } });
   };
 
   const save = async () => {

@@ -202,11 +202,16 @@ export interface Activity {
   skills: SkillId[];
   /** ordered easiest → hardest tier ids, null when the activity has one form */
   difficulties: string[] | null;
-  /** rough minutes one session takes */
+  /** rough minutes one session takes at its default `rounds` (rounded, at least 1) */
   minutes: number;
+  /**
+   * Real seconds one repetition takes: one round of an ear drill, one full
+   * run (listen + sing) of a melody. Drives fitting a day to its time budget.
+   */
+  secondsPerRep: number;
   /** intrinsic difficulty 0–1, for warm-up/challenge slotting */
   challenge: number;
-  /** number of rounds per session (ear exercises 3–8, melody always 1) */
+  /** default repetitions per session: ear rounds (3–8), melody sung passes (1) */
   rounds: number;
 }
 
@@ -238,6 +243,8 @@ export interface LessonStep {
   /** why this step is in today's lesson — always explainable */
   reason: string;
   estMinutes: number;
+  /** repetitions fitted to the day's time budget; defaults to `activity.rounds` */
+  rounds?: number;
 }
 
 export interface DailyLesson {

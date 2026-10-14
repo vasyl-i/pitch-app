@@ -9,11 +9,21 @@ import { useFonts } from 'expo-font';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
-import { catalogForTier, generateDefaultWeeklyPlan, startLearningTracker, usePreferencesStore } from '@/features/learning';
-import { AuthGate, useAuthStore, startSync, stopSync, pullFromServer } from '@/features/auth';
+import {
+  generateDefaultWeeklyPlan,
+  jsDateToWeekdayIndex,
+  planHasPremiumActivity,
+  planRepeatsEveryDay,
+  planPredatesFreeCatalogExpansion,
+  startLearningTracker,
+  useLessonSessionStore,
+  usePreferencesStore,
+} from '@/features/learning';
+import { AuthGate, useAuthStore, startSync, stopSync, pullFromServer, waitForSyncReady } from '@/features/auth';
 import {
   setupNotificationHandler,
   syncReminder,
+  setDailyTasksDoneDay,
   registerPushToken,
   scheduleTrialEndingReminder,
   cancelTrialEndingReminder,
@@ -29,6 +39,7 @@ import {
 } from '@/features/subscription';
 import { initAnalytics, identifyUser, resetAnalyticsUser, setUserProperties, track } from '@/shared/lib/analytics';
 import { ThemeProvider, theme } from '@/shared/theme';
+import { mmkv } from '@/shared/lib/storage';
 import { toastConfig } from '@/shared/ui';
 import { supabase } from '@/shared/lib/supabase';
 import { preloadSamples, useSoundStore } from '@/shared/audio';
@@ -134,14 +145,23 @@ function SyncManager() {
   return null;
 }
 
-/** Keeps the scheduled local notification in sync with the reminder preference. */
+/** Keeps the scheduled local notifications in sync with the reminder preference and today's progress. */
 function ReminderSync() {
   const reminderHour = usePreferencesStore((s) => s.preferences?.reminderHour ?? null);
   const reminderMinute = usePreferencesStore((s) => s.preferences?.reminderMinute ?? 0);
 
+  // The day whose guided plan is fully done; the scheduler drops that day's catch-up nudge
+  const dailyTasksDoneDay = useLessonSessionStore((s) =>
+    s.steps.length > 0 && s.steps.every((step) => s.completedSlots.includes(step.slot)) ? s.planDate : null,
+  );
+
   useEffect(() => {
     syncReminder(reminderHour, reminderMinute);
   }, [reminderHour, reminderMinute]);
+
+  useEffect(() => {
+    setDailyTasksDoneDay(dailyTasksDoneDay);
+  }, [dailyTasksDoneDay]);
 
   return null;
 }
@@ -178,34 +198,60 @@ function UserPropertiesSync() {
 }
 
 /**
- * Rebuilds the weekly plan when the user upgrades to Premium.
+ * Rebuilds the auto-generated weekly plan when it no longer fits the user:
  *
- * A free user's weekly plan contains only free exercises. When they subscribe,
- * the plan should be rebuilt from the full catalog so they immediately see
- * premium exercises in their daily practice.
+ * - Upgraded to Premium: a plan without a single Premium exercise was built
+ *   for the free tier, so it's rebuilt from the full catalog and the new
+ *   material shows up in daily practice straight away.
+ * - Legacy plan: the old default put the same list on every day of the week.
+ *   It's replaced by a varied one, keeping today's list so a plan in progress
+ *   doesn't change under the user.
+ * - Old free plan: built before the interval/chord ear drills and the
+ *   scale/arpeggio warm-ups became free, so it holds none of them. Rebuilt
+ *   the same way, once per user on this device.
+ *
+ * All checks wait for the server pull, which can replace the local plan,
+ * and run again only when the Premium state or the signed-in user changes,
+ * so they never fight the user's own edits to the plan.
  */
+/** set once this device has refreshed a user's old free plan for the bigger free catalog */
+const freePlanRefreshKey = (userId: string | undefined) => `weekly-plan-free-catalog-v2:${userId ?? 'local'}`;
+
 function WeeklyPlanSync() {
   const subscription = useSubscriptionStore((s) => s.subscription);
-  const prefs = usePreferencesStore((s) => s.preferences);
-  const setPreferences = usePreferencesStore((s) => s.setPreferences);
   const premium = isPremium(subscription);
+  // SyncManager (rendered first) starts the pull once auth has settled
+  const authLoading = useAuthStore((s) => s.loading);
+  const userId = useAuthStore((s) => s.user?.id);
 
   useEffect(() => {
-    if (!prefs?.weeklyPlan) return;
-    if (!premium) return;
+    if (authLoading) return;
+    let cancelled = false;
+    waitForSyncReady().then(() => {
+      if (cancelled) return;
+      const { preferences: prefs, setPreferences } = usePreferencesStore.getState();
+      const plan = prefs?.weeklyPlan;
+      if (!plan) return;
 
-    // Check if the current weekly plan only contains free exercises —
-    // if so, the user just upgraded and we should rebuild with the full catalog
-    const freeIds = new Set(catalogForTier('free').map((a) => a.id));
-    const allEntries = Object.values(prefs.weeklyPlan).flat() as { activityId: string }[];
-    const allFree = allEntries.length > 0 && allEntries.every((e) => freeIds.has(e.activityId));
-
-    if (allFree) {
-      setPreferences({
-        weeklyPlan: generateDefaultWeeklyPlan(prefs.dailyMinutes, 'premium'),
-      });
-    }
-  }, [premium]);
+      const tier = premium ? 'premium' : 'free';
+      if (premium && !planHasPremiumActivity(plan)) {
+        setPreferences({ weeklyPlan: generateDefaultWeeklyPlan(prefs.dailyMinutes, tier) });
+      } else if (
+        planRepeatsEveryDay(plan) ||
+        (!premium && !mmkv.getBoolean(freePlanRefreshKey(userId)) && planPredatesFreeCatalogExpansion(plan))
+      ) {
+        const varied = generateDefaultWeeklyPlan(prefs.dailyMinutes, tier);
+        const today = jsDateToWeekdayIndex(new Date());
+        setPreferences({ weeklyPlan: { ...varied, [today]: plan[today] } });
+      }
+      // one shot per device: a plan the user trims back to the old exercises
+      // later on is their choice, not a stale plan
+      if (!premium) mmkv.set(freePlanRefreshKey(userId), true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [premium, authLoading, userId]);
 
   return null;
 }

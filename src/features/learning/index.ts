@@ -46,6 +46,7 @@ export type { WeeklyReviewInput } from './lib/weekly';
 export { dueReviews, REVIEW_INTERVALS_DAYS } from './lib/spacedRepetition';
 export { CATALOG, FREE_CATALOG, catalogForTier, activityById } from './lib/catalog';
 export { generateFixedLesson } from './lib/fixedProgression';
+export { fitLessonToBudget } from './lib/budget';
 export type { FixedLessonInput } from './lib/fixedProgression';
 export {
   findWeakSpots,
@@ -75,4 +76,7 @@ export {
   jsDateToWeekdayIndex,
   generateDefaultWeeklyPlan,
   weeklyPlanFromSteps,
+  planHasPremiumActivity,
+  planRepeatsEveryDay,
+  planPredatesFreeCatalogExpansion,
 } from './lib/weeklyPlan';

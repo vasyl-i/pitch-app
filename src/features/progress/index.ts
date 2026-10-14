@@ -1,7 +1,14 @@
 /** Persisted practice history and everything derived from it. */
 export { useProgressStore } from './model/progressStore';
 export type { SessionRecord, NoteTally } from './model/progressStore';
-export { buildSessionRecord, buildAttemptRecord, tallyByPitchClass, starsForScore, phraseSeconds } from './lib/record';
+export {
+  buildSessionRecord,
+  buildAttemptRecord,
+  tallyByPitchClass,
+  starsForScore,
+  phraseSeconds,
+  elapsedPracticeSeconds,
+} from './lib/record';
 export type { AttemptSubject, AttemptScores, GradedNote, PhraseLike } from './lib/record';
 export {
   weeklyStats,

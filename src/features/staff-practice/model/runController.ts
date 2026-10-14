@@ -108,6 +108,12 @@ export interface RunControllerOptions {
   onWellSungNote?(midi: number, coverage: number): void;
   /** called before a stage begins — async so the hook can release/acquire the mic */
   onBeforeStage?(stage: RunStage): Promise<void> | void;
+  /**
+   * the "your turn" card has just appeared, `TRANSITION_MS` before the mic
+   * opens — the moment to sound a starting note, which must have died away
+   * by then
+   */
+  cueSolo?(): void;
   now?(): number;
 }
 
@@ -118,6 +124,8 @@ export interface RunController {
   startRun(): void;
   /** the stage-1 reference has finished sounding */
   referenceFinished(): void;
+  /** the singer cut the stage-1 reference short; no-op outside it */
+  skipListen(): void;
   /** the stage-2 guide has run out */
   accompanimentFinished(): void;
   /** the stage-3 phrase timeline has run out */
@@ -135,6 +143,7 @@ export function createRunController({
   store,
   onWellSungNote,
   onBeforeStage,
+  cueSolo,
   now = Date.now,
 }: RunControllerOptions): RunController {
   // one evaluator per scored attempt: same engine, same exercise, two
@@ -228,6 +237,7 @@ export function createRunController({
   const beginTransition = () => {
     stage = 'transition';
     store.setStatus('transition');
+    cueSolo?.();
     stageTimer = setTimeout(() => {
       stageTimer = null;
       if (disposed) return;
@@ -304,6 +314,29 @@ export function createRunController({
     if (ui) store.setPitch({ liveMidi: voicedMidi, liveCents: cents, liveRms: rms, ...(trailDue && { trail: [...trail] }) });
   };
 
+  const referenceFinished = () => {
+    if (disposed || stage !== 'listen') return;
+    demo.stop();
+
+    if (SKIP_ACCOMPANIED_STAGE) {
+      // Skip the accompanied stage — go straight to solo via transition
+      stageTimer = setTimeout(() => {
+        stageTimer = null;
+        if (disposed) return;
+        beginTransition();
+      }, DEMO_GAP_MS);
+      return;
+    }
+
+    // a beat of silence so the last reference note's decay is fully gone
+    // before the sing-along opens
+    stageTimer = setTimeout(() => {
+      stageTimer = null;
+      if (disposed) return;
+      startPlaybackStage('accompanied', 'accompanied', accompaniment);
+    }, DEMO_GAP_MS);
+  };
+
   return {
     get stage() {
       return stage;
@@ -329,27 +362,12 @@ export function createRunController({
       startPlaybackStage('listen', 'listen', demo);
     },
 
-    referenceFinished() {
-      if (disposed || stage !== 'listen') return;
-      demo.stop();
+    referenceFinished,
 
-      if (SKIP_ACCOMPANIED_STAGE) {
-        // Skip the accompanied stage — go straight to solo via transition
-        stageTimer = setTimeout(() => {
-          stageTimer = null;
-          if (disposed) return;
-          beginTransition();
-        }, DEMO_GAP_MS);
-        return;
-      }
-
-      // a beat of silence so the last reference note's decay is fully gone
-      // before the sing-along opens
-      stageTimer = setTimeout(() => {
-        stageTimer = null;
-        if (disposed) return;
-        startPlaybackStage('accompanied', 'accompanied', accompaniment);
-      }, DEMO_GAP_MS);
+    skipListen() {
+      if (disposed || stage !== 'listen' || stageTimer) return;
+      // stopping cancels the demo's end timer, so this is the only handover
+      referenceFinished();
     },
 
     accompanimentFinished() {

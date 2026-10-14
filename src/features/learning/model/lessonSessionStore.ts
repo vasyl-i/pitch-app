@@ -32,11 +32,15 @@ export interface GuidedStep {
   title: string;
   reason: string;
   estMinutes: number;
+  /** repetitions fitted to the day: ear rounds, or melody sung passes */
   totalRounds: number;
 }
 
 interface LessonSessionState {
+  /** the plan's snapshot key: date plus the inputs it was generated from (see `planKey`) */
   dayKey: string | null;
+  /** local calendar day (`YYYY-MM-DD`) the plan was generated for */
+  planDate: string | null;
   steps: GuidedStep[];
   estMinutes: number;
   completedSlots: LessonSlot[];
@@ -47,7 +51,10 @@ interface LessonSessionState {
   /** partial round progress for exercises exited mid-session, keyed by LessonSlot */
   partialProgress: Record<string, PartialProgress>;
 
-  /** snapshot a fresh plan when the day changes; no-op for the same day */
+  /**
+   * snapshot a fresh plan when the key changes; no-op for the same key.
+   * Regenerating on the same date keeps progress on steps that survive it.
+   */
   ensureDay(dayKey: string, generate: () => DailyLesson): void;
   begin(slot: LessonSlot): void;
   /** mark the active step done and clear it */
@@ -65,6 +72,7 @@ export const useLessonSessionStore = create<LessonSessionState>()(
   persist(
     (set, get) => ({
       dayKey: null,
+      planDate: null,
       steps: [],
       estMinutes: 0,
       completedSlots: [],
@@ -73,24 +81,41 @@ export const useLessonSessionStore = create<LessonSessionState>()(
       partialProgress: {},
 
       ensureDay(dayKey, generate) {
-        if (get().dayKey === dayKey) return;
+        const prev = get();
+        if (prev.dayKey === dayKey) return;
         const lesson = generate();
+        const steps: GuidedStep[] = lesson.steps.map((s) => ({
+          slot: s.slot,
+          kind: s.activity.kind,
+          activityId: s.activity.id,
+          difficultyId: s.difficultyId,
+          title: s.activity.title,
+          reason: s.reason,
+          estMinutes: s.estMinutes,
+          totalRounds: s.rounds ?? s.activity.rounds,
+        }));
+
+        // Same day, different inputs (tier change, preference edit): a step
+        // that is still in the plan keeps its completion and partial progress
+        const sameDay = prev.planDate === lesson.dayKey;
+        const survives = (slot: LessonSlot) => {
+          const before = prev.steps.find((s) => s.slot === slot);
+          const after = steps.find((s) => s.slot === slot);
+          return !!before && !!after && before.kind === after.kind && before.activityId === after.activityId;
+        };
+        const completedSlots = sameDay ? prev.completedSlots.filter(survives) : [];
+        const partialProgress = sameDay
+          ? Object.fromEntries(Object.entries(prev.partialProgress).filter(([slot]) => survives(slot as LessonSlot)))
+          : {};
+
         set({
           dayKey,
-          steps: lesson.steps.map((s) => ({
-            slot: s.slot,
-            kind: s.activity.kind,
-            activityId: s.activity.id,
-            difficultyId: s.difficultyId,
-            title: s.activity.title,
-            reason: s.reason,
-            estMinutes: s.estMinutes,
-            totalRounds: s.activity.rounds,
-          })),
+          planDate: lesson.dayKey,
+          steps,
           estMinutes: lesson.estMinutes,
-          completedSlots: [],
+          completedSlots,
           activeSlot: null,
-          partialProgress: {},
+          partialProgress,
         });
       },
 
@@ -133,7 +158,7 @@ export const useLessonSessionStore = create<LessonSessionState>()(
     }),
     {
       name: 'lesson-session-v1',
-      version: 1,
+      version: 2,
       storage: createJSONStorage(() => mmkvStorage),
       migrate(persisted: unknown) {
         const state = persisted as Record<string, unknown>;
@@ -146,6 +171,10 @@ export const useLessonSessionStore = create<LessonSessionState>()(
           });
         }
         if (!state.partialProgress) state.partialProgress = {};
+        // v2: planDate split out of dayKey, which starts with the date
+        if (state.planDate === undefined) {
+          state.planDate = typeof state.dayKey === 'string' ? state.dayKey.slice(0, 10) : null;
+        }
         return state as unknown as LessonSessionState;
       },
     }

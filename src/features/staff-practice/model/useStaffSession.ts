@@ -10,22 +10,39 @@
 import { useEffect, useRef } from 'react';
 import { InteractionManager } from 'react-native';
 import { AudioManager } from 'react-native-audio-api';
-import type { Exercise } from '@/entities/exercise';
+import { categoryRepeats, type Exercise } from '@/entities/exercise';
 import { recordObservedNote } from '@/entities/profile';
-import { acquireMic, MicPermissionError, type MicLease } from '@/features/pitch-detection';
+import { acquireMic, micSettled, MicPermissionError, type MicLease } from '@/features/pitch-detection';
 import { micActive, micGlowTier } from '@/shared/lib/micRmsBus';
 import { hapticMicReady } from '@/shared/audio';
-import { audioContext, watchOutputRoute } from '@/shared/audio';
+import { audioContext, audioNow, createToneGroup, watchOutputRoute } from '@/shared/audio';
 import { createMelodyPlayer } from '../lib/melodyPlayer';
 import { createRunController, type RunStage } from './runController';
 import { useStaffStore } from './staffStore';
 
 export interface StaffSessionControls {
   restart: () => void;
+  /** jump from the listen (preview) stage straight to singing */
+  skipListen: () => void;
+}
+
+/** the starting-note cue: a beat after the "your turn" card fades in */
+const CUE_DELAY_SEC = 0.25;
+/** long enough to lock onto, short enough to be gone well before the mic opens */
+const CUE_DURATION_SEC = 0.9;
+
+/**
+ * Whether the "your turn" card sounds the first note. Scales and arpeggios
+ * move to a new key every round, so the singer needs to hear where this one
+ * starts; a song is sung in the key just heard.
+ */
+export function cuesStartingNote(exercise: Exercise): boolean {
+  return categoryRepeats(exercise.category) === 'ladder';
 }
 
 export function useStaffSession(exercise: Exercise, rate = 1): StaffSessionControls {
   const restartRef = useRef<() => void>(() => {});
+  const skipListenRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     const store = useStaffStore.getState();
@@ -66,16 +83,27 @@ export function useStaffSession(exercise: Exercise, rate = 1): StaffSessionContr
       silent: true,
     });
 
+    const cue = createToneGroup();
+    const firstNote = exercise.notes[0];
+    const cueSolo = cuesStartingNote(exercise) && firstNote
+      ? () => {
+          cue.cancel();
+          cue.schedule({ midi: firstNote.midi, at: audioNow() + CUE_DELAY_SEC, duration: CUE_DURATION_SEC, volume: 0.55 });
+        }
+      : undefined;
+
     // Declared early so closures below can reference it; assigned after creation.
     let controller: ReturnType<typeof createRunController>;
 
     /** Release the mic lease so the audio session can switch to playback. */
     const releaseLease = async () => {
-      if (lease) {
-        micActive.value = false;
-        await lease.release();
-        lease = null;
-      }
+      if (!lease) return;
+      // cleared before the await, so a restart racing the release acquires a
+      // fresh lease instead of trusting the one being torn down
+      const releasing = lease;
+      lease = null;
+      micActive.value = false;
+      await releasing.release();
     };
 
     /** Acquire the mic for recording stages. */
@@ -100,6 +128,7 @@ export function useStaffSession(exercise: Exercise, rate = 1): StaffSessionContr
       if (disposed) return;
       if (nextStage === 'listen') {
         await releaseLease();
+        await micSettled();
         // Switch to playback category for full-volume demo
         AudioManager.setAudioSessionOptions({ iosCategory: 'playback', iosMode: 'default' });
         await AudioManager.setAudioSessionActivity(true);
@@ -118,19 +147,33 @@ export function useStaffSession(exercise: Exercise, rate = 1): StaffSessionContr
       store: {
         reset: () => useStaffStore.getState().reset(),
         clearStageFeedback: () => useStaffStore.getState().clearStageFeedback(),
-        setStatus: (status) => useStaffStore.getState().setStatus(status),
+        setStatus: (status) => {
+          useStaffStore.getState().setStatus(status);
+          if (status === 'no-input' || status === 'error') void releaseLease();
+        },
         setPlayback: (patch) => useStaffStore.getState().setPlayback(patch),
         setPitch: (patch) => useStaffStore.getState().setPitch(patch),
         addResult: (result) => useStaffStore.getState().addResult(result),
         setAccompaniedSummary: (summary) => useStaffStore.getState().setAccompaniedSummary(summary),
-        setSummary: (summary, comparison) => useStaffStore.getState().setSummary(summary, comparison),
+        setSummary: (summary, comparison) => {
+          useStaffStore.getState().setSummary(summary, comparison);
+          // the run is over: free the mic now rather than when the screen
+          // unmounts, which a "Continue" replace only does after the next
+          // exercise has already started sounding its prompt
+          void releaseLease();
+        },
       },
       onWellSungNote: recordObservedNote,
       onBeforeStage,
+      cueSolo,
     });
 
     const begin = async () => {
       try {
+        // a mic release still landing (the previous exercise, or the previous
+        // key of a guided scale) would switch the session off under the preview
+        await micSettled();
+        if (disposed) return;
         // Don't acquire mic yet — the demo stage doesn't need it.
         // Switch to playback category for full-volume demo playback.
         AudioManager.setAudioSessionOptions({ iosCategory: 'playback', iosMode: 'default' });
@@ -149,7 +192,11 @@ export function useStaffSession(exercise: Exercise, rate = 1): StaffSessionContr
       }
     };
 
-    restartRef.current = () => controller.startRun();
+    restartRef.current = () => {
+      cue.cancel();
+      controller.startRun();
+    };
+    skipListenRef.current = () => controller.skipListen();
 
     // Defer mic acquisition until the screen transition animation finishes —
     // AudioRecorder creation and audio session setup are heavy native calls
@@ -163,6 +210,7 @@ export function useStaffSession(exercise: Exercise, rate = 1): StaffSessionContr
       disposed = true;
       unwatchRoute();
       controller.dispose();
+      cue.cancel();
       demo.dispose();
       accompaniment.dispose();
       solo.dispose();
@@ -174,5 +222,5 @@ export function useStaffSession(exercise: Exercise, rate = 1): StaffSessionContr
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exercise.id, rate]);
 
-  return { restart: () => restartRef.current() };
+  return { restart: () => restartRef.current(), skipListen: () => skipListenRef.current() };
 }

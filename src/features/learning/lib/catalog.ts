@@ -13,11 +13,15 @@
  * (Relative imports rather than the `@/` alias so the whole lib layer runs
  * under plain `node --test`.)
  */
-import type { ExerciseCategory } from '../../../entities/exercise/categories';
+import { categoryTier, type ExerciseCategory } from '../../../entities/exercise/categories';
 import { exercises as melodyLibrary } from '../../../entities/exercise/library';
 import type { Activity, SkillId } from '../model/types';
 
-const EAR_ACTIVITIES: Activity[] = [
+/**
+ * Ear drills: `secondsPerRep` is one round — prompt, count-in, the open mic
+ * window, the result beat — measured against the session's timings.
+ */
+const EAR_DRILLS: Omit<Activity, 'minutes'>[] = [
   {
     kind: 'ear',
     id: 'note-echo',
@@ -25,7 +29,7 @@ const EAR_ACTIVITIES: Activity[] = [
     tier: 'free',
     skills: ['pitch-accuracy', 'pitch-memory'],
     difficulties: null,
-    minutes: 2,
+    secondsPerRep: 9,
     challenge: 0.15,
     rounds: 5,
   },
@@ -33,10 +37,10 @@ const EAR_ACTIVITIES: Activity[] = [
     kind: 'ear',
     id: 'major-minor',
     title: 'Major or minor?',
-    tier: 'premium',
+    tier: 'free',
     skills: ['chord-recognition'],
     difficulties: null,
-    minutes: 2,
+    secondsPerRep: 6,
     challenge: 0.2,
     rounds: 8,
   },
@@ -47,7 +51,7 @@ const EAR_ACTIVITIES: Activity[] = [
     tier: 'free',
     skills: ['melody-reproduction', 'musical-memory', 'rhythm-memory'],
     difficulties: ['beginner', 'intermediate', 'advanced'],
-    minutes: 3,
+    secondsPerRep: 13,
     challenge: 0.35,
     rounds: 4,
   },
@@ -58,7 +62,7 @@ const EAR_ACTIVITIES: Activity[] = [
     tier: 'free',
     skills: ['pitch-memory', 'musical-memory'],
     difficulties: ['easy', 'medium', 'hard', 'expert'],
-    minutes: 3,
+    secondsPerRep: 16,
     challenge: 0.35,
     rounds: 3,
   },
@@ -66,10 +70,10 @@ const EAR_ACTIVITIES: Activity[] = [
     kind: 'ear',
     id: 'odd-one-out',
     title: 'Odd one out',
-    tier: 'premium',
+    tier: 'free',
     skills: ['interval-recognition', 'chord-recognition'],
     difficulties: ['intervals', 'chords', 'scales'],
-    minutes: 3,
+    secondsPerRep: 9,
     challenge: 0.4,
     rounds: 6,
   },
@@ -77,10 +81,10 @@ const EAR_ACTIVITIES: Activity[] = [
     kind: 'ear',
     id: 'finish-melody',
     title: 'Finish the melody',
-    tier: 'premium',
+    tier: 'free',
     skills: ['musical-memory', 'interval-singing'],
     difficulties: null,
-    minutes: 2,
+    secondsPerRep: 10,
     challenge: 0.4,
     rounds: 5,
   },
@@ -88,10 +92,10 @@ const EAR_ACTIVITIES: Activity[] = [
     kind: 'ear',
     id: 'echo-interval',
     title: 'Echo the interval',
-    tier: 'premium',
+    tier: 'free',
     skills: ['interval-recognition', 'melody-reproduction'],
     difficulties: ['beginner', 'intermediate', 'advanced'],
-    minutes: 3,
+    secondsPerRep: 11,
     challenge: 0.35,
     rounds: 5,
   },
@@ -99,10 +103,10 @@ const EAR_ACTIVITIES: Activity[] = [
     kind: 'ear',
     id: 'sing-interval',
     title: 'Sing the interval',
-    tier: 'premium',
+    tier: 'free',
     skills: ['interval-singing', 'interval-recognition'],
     difficulties: ['beginner', 'intermediate', 'advanced'],
-    minutes: 3,
+    secondsPerRep: 10,
     challenge: 0.5,
     rounds: 5,
   },
@@ -113,7 +117,7 @@ const EAR_ACTIVITIES: Activity[] = [
     tier: 'free',
     skills: ['chord-singing', 'chord-recognition', 'interval-singing'],
     difficulties: ['beginner', 'intermediate', 'advanced'],
-    minutes: 3,
+    secondsPerRep: 14,
     challenge: 0.6,
     rounds: 4,
   },
@@ -121,71 +125,92 @@ const EAR_ACTIVITIES: Activity[] = [
 
 /**
  * How each melody category behaves as practice: which skills it trains
- * (primary first — that drives need-scoring and difficulty), how long a pass
- * takes, and a floor on intrinsic challenge.
+ * (primary first — that drives need-scoring and difficulty) and a floor on
+ * intrinsic challenge. How long it takes comes from the melody itself.
  *
  * This is the single place a new exercise category has to touch to become a
  * full citizen of the platform: lessons, recommendations, weak-spot training
  * and the skill tree all read the catalog.
  */
-const CATEGORY_PROFILE: Record<ExerciseCategory, { skills: SkillId[]; minutes: number; minChallenge: number }> = {
+const CATEGORY_PROFILE: Record<ExerciseCategory, { skills: SkillId[]; minChallenge: number }> = {
   warmup: {
     skills: ['voice-control', 'pitch-stability', 'pitch-accuracy', 'sight-singing'],
-    minutes: 2,
     minChallenge: 0,
   },
   melody: {
     skills: ['melody-reproduction', 'pitch-accuracy', 'rhythm-accuracy', 'sight-singing'],
-    minutes: 3,
     minChallenge: 0,
   },
   modes: {
     skills: ['sight-singing', 'pitch-accuracy', 'interval-singing', 'musical-memory'],
-    minutes: 3,
     minChallenge: 0.55,
   },
   jazz: {
     skills: ['chord-singing', 'interval-singing', 'pitch-accuracy'],
-    minutes: 3,
     minChallenge: 0.6,
   },
   chromatic: {
     skills: ['pitch-accuracy', 'interval-singing', 'pitch-stability'],
-    minutes: 3,
     minChallenge: 0.7,
   },
   agility: {
     skills: ['voice-control', 'rhythm-accuracy', 'melody-reproduction', 'pitch-accuracy'],
-    minutes: 3,
     minChallenge: 0.75,
   },
   belt: {
     skills: ['voice-control', 'pitch-stability', 'pitch-accuracy'],
-    minutes: 4,
     minChallenge: 0.8,
   },
   harmony: {
     skills: ['pitch-stability', 'chord-singing', 'pitch-accuracy'],
-    minutes: 3,
     minChallenge: 0.7,
   },
 };
 
 const DIFFICULTY_CHALLENGE: Record<string, number> = { easy: 0.2, medium: 0.4, hard: 0.6 };
 
+/** the melody player's count-in before the first note, in seconds */
+const MELODY_LEAD_IN_SEC = 1.2;
+/** stage gaps, the "now on your own" card and a glance at the summary */
+const MELODY_RUN_OVERHEAD_SEC = 9;
+/** an ear session's intro and closing summary, on top of its rounds */
+const EAR_SESSION_OVERHEAD_SEC = 10;
+
+/**
+ * Real seconds a session takes at `reps` repetitions — ear rounds, or full
+ * melody runs (each one already includes its own overhead).
+ */
+export function sessionSeconds(activity: Omit<Activity, 'minutes'>, reps = activity.rounds): number {
+  const overhead = activity.kind === 'ear' ? EAR_SESSION_OVERHEAD_SEC : 0;
+  return overhead + reps * activity.secondsPerRep;
+}
+
+/** whole minutes for display, never below one */
+export function displayMinutes(seconds: number): number {
+  return Math.max(1, Math.round(seconds / 60));
+}
+
+const withMinutes = (a: Omit<Activity, 'minutes'>): Activity => ({ ...a, minutes: displayMinutes(sessionSeconds(a)) });
+
+const EAR_ACTIVITIES: Activity[] = EAR_DRILLS.map(withMinutes);
+
 export const MELODY_ACTIVITIES: Activity[] = melodyLibrary.map((e) => {
   const profile = CATEGORY_PROFILE[e.category];
-  return {
+  const phraseSec = e.notes.reduce((end, n) => Math.max(end, n.start + n.duration), 0);
+  return withMinutes({
     kind: 'melody',
     id: e.id,
     title: e.title,
-    tier: e.id === 'twinkle' || e.id === 'c-major-scale' ? 'free' : 'premium',
+    // free vs. Premium is decided per category (songs and the scale/arpeggio
+    // warm-ups are free; the advanced library is Premium)
+    tier: categoryTier(e.category),
     skills: profile.skills,
     difficulties: null,
-    minutes: profile.minutes,
+    // a run sounds the phrase twice: the listen stage, then the solo pass
+    secondsPerRep: Math.round(2 * (MELODY_LEAD_IN_SEC + phraseSec) + MELODY_RUN_OVERHEAD_SEC),
     challenge: Math.max(profile.minChallenge, DIFFICULTY_CHALLENGE[e.difficulty] ?? 0.4),
     rounds: 1,
-  };
+  });
 });
 
 export const CATALOG: Activity[] = [...EAR_ACTIVITIES, ...MELODY_ACTIVITIES];

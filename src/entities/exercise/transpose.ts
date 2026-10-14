@@ -15,6 +15,18 @@ export interface Transposition {
   fits: boolean;
 }
 
+/** a little headroom so the singer isn't parked at their extremes */
+const RANGE_MARGIN = 1;
+
+function bounds(exercise: Exercise) {
+  const midis = exercise.notes.map((n) => n.midi);
+  return { lo: Math.min(...midis), hi: Math.max(...midis) };
+}
+
+function usable(range: PitchRange) {
+  return { low: range.lowMidi + RANGE_MARGIN, high: range.highMidi - RANGE_MARGIN };
+}
+
 /**
  * Pick the transposition that best centres a melody in the singer's range.
  * Keeps the original when it already fits comfortably, so we don't move
@@ -23,14 +35,8 @@ export interface Transposition {
 export function fitToRange(exercise: Exercise, range: PitchRange | null): Transposition {
   if (!range) return { shift: 0, fits: true };
 
-  const midis = exercise.notes.map((n) => n.midi);
-  const lo = Math.min(...midis);
-  const hi = Math.max(...midis);
-
-  // a little headroom so the singer isn't parked at their extremes
-  const margin = 1;
-  const usableLow = range.lowMidi + margin;
-  const usableHigh = range.highMidi - margin;
+  const { lo, hi } = bounds(exercise);
+  const { low: usableLow, high: usableHigh } = usable(range);
 
   if (lo >= usableLow && hi <= usableHigh) return { shift: 0, fits: true };
 
@@ -47,6 +53,40 @@ export function fitToRange(exercise: Exercise, range: PitchRange | null): Transp
 
   const fits = lo + shift >= usableLow && hi + shift <= usableHigh;
   return { shift, fits };
+}
+
+/**
+ * How many keys, a semitone apart, the whole exercise fits in within the
+ * range — the most rounds a key ladder can climb. At least one (an exercise
+ * wider than the range still gets its best-fit key); unbounded without a
+ * measured range.
+ */
+export function ladderRoom(exercise: Exercise, range: PitchRange | null): number {
+  if (!range) return Infinity;
+  const { lo, hi } = bounds(exercise);
+  const { low, high } = usable(range);
+  return Math.max(1, high - low - (hi - lo) + 1);
+}
+
+/**
+ * Transpositions for `rounds` rounds of a scale or arpeggio, climbing a
+ * semitone per round — the pattern keeps its own tonality (a major scale is a
+ * major scale in every key), only the tonic rises. The climb never leaves the
+ * range, so it may be shorter than asked; it sits in the middle of the room
+ * the range leaves, lowest key first. Without a range it climbs from the
+ * authored key.
+ */
+export function keyLadder(exercise: Exercise, range: PitchRange | null, rounds: number): number[] {
+  const count = Math.max(1, Math.min(rounds, ladderRoom(exercise, range)));
+  if (!range) return Array.from({ length: count }, (_, i) => i);
+  if (count === 1) return [fitToRange(exercise, range).shift];
+  const { lo, hi } = bounds(exercise);
+  const { low, high } = usable(range);
+  // every shift in [lowest, highest] keeps the exercise inside the range
+  const lowest = low - lo;
+  const highest = high - hi;
+  const start = lowest + Math.floor((highest - lowest - (count - 1)) / 2);
+  return Array.from({ length: count }, (_, i) => start + i);
 }
 
 /** Transpose the key label along with the notes, e.g. "C major" +2 -> "D major" */
