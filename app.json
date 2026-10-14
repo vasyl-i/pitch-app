@@ -83,7 +83,17 @@
       "@react-native-community/datetimepicker",
       "@react-native-firebase/app",
       "@react-native-firebase/crashlytics",
-      "./plugins/with-firebase-disable-spm"
+      "./plugins/with-firebase-disable-spm",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "extraProguardRules": "-keep class com.swmansion.audioapi.** { *; }\n-keep class com.shopify.reactnative.skia.** { *; }"
+          }
+        }
+      ]
     ],
     "extra": {
       "eas": {
