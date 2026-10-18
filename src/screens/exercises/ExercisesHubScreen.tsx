@@ -18,6 +18,14 @@ import {
   type WeeklyPlan,
 } from '@/features/learning';
 import { bestScores, starsForScore, useProgressStore } from '@/features/progress';
+import {
+    isPremiumSpeed,
+    MAX_FREE_SPEED,
+    SPEED_LEVELS,
+    speedBpm,
+    useSpeedStore,
+    type ScaleDirection,
+} from '@/features/staff-practice';
 import { PremiumBadge, useEntitlement, usePremiumStatus, usePaywall } from '@/features/subscription';
 import { AppText, Screen } from '@/shared/ui';
 import { typography, useTheme } from '@/shared/theme';
@@ -223,7 +231,7 @@ export function ExercisesHubScreen({ navigation }: ExercisesScreenProps<'Exercis
                                 return exerciseLocked ? (
                                     <LockedMelodyRow key={e.id} exercise={e} bgColor={bgColor} onPress={openPaywall} />
                                 ) : (
-                                    <MelodyRow key={e.id} exercise={e} bgColor={bgColor} best={best[e.id]} onPress={() => navigation.navigate('MelodyPractice', { exerciseId: e.id })} onAdd={() => setDayPickerEntry({ activityId: e.id, kind: 'melody' })} />
+                                    <MelodyRow key={e.id} exercise={e} bgColor={bgColor} best={best[e.id]} premium={isPremium} onLockedSpeed={openPaywall} onPress={() => navigation.navigate('MelodyPractice', { exerciseId: e.id })} onAdd={() => setDayPickerEntry({ activityId: e.id, kind: 'melody' })} />
                                 );
                             })}
                         </View>
@@ -265,8 +273,16 @@ function SectionHeader({ label, tagline, locked }: { label: string; tagline: str
     );
 }
 
-function MelodyRow({ exercise, bgColor, best, onPress, onAdd }: { exercise: Exercise; bgColor: string; best: number | undefined; onPress: () => void; onAdd: () => void }) {
+function MelodyRow({ exercise, bgColor, best, premium, onPress, onAdd, onLockedSpeed }: { exercise: Exercise; bgColor: string; best: number | undefined; premium: boolean; onPress: () => void; onAdd: () => void; onLockedSpeed: () => void }) {
     const { palette } = useTheme();
+    // the tempo it runs at, preview and singing alike — remembered per exercise
+    const picked = useSpeedStore((s) => s.speeds[exercise.id] ?? 1);
+    // a Premium speed kept from a lapsed subscription plays at the free maximum
+    const speed = !premium && isPremiumSpeed(picked) ? MAX_FREE_SPEED : picked;
+    const setSpeed = useSpeedStore((s) => s.setSpeed);
+    // a scale practised here sweeps through the keys endlessly, from this end first
+    const direction = useSpeedStore((s) => s.directions[exercise.id] ?? 'up');
+    const setDirection = useSpeedStore((s) => s.setDirection);
     const earned = best === undefined ? 0 : starsForScore(best);
     const catIcon = EXERCISE_CAT_ICONS[exercise.id] ?? DEFAULT_CAT_ICON;
     const inset = catIcon.inset ?? 0;
@@ -308,11 +324,67 @@ function MelodyRow({ exercise, bgColor, best, onPress, onAdd }: { exercise: Exer
                             <Ionicons name="add-circle" size={26} color={palette.accent} />
                         </Pressable>
                     </View>
+                    <View style={styles.chips}>
+                        {SPEED_LEVELS.map((level) => {
+                            const isSelected = level === speed;
+                            const locked = !premium && isPremiumSpeed(level);
+                            return (
+                                <Pressable
+                                    key={level}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={`Speed ${speedBpm(exercise.bpm, level)} beats per minute${locked ? ', Premium' : ''}`}
+                                    accessibilityState={{ selected: isSelected }}
+                                    onPress={() => (locked ? onLockedSpeed() : setSpeed(exercise.id, level))}
+                                    style={[
+                                        styles.chip,
+                                        locked && styles.lockedChip,
+                                        { backgroundColor: isSelected ? 'rgba(200, 218, 89, 0.14)' : palette.surface },
+                                    ]}
+                                >
+                                    {locked && <Ionicons name="lock-closed" size={10} color={palette.textFaint} />}
+                                    <AppText variant="caption" color={isSelected ? palette.accent : locked ? palette.textFaint : palette.textSecondary}>
+                                        {speedBpm(exercise.bpm, level)} bpm
+                                    </AppText>
+                                </Pressable>
+                            );
+                        })}
+                    </View>
+                    {exercise.pattern === 'scale' && (
+                        <View style={[styles.chips, { marginTop: 6 }]}>
+                            {SCALE_DIRECTIONS.map(({ id, label, icon }) => {
+                                const isSelected = id === direction;
+                                return (
+                                    <Pressable
+                                        key={id}
+                                        accessibilityRole="button"
+                                        accessibilityLabel={`Keys ${label.toLowerCase()}`}
+                                        accessibilityState={{ selected: isSelected }}
+                                        onPress={() => setDirection(exercise.id, id)}
+                                        style={[
+                                            styles.chip,
+                                            styles.lockedChip,
+                                            { backgroundColor: isSelected ? 'rgba(200, 218, 89, 0.14)' : palette.surface },
+                                        ]}
+                                    >
+                                        <Ionicons name={icon} size={11} color={isSelected ? palette.accent : palette.textSecondary} />
+                                        <AppText variant="caption" color={isSelected ? palette.accent : palette.textSecondary}>
+                                            {label}
+                                        </AppText>
+                                    </Pressable>
+                                );
+                            })}
+                        </View>
+                    )}
                 </View>
             )}
         </Pressable>
     );
 }
+
+const SCALE_DIRECTIONS: readonly { id: ScaleDirection; label: string; icon: 'arrow-up' | 'arrow-down' }[] = [
+    { id: 'up', label: 'Low to high', icon: 'arrow-up' },
+    { id: 'down', label: 'High to low', icon: 'arrow-down' },
+];
 
 function LockedMelodyRow({ exercise, bgColor, onPress }: { exercise: Exercise; bgColor: string; onPress: () => void }) {
     const { palette } = useTheme();
@@ -449,6 +521,8 @@ const styles = StyleSheet.create({
     info: { flex: 1, marginLeft: 12 },
     chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
     chip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999 },
+    // a chip with an icon before its label
+    lockedChip: { flexDirection: 'row', alignItems: 'center', gap: 4 },
     starRow: { flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 6 },
     addBtn: { marginLeft: 8, padding: 4 },
     modalOverlay: {

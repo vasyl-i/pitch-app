@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { melodyById } from '../library';
-import { keyLadder, ladderRoom, transposeExercise } from '../transpose';
+import { keyLadder, keyRoom, ladderRoom, nextSweepKey, randomKey, transposeExercise } from '../transpose';
 
 const scale = melodyById('c-major-scale')!; // C4–C5, an octave
 
@@ -32,4 +32,43 @@ test('without a range the ladder climbs from the authored key', () => {
 test('each key keeps the tonality', () => {
   assert.equal(transposeExercise(scale, 2).key, 'D major');
   assert.equal(transposeExercise(melodyById('e-minor-scale')!, 1).key, 'F minor');
+});
+
+test('an endless scale sweeps to one end of the room, turns, and comes back', () => {
+  const room = { lowest: -2, highest: 1 };
+  let key = { shift: room.lowest, direction: 1 as 1 | -1 };
+  const visited = [key.shift];
+  for (let i = 0; i < 8; i++) {
+    key = nextSweepKey(key.shift, key.direction, room);
+    visited.push(key.shift);
+  }
+  assert.deepEqual(visited, [-2, -1, 0, 1, 0, -1, -2, -1, 0]);
+  // starting from the top, downward
+  assert.deepEqual(nextSweepKey(1, -1, room), { shift: 0, direction: -1 });
+  // a one-key room just stays put
+  assert.deepEqual(nextSweepKey(3, 1, { lowest: 3, highest: 3 }), { shift: 3, direction: 1 });
+});
+
+test('a random key stays in the room and never repeats the last one', () => {
+  const room = { lowest: -3, highest: 3 };
+  let previous: number | null = null;
+  const seen = new Set<number>();
+  for (let i = 0; i < 200; i++) {
+    const shift = randomKey(room, previous);
+    assert.ok(shift >= room.lowest && shift <= room.highest, `${shift}`);
+    assert.notEqual(shift, previous);
+    seen.add(shift);
+    previous = shift;
+  }
+  assert.equal(seen.size, 7);
+  assert.equal(randomKey({ lowest: 2, highest: 2 }, 2), 2);
+});
+
+test('the key room keeps every note inside the range', () => {
+  const range = { lowMidi: 50, highMidi: 70 }; // usable 51–69
+  const room = keyRoom(scale, range);
+  assert.deepEqual(room, { lowest: -9, highest: -3 });
+  // narrower than the scale: its best-fit key only
+  const tight = keyRoom(scale, { lowMidi: 58, highMidi: 66 });
+  assert.equal(tight.lowest, tight.highest);
 });

@@ -228,7 +228,9 @@ export function createRunController({
     // 'accompanied' the canvas becomes visible (canvasRunning) and initialises
     // its scroll offset from position. If status fires first, the canvas sees
     // position=0 (from clearStageFeedback) and flashes notes at the playhead.
-    publishPlayback(-player.leadIn, now());
+    // (in phrase time, like every position: the count-in is `leadIn` wall
+    // seconds, so its phrase-time length scales with the rate)
+    publishPlayback(player.currentTime(), now());
     store.setStatus(status);
     tick();
   };
@@ -256,7 +258,7 @@ export function createRunController({
     // can see when the first note arrives — same UX as the accompanied stage.
     solo.start();
     // Position before status — see comment in startPlaybackStage.
-    publishPlayback(-solo.leadIn, now());
+    publishPlayback(solo.currentTime(), now());
     store.setStatus('running');
     tick();
     silenceTimer = setTimeout(() => {

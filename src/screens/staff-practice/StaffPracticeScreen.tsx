@@ -1,13 +1,27 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { categoryRepeats, exercises, fitToRange, keyLadder, odeToJoy, transposeExercise } from '@/entities/exercise';
+import {
+  categoryRepeats,
+  exercises,
+  fitToRange,
+  keyLadder,
+  keyRoom,
+  nextSweepKey,
+  odeToJoy,
+  randomKey,
+  transposeExercise,
+  type KeyDirection,
+} from '@/entities/exercise';
 import { useProfileStore } from '@/entities/profile';
 import { buildSessionRecord, elapsedPracticeSeconds, useProgressStore } from '@/features/progress';
 import {
   cuesStartingNote,
+  directionFor,
   LiveReadout,
   MicGlow,
   PianoKeyboard,
+  speedBpm,
+  speedFor,
   useStaffSession,
   useStaffStore,
   VERDICT_LABEL,
@@ -18,6 +32,7 @@ import { useTheme } from '@/shared/theme';
 import type { RootScreenProps } from '@/app/navigation/types';
 import { resetToTab } from '@/app/navigation/resetToTab';
 import { useLessonSessionStore } from '@/features/learning';
+import { isPremium, useSubscriptionStore } from '@/features/subscription';
 import { activeStepLabel, advanceAfterStep } from '../session/lessonFlow';
 import { PhraseSummaryCard } from './PhraseSummaryCard';
 import { StageTransition } from './StageTransition';
@@ -28,7 +43,10 @@ const NEXT_RUN_DELAY_MS = 600;
 export function StaffPracticeScreen({ navigation, route }: RootScreenProps<'MelodyPractice'>) {
   const original = exercises.find((e) => e.id === route.params.exerciseId) ?? odeToJoy;
   const guided = route.params.guided === true;
-  const [rate, setRate] = useState(1);
+  // the speed picked for this exercise in the library, for preview and singing alike
+  const [rate, setRate] = useState<number>(() =>
+    speedFor(original.id, isPremium(useSubscriptionStore.getState().subscription)),
+  );
   const [loop, setLoop] = useState(false);
   const [showHz, setShowHz] = useState(false);
 
@@ -53,25 +71,69 @@ export function StaffPracticeScreen({ navigation, route }: RootScreenProps<'Melo
     if (rounds <= 1) return null;
     return keyLadder(original, useProfileStore.getState().autoTranspose ? range : null, rounds);
   });
-  const [round, setRound] = useState(0);
-  const rounds = ladder?.length ?? 1;
-  const nextRound = useCallback(() => setRound((r) => Math.min(r + 1, rounds - 1)), [rounds]);
+  // Practised on its own (from the library), a scale or arpeggio runs round
+  // after round until the singer leaves, each round in a new key within the
+  // range: a scale sweeps a semitone at a time to one end of the voice and
+  // back, starting from the end its direction setting picks; an arpeggio
+  // hops to a random key.
+  const pattern = guided ? undefined : original.pattern;
+  const [room] = useState(() =>
+    pattern ? keyRoom(original, useProfileStore.getState().autoTranspose ? range : null) : null,
+  );
+  const [endless, setEndless] = useState<{ shift: number; direction: KeyDirection } | null>(() => {
+    if (!room) return null;
+    if (pattern === 'arpeggio') return { shift: randomKey(room, null), direction: 1 };
+    const up = directionFor(original.id) === 'up';
+    return { shift: up ? room.lowest : room.highest, direction: up ? 1 : -1 };
+  });
 
-  const roundShift = ladder ? ladder[round] : autoTranspose ? shift : 0;
-  // every key of the climb on one fixed pitch axis, so each round visibly
-  // sits a semitone above the last
+  const [round, setRound] = useState(0);
+  const [previousShift, setPreviousShift] = useState<number | null>(null);
+  const rounds = endless ? Infinity : (ladder?.length ?? 1);
+  const roundShift = endless ? endless.shift : ladder ? ladder[round] : autoTranspose ? shift : 0;
+
+  const nextRound = useCallback(() => {
+    setPreviousShift(roundShift);
+    setRound((r) => Math.min(r + 1, rounds - 1));
+    if (room) {
+      setEndless((cur) => {
+        if (!cur) return cur;
+        return pattern === 'arpeggio'
+          ? { shift: randomKey(room, cur.shift), direction: 1 }
+          : nextSweepKey(cur.shift, cur.direction, room);
+      });
+    }
+  }, [roundShift, rounds, room, pattern]);
+
+  // how this round's key relates to the last, for the preview prompt
+  const keyChange =
+    previousShift === null || previousShift === roundShift
+      ? null
+      : roundShift - previousShift === 1
+        ? 'A semitone higher'
+        : roundShift - previousShift === -1
+          ? 'A semitone lower'
+          : 'A new key';
+
+  // every key the rounds can visit on one fixed pitch axis, so each new key
+  // visibly sits above or below the last
   const ladderSpan = useMemo(() => {
-    if (!ladder) return undefined;
     const midis = original.notes.map((n) => n.midi);
+    if (room) return { low: Math.min(...midis) + room.lowest, high: Math.max(...midis) + room.highest };
+    if (!ladder) return undefined;
     return { low: Math.min(...midis) + ladder[0], high: Math.max(...midis) + ladder[ladder.length - 1] };
-  }, [original, ladder]);
+  }, [original, ladder, room]);
   const exercise = useMemo(() => transposeExercise(original, roundShift), [original, roundShift]);
 
   return (
     <StaffSession
-      key={`${exercise.id}-${rate}-${roundShift}`}
+      // the round too: a range with room for one key repeats it, and each
+      // round still needs a fresh run
+      key={`${exercise.id}-${rate}-${roundShift}-${round}`}
       navigation={navigation}
       guided={guided}
+      endless={endless !== null}
+      keyChange={keyChange}
       round={round}
       rounds={rounds}
       onRoundDone={nextRound}
@@ -94,6 +156,8 @@ export function StaffPracticeScreen({ navigation, route }: RootScreenProps<'Melo
 function StaffSession({
   navigation,
   guided,
+  endless,
+  keyChange,
   round,
   rounds,
   onRoundDone,
@@ -112,6 +176,10 @@ function StaffSession({
 }: {
   navigation: RootScreenProps<'MelodyPractice'>['navigation'];
   guided: boolean;
+  /** rounds continue until the singer leaves (a scale or arpeggio from the library) */
+  endless: boolean;
+  /** how this round's key moved from the last one, e.g. "A semitone lower" */
+  keyChange: string | null;
   /** this session's round of the step (0-based) and how many the step has */
   round: number;
   rounds: number;
@@ -204,8 +272,8 @@ function StaffSession({
   // points at the one-second fix.
   const { promptTitle, promptSubtitle } = ((): { promptTitle: string; promptSubtitle: string } => {
     if (status === 'listen') {
-      return round > 0
-        ? { promptTitle: `Now in ${exercise.key}`, promptSubtitle: 'A semitone higher — listen first' }
+      return keyChange
+        ? { promptTitle: `Now in ${exercise.key}`, promptSubtitle: `${keyChange} — listen first` }
         : { promptTitle: 'Listen to the example', promptSubtitle: 'Follow the notes' };
     }
     if (status === 'accompanied') {
@@ -239,9 +307,12 @@ function StaffSession({
               <AppText variant="caption">
                 {guided
                     ? `${activeStepLabel() ?? "Today's practice"}${rounds > 1 ? ` · ${exercise.key} · Round ${round + 1} of ${rounds}` : ''}`
+                    : endless
+                      ? `${exercise.key} · Round ${round + 1}`
                     : shift !== 0
                         ? `${exercise.key} · ${shift > 0 ? '+' : ''}${shift} for your range`
                         : exercise.source}
+                {rate !== 1 ? ` · ${speedBpm(exercise.bpm, rate)} bpm` : ''}
               </AppText>
             </View>
           </View>

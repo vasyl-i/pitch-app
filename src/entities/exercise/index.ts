@@ -1,10 +1,10 @@
 /** Target-melody exercises: the content model, how to fit it to a voice, and how to grade it. */
-export type { Exercise, TargetNote, ExerciseCategory, Difficulty } from './types';
+export type { Exercise, TargetNote, ExerciseCategory, ExercisePattern, Difficulty } from './types';
 export { exercises, odeToJoy, melodyById } from './library';
 export { EXERCISE_CATEGORIES, categoriesInOrder, categoryMeta, categoryRepeats, categoryTier } from './categories';
 export type { ExerciseCategoryMeta, ExerciseRepeat, ExerciseTier } from './categories';
-export { fitToRange, keyLadder, ladderRoom, transposeExercise, transposeKeyLabel } from './transpose';
-export type { Transposition } from './transpose';
+export { fitToRange, keyLadder, keyRoom, ladderRoom, nextSweepKey, randomKey, transposeExercise, transposeKeyLabel } from './transpose';
+export type { KeyDirection, KeyRoom, Transposition } from './transpose';
 export {
   centsToTarget,
   verdictOfCents,

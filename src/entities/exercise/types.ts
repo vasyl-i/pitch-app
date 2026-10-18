@@ -16,6 +16,8 @@ import type { ExerciseCategory } from './categories';
 
 export type Difficulty = 'easy' | 'medium' | 'hard';
 
+export type ExercisePattern = 'scale' | 'arpeggio';
+
 export interface Exercise {
   id: string;
   title: string;
@@ -28,6 +30,12 @@ export interface Exercise {
   /** the family this belongs to — also decides free vs. Premium (see categories) */
   category: ExerciseCategory;
   difficulty: Difficulty;
+  /**
+   * Set when the exercise is a scale or an arpeggio. Practised on its own, a
+   * scale sweeps up and down through the singer's keys and an arpeggio hops
+   * between random ones, round after round (see `nextSweepKey`, `randomKey`).
+   */
+  pattern?: ExercisePattern;
   /** optional technique note shown before the exercise starts */
   hint?: string;
   notes: TargetNote[];

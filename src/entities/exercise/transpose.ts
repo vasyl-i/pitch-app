@@ -89,6 +89,60 @@ export function keyLadder(exercise: Exercise, range: PitchRange | null, rounds: 
   return Array.from({ length: count }, (_, i) => start + i);
 }
 
+/** The transpositions an exercise can be sung at: every shift in [lowest, highest]. */
+export interface KeyRoom {
+  lowest: number;
+  highest: number;
+}
+
+/** keys either side of the authored one, for a voice whose range isn't measured yet */
+const UNMEASURED_ROOM = 5;
+
+/**
+ * Every key the whole exercise fits in within the range. A range narrower
+ * than the exercise leaves only its best-fit key; no measured range allows
+ * a few semitones either side of the authored key.
+ */
+export function keyRoom(exercise: Exercise, range: PitchRange | null): KeyRoom {
+  if (!range) return { lowest: -UNMEASURED_ROOM, highest: UNMEASURED_ROOM };
+  const { lo, hi } = bounds(exercise);
+  const { low, high } = usable(range);
+  if (low - lo > high - hi) {
+    const { shift } = fitToRange(exercise, range);
+    return { lowest: shift, highest: shift };
+  }
+  return { lowest: low - lo, highest: high - hi };
+}
+
+export type KeyDirection = 1 | -1;
+
+/**
+ * The next key of an endless scale sweep: a semitone on in `direction`,
+ * turning round at either end of the room — up to the top of the voice, back
+ * down to the bottom, and up again.
+ */
+export function nextSweepKey(
+  shift: number,
+  direction: KeyDirection,
+  room: KeyRoom,
+): { shift: number; direction: KeyDirection } {
+  if (room.lowest >= room.highest) return { shift: room.lowest, direction };
+  const next = shift + direction;
+  if (next >= room.lowest && next <= room.highest) return { shift: next, direction };
+  const turned = -direction as KeyDirection;
+  return { shift: shift + turned, direction: turned };
+}
+
+/** A random key from the room, never the `previous` one while there's a choice. */
+export function randomKey(room: KeyRoom, previous: number | null, rand: () => number = Math.random): number {
+  const size = room.highest - room.lowest + 1;
+  if (size <= 1) return room.lowest;
+  const avoid = previous !== null && previous >= room.lowest && previous <= room.highest;
+  const shift = room.lowest + Math.floor(rand() * (avoid ? size - 1 : size));
+  // skip over the previous key: the options above it shift up by one
+  return avoid && shift >= previous! ? shift + 1 : shift;
+}
+
 /** Transpose the key label along with the notes, e.g. "C major" +2 -> "D major" */
 export function transposeKeyLabel(key: string, shift: number): string {
   if (shift === 0) return key;

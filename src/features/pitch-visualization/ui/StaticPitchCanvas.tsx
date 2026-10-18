@@ -127,11 +127,15 @@ export function StaticPitchCanvas({
   };
 
   // ---- Horizontal range: fit entire melody duration ----
+  // Everything on the canvas is laid out in *phrase* time — the seconds the
+  // melody is authored in — because that is what `currentTime` and the trail
+  // samples carry (players report `elapsed × rate`). The rate only sets how
+  // fast the playhead travels across it; mixing in wall-clock time put the
+  // notes, the highlight and the playhead out of step at any speed but 1×.
   const totalDuration = useMemo(() => {
     if (!targets.length) return 1;
-    const last = targets[targets.length - 1];
-    return (last.start + last.duration) / rate;
-  }, [targets, rate]);
+    return targets.reduce((end, n) => Math.max(end, n.start + n.duration), 0);
+  }, [targets]);
 
   const RIGHT_PAD_PX = W * 0.03;
   const usableW = W - LABEL_MARGIN - RIGHT_PAD_PX;
@@ -146,14 +150,20 @@ export function StaticPitchCanvas({
   // the playhead moves at 60fps regardless of JS thread load.
   const clock = useClock();
   const clockOffsetSec = useSharedValue(0);
+  const rateSV = useSharedValue(rate);
   const offsetInit = useRef(false);
   const prevCT = useRef(currentTime);
 
+  // the playhead advances `rate` phrase-seconds per clock second
+  const syncClock = () => {
+    rateSV.value = rate;
+    clockOffsetSec.value = currentTime - (clock.value / 1000) * rate;
+  };
   if (!offsetInit.current && W > 0 && running) {
-    clockOffsetSec.value = currentTime - clock.value / 1000;
+    syncClock();
     offsetInit.current = true;
-  } else if (offsetInit.current && Math.abs(currentTime - prevCT.current) > 0.5) {
-    clockOffsetSec.value = currentTime - clock.value / 1000;
+  } else if (offsetInit.current && (Math.abs(currentTime - prevCT.current) > 0.5 || rateSV.value !== rate)) {
+    syncClock();
   }
   prevCT.current = currentTime;
 
@@ -171,7 +181,7 @@ export function StaticPitchCanvas({
   const playheadXAnimated = useDerivedValue(() => {
     'worklet';
     const t = runningSV.value
-      ? clock.value / 1000 + clockOffsetSec.value
+      ? (clock.value / 1000) * rateSV.value + clockOffsetSec.value
       : pausedTimeSV.value;
     return xOffsetSV.value + t * pxPerSecSV.value;
   });
@@ -199,7 +209,7 @@ export function StaticPitchCanvas({
   // ---- Beat / bar lines ----
   const beatLines = useMemo(() => {
     if (!W || !H) return [];
-    const beatSec = (60 / bpm) / rate;
+    const beatSec = 60 / bpm;
     const beatsPerBar = 4; // assume 4/4 for now
     const out: { x: number; isBar: boolean }[] = [];
     for (let beat = 0; beat * beatSec <= totalDuration; beat++) {
@@ -210,17 +220,17 @@ export function StaticPitchCanvas({
     }
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [W, H, bpm, rate, pxPerSec, totalDuration]);
+  }, [W, H, bpm, pxPerSec, totalDuration]);
 
   // ---- Active note (under playhead) ----
   const activeNoteIdx = useMemo(() => {
     for (let i = 0; i < targets.length; i++) {
-      const s = targets[i].start / rate;
-      const e = (targets[i].start + targets[i].duration) / rate;
+      const s = targets[i].start;
+      const e = targets[i].start + targets[i].duration;
       if (currentTime >= s && currentTime < e) return i;
     }
     return -1;
-  }, [targets, currentTime, rate]);
+  }, [targets, currentTime]);
 
   // ---- Target note rectangles ----
   const targetFont = useFont(require('../../../../assets/fonts/Satoshi-Medium.ttf'), 11);
@@ -228,8 +238,8 @@ export function StaticPitchCanvas({
   const targetRects = useMemo(() => {
     if (!targets.length || !W) return [];
     return targets.map((note, i) => {
-      const noteStart = note.start / rate;
-      const noteEnd = (note.start + note.duration) / rate;
+      const noteStart = note.start;
+      const noteEnd = note.start + note.duration;
       const x0 = xOfTime(noteStart);
       const x1 = xOfTime(noteEnd);
       const y = yOfMidi(note.midi);
@@ -243,7 +253,7 @@ export function StaticPitchCanvas({
       };
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [targets, W, H, midCenter, semiH, rate, pxPerSec, activeNoteIdx]);
+  }, [targets, W, H, midCenter, semiH, pxPerSec, activeNoteIdx]);
 
   // ---- Voice trail (accumulate full history) ----
   // The store's trail array is bounded to ~6 seconds (old samples are shifted

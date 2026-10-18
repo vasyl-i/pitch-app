@@ -25,6 +25,7 @@ const cMajorScale: Exercise = {
   key: 'C major',
   bpm: 100,
   category: 'warmup',
+  pattern: 'scale',
   difficulty: 'easy',
   notes: seq(100, [
     [C4, 1, 'Do'], [D4, 1, 'Re'], [E4, 1, 'Mi'], [F4, 1, 'Fa'], [G4, 1, 'Sol'], [A4, 1, 'La'], [B4, 1, 'Ti'], [C5, 1, 'Do'],
@@ -39,6 +40,7 @@ const majorArpeggio: Exercise = {
   key: 'C major',
   bpm: 96,
   category: 'warmup',
+  pattern: 'arpeggio',
   difficulty: 'easy',
   notes: seq(96, [
     [C4, 1, 'Do'], [E4, 1, 'Mi'], [G4, 1, 'Sol'], [C5, 1, 'Do'], [G4, 1, 'Sol'], [E4, 1, 'Mi'], [C4, 2, 'Do'],
@@ -54,6 +56,7 @@ const eMinorScale: Exercise = {
   key: 'E minor',
   bpm: 100,
   category: 'warmup',
+  pattern: 'scale',
   difficulty: 'medium',
   notes: seq(100, [
     [E4, 1, 'La'], [FS4, 1, 'Ti'], [G4, 1, 'Do'], [A4, 1, 'Re'], [B4, 1, 'Mi'], [C5, 1, 'Fa'], [D5, 1, 'Sol'], [E5, 1, 'La'],
@@ -68,6 +71,7 @@ const minorArpeggio: Exercise = {
   key: 'E minor',
   bpm: 96,
   category: 'warmup',
+  pattern: 'arpeggio',
   difficulty: 'medium',
   notes: seq(96, [
     [E4, 1, 'La'], [G4, 1, 'Do'], [B4, 1, 'Mi'], [E5, 1, 'La'], [B4, 1, 'Mi'], [G4, 1, 'Do'], [E4, 2, 'La'],
@@ -157,6 +161,7 @@ const dDorian: Exercise = {
   key: 'D dorian',
   bpm: 92,
   category: 'modes',
+  pattern: 'scale',
   difficulty: 'medium',
   hint: 'Dorian is a minor scale with a bright 6th — listen for the lift on B.',
   notes: seq(92, [
@@ -172,6 +177,7 @@ const cLydian: Exercise = {
   key: 'C lydian',
   bpm: 92,
   category: 'modes',
+  pattern: 'scale',
   difficulty: 'hard',
   hint: 'The raised 4th (F#) is the whole character — resist sliding down to F.',
   notes: seq(92, [
@@ -187,6 +193,7 @@ const gMixolydian: Exercise = {
   key: 'G mixolydian',
   bpm: 92,
   category: 'modes',
+  pattern: 'scale',
   difficulty: 'medium',
   hint: 'The 7th stays natural — it should feel unresolved, not like it wants to rise.',
   notes: seq(92, [
@@ -202,6 +209,7 @@ const majorSeventhArpeggio: Exercise = {
   key: 'C major',
   bpm: 88,
   category: 'jazz',
+  pattern: 'arpeggio',
   difficulty: 'medium',
   hint: 'The 7th (B) sits a half step under the octave — aim just below the Do.',
   notes: seq(88, [
@@ -217,6 +225,7 @@ const minorSeventhArpeggio: Exercise = {
   key: 'A minor',
   bpm: 88,
   category: 'jazz',
+  pattern: 'arpeggio',
   difficulty: 'medium',
   notes: seq(88, [
     [A3, 1, 'La'], [C4, 1, 'Do'], [E4, 1, 'Mi'], [G4, 1, 'Sol'], [A4, 2, 'La'],
@@ -231,6 +240,7 @@ const majorNinthArpeggio: Exercise = {
   key: 'C major',
   bpm: 84,
   category: 'jazz',
+  pattern: 'arpeggio',
   difficulty: 'hard',
   hint: 'Five notes up before you turn around — keep breath in reserve for the D.',
   notes: seq(84, [
