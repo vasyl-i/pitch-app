@@ -2,6 +2,7 @@ import { StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AppText } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
+import { useTranslation } from '@/shared/i18n';
 import { colorForCents, NOTICEABLE_CENTS } from '@/shared/lib/music';
 
 /** gauge half-span in cents — a bit past the "noticeable" band so the needle rarely pins */
@@ -9,6 +10,7 @@ const CLAMP_CENTS = NOTICEABLE_CENTS + 30;
 
 /** Horizontal in-tune gauge: needle position and color both track cents deviation. */
 export function CentsGauge({ cents }: { cents: number | null }) {
+  const { t } = useTranslation();
   const { palette, gradient } = useTheme();
   const clamped = cents === null ? 0 : Math.max(-CLAMP_CENTS, Math.min(CLAMP_CENTS, cents));
   const pct = 50 + (clamped / CLAMP_CENTS) * 50;
@@ -31,13 +33,13 @@ export function CentsGauge({ cents }: { cents: number | null }) {
       </View>
       <View style={styles.labels}>
         <AppText variant="caption" style={{ fontSize: 12 }}>
-          ♭ flat
+          ♭ {t('pitch.flat')}
         </AppText>
         <AppText variant="caption" style={{ fontSize: 12 }}>
-          in tune
+          {t('pitch.inTune')}
         </AppText>
         <AppText variant="caption" style={{ fontSize: 12 }}>
-          sharp ♯
+          {t('pitch.sharp')} ♯
         </AppText>
       </View>
     </View>

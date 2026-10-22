@@ -3,19 +3,25 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
+import { formatDate, useTranslation } from '@/shared/i18n';
 import { localDayKey } from '../lib/stats';
 
-const WEEKDAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-const MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-];
+/** single-letter weekday headers, Monday first, in the app language (2024-01-01 was a Monday) */
+const weekdayInitials = () =>
+  Array.from({ length: 7 }, (_, i) => formatDate(new Date(2024, 0, 1 + i), { weekday: 'narrow' }));
+
+/** "October 2026" / "Жовтень 2026 р." */
+const monthTitle = (year: number, month: number) => {
+  const label = formatDate(new Date(year, month, 1), { month: 'long', year: 'numeric' });
+  return label.charAt(0).toUpperCase() + label.slice(1);
+};
 
 /**
  * Month grid with practiced days checked off. Weeks start on Monday; days are
  * keyed with `localDayKey` so they match the consistency count exactly.
  */
 export function PracticeCalendar({ practicedDays }: { practicedDays: Set<string> }) {
+  const { t } = useTranslation();
   const { palette, radii } = useTheme();
   const [cursor, setCursor] = useState(() => {
     const n = new Date();
@@ -45,7 +51,7 @@ export function PracticeCalendar({ practicedDays }: { practicedDays: Set<string>
       <View style={styles.header}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Previous month"
+          accessibilityLabel={t('progress.calendar.previous')}
           onPress={() => shiftMonth(-1)}
           hitSlop={8}
           style={({ pressed }) => pressed && { opacity: 0.6 }}
@@ -53,11 +59,11 @@ export function PracticeCalendar({ practicedDays }: { practicedDays: Set<string>
           <Ionicons name="chevron-back" size={18} color={palette.textFaint} />
         </Pressable>
         <AppText variant="label">
-          {MONTHS[cursor.month]} {cursor.year}
+          {monthTitle(cursor.year, cursor.month)}
         </AppText>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Next month"
+          accessibilityLabel={t('progress.calendar.next')}
           onPress={() => shiftMonth(1)}
           disabled={viewingCurrentMonth}
           hitSlop={8}
@@ -68,7 +74,7 @@ export function PracticeCalendar({ practicedDays }: { practicedDays: Set<string>
       </View>
 
       <View style={styles.grid}>
-        {WEEKDAYS.map((label, i) => (
+        {weekdayInitials().map((label, i) => (
           <View key={`wd-${i}`} style={styles.cell}>
             <AppText variant="caption" style={{ fontSize: 12 }}>
               {label}

@@ -5,6 +5,7 @@
 import { ScrollView, View } from 'react-native';
 import {
   DEFAULT_PREFERENCES,
+  GENRE_LABELS,
   GENRE_OPTIONS,
   GOAL_LABELS,
   usePreferencesStore,
@@ -13,54 +14,56 @@ import {
 } from '@/features/learning';
 import { AppText, BackButton, ChipGroup, Screen, type ChipOption } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
+import { formatHour, t, useTranslation } from '@/shared/i18n';
 import type { RootScreenProps } from '@/app/navigation/types';
 
 type Option<T> = ChipOption<T>;
 
-const GOAL_OPTIONS = (Object.entries(GOAL_LABELS) as [LearningGoal, string][]).map(([value, label]) => ({ value, label }));
-
-const MINUTES: Option<LearningPreferences['dailyMinutes']>[] = [5, 10, 15, 20, 30].map((m) => ({
-  value: m as LearningPreferences['dailyMinutes'],
-  label: `${m} min`,
-}));
-
-const EXPERIENCE: Option<LearningPreferences['experience']>[] = [
-  { value: 'complete-beginner', label: 'Complete beginner' },
-  { value: 'beginner', label: 'Beginner' },
-  { value: 'intermediate', label: 'Intermediate' },
-  { value: 'advanced', label: 'Advanced' },
-  { value: 'professional', label: 'Professional' },
-];
-
-const READING: Option<LearningPreferences['musicReading']>[] = [
-  { value: 'none', label: 'None' },
-  { value: 'basic', label: 'Basic' },
-  { value: 'comfortable', label: 'Comfortable' },
-  { value: 'advanced', label: 'Advanced' },
-];
-
-const COACH: Option<LearningPreferences['coachStyle']>[] = [
-  { value: 'encouraging', label: 'Encouraging' },
-  { value: 'direct', label: 'Direct' },
-  { value: 'technical', label: 'Technical' },
-];
-
-const REMINDER: Option<number | null>[] = [
-  { value: null, label: 'Off' },
-  { value: 8, label: 'Morning (8:00)' },
-  { value: 14, label: 'Afternoon (2:00)' },
-  { value: 19, label: 'Evening (7:00)' },
-];
-
-const DIFFICULTY: Option<LearningPreferences['preferredDifficulty']>[] = [
-  { value: 'adaptive', label: 'Adaptive' },
-  { value: 'easy', label: 'Easy' },
-  { value: 'normal', label: 'Normal' },
-  { value: 'challenge', label: 'Challenge' },
-];
+// built per render so labels follow the current language
+function buildOptions() {
+  const goals = (Object.keys(GOAL_LABELS) as LearningGoal[]).map((value) => ({ value, label: GOAL_LABELS[value] }));
+  const minutes: Option<LearningPreferences['dailyMinutes']>[] = [5, 10, 15, 20, 30].map((m) => ({
+    value: m as LearningPreferences['dailyMinutes'],
+    label: t('common.minutesShort', { count: m }),
+  }));
+  const experience: Option<LearningPreferences['experience']>[] = [
+    { value: 'complete-beginner', label: t('profile.prefs.experience.completeBeginner') },
+    { value: 'beginner', label: t('profile.prefs.experience.beginner') },
+    { value: 'intermediate', label: t('profile.prefs.experience.intermediate') },
+    { value: 'advanced', label: t('profile.prefs.experience.advanced') },
+    { value: 'professional', label: t('profile.prefs.experience.professional') },
+  ];
+  const reading: Option<LearningPreferences['musicReading']>[] = [
+    { value: 'none', label: t('profile.prefs.reading.none') },
+    { value: 'basic', label: t('profile.prefs.reading.basic') },
+    { value: 'comfortable', label: t('profile.prefs.reading.comfortable') },
+    { value: 'advanced', label: t('profile.prefs.reading.advanced') },
+  ];
+  const coach: Option<LearningPreferences['coachStyle']>[] = [
+    { value: 'encouraging', label: t('profile.prefs.coach.encouraging') },
+    { value: 'direct', label: t('profile.prefs.coach.direct') },
+    { value: 'technical', label: t('profile.prefs.coach.technical') },
+  ];
+  const reminder: Option<number | null>[] = [
+    { value: null, label: t('profile.prefs.reminder.off') },
+    { value: 8, label: t('profile.prefs.reminder.morning', { time: formatHour(8) }) },
+    { value: 14, label: t('profile.prefs.reminder.afternoon', { time: formatHour(14) }) },
+    { value: 19, label: t('profile.prefs.reminder.evening', { time: formatHour(19) }) },
+  ];
+  const difficulty: Option<LearningPreferences['preferredDifficulty']>[] = [
+    { value: 'adaptive', label: t('profile.prefs.difficulty.adaptive') },
+    { value: 'easy', label: t('profile.prefs.difficulty.easy') },
+    { value: 'normal', label: t('profile.prefs.difficulty.normal') },
+    { value: 'challenge', label: t('profile.prefs.difficulty.challenge') },
+  ];
+  const genres = GENRE_OPTIONS.map((g) => ({ value: g, label: GENRE_LABELS[g] ?? g }));
+  return { goals, minutes, experience, reading, coach, reminder, difficulty, genres };
+}
 
 export function LearningPreferencesScreen({ navigation }: RootScreenProps<'LearningPreferences'>) {
+  const { t } = useTranslation();
   const { spacing } = useTheme();
+  const options = buildOptions();
   const prefs = usePreferencesStore((s) => s.preferences) ?? { ...DEFAULT_PREFERENCES, updatedAt: 0 };
   const setPreferences = usePreferencesStore((s) => s.setPreferences);
 
@@ -78,36 +81,36 @@ export function LearningPreferencesScreen({ navigation }: RootScreenProps<'Learn
       </View>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: spacing.xxl }}>
         <AppText variant="title" style={{ fontSize: 34, marginTop: spacing.sm }}>
-          Learning preferences
+          {t('profile.prefs.title')}
         </AppText>
         <AppText variant="body" style={{ marginTop: spacing.xs }}>
-          Changing these reshapes future lessons — your history and skill progress stay intact.
+          {t('profile.prefs.subtitle')}
         </AppText>
 
         <ChipGroup
-          title="Primary goal"
-          options={GOAL_OPTIONS}
+          title={t('profile.prefs.primaryGoal')}
+          options={options.goals}
           selected={[prefs.primaryGoal]}
           onSelect={(v) => setPreferences({ primaryGoal: v, secondaryGoal: prefs.secondaryGoal === v ? null : prefs.secondaryGoal })}
         />
         <ChipGroup
-          title="Secondary goal (optional)"
-          options={GOAL_OPTIONS.filter((o) => o.value !== prefs.primaryGoal)}
+          title={t('profile.prefs.secondaryGoal')}
+          options={options.goals.filter((o) => o.value !== prefs.primaryGoal)}
           selected={prefs.secondaryGoal ? [prefs.secondaryGoal] : []}
           onSelect={(v) => setPreferences({ secondaryGoal: prefs.secondaryGoal === v ? null : v })}
         />
-        <ChipGroup title="Daily practice time" options={MINUTES} selected={[prefs.dailyMinutes]} onSelect={(v) => setPreferences({ dailyMinutes: v })} />
-        <ChipGroup title="Experience level" options={EXPERIENCE} selected={[prefs.experience]} onSelect={(v) => setPreferences({ experience: v })} />
-        <ChipGroup title="Music reading" options={READING} selected={[prefs.musicReading]} onSelect={(v) => setPreferences({ musicReading: v })} />
+        <ChipGroup title={t('profile.prefs.dailyTime')} options={options.minutes} selected={[prefs.dailyMinutes]} onSelect={(v) => setPreferences({ dailyMinutes: v })} />
+        <ChipGroup title={t('profile.prefs.experienceTitle')} options={options.experience} selected={[prefs.experience]} onSelect={(v) => setPreferences({ experience: v })} />
+        <ChipGroup title={t('profile.prefs.readingTitle')} options={options.reading} selected={[prefs.musicReading]} onSelect={(v) => setPreferences({ musicReading: v })} />
         <ChipGroup
-          title="Preferred genres"
-          options={GENRE_OPTIONS.map((g) => ({ value: g, label: g }))}
+          title={t('profile.prefs.genres')}
+          options={options.genres}
           selected={prefs.preferredGenres}
           onSelect={toggleGenre}
         />
-        <ChipGroup title="Coach style" options={COACH} selected={[prefs.coachStyle]} onSelect={(v) => setPreferences({ coachStyle: v })} />
-        <ChipGroup title="Practice reminder" options={REMINDER} selected={[prefs.reminderHour]} onSelect={(v) => setPreferences({ reminderHour: v })} />
-        <ChipGroup title="Difficulty" options={DIFFICULTY} selected={[prefs.preferredDifficulty]} onSelect={(v) => setPreferences({ preferredDifficulty: v })} />
+        <ChipGroup title={t('profile.prefs.coachTitle')} options={options.coach} selected={[prefs.coachStyle]} onSelect={(v) => setPreferences({ coachStyle: v })} />
+        <ChipGroup title={t('profile.reminder')} options={options.reminder} selected={[prefs.reminderHour]} onSelect={(v) => setPreferences({ reminderHour: v })} />
+        <ChipGroup title={t('profile.prefs.difficultyTitle')} options={options.difficulty} selected={[prefs.preferredDifficulty]} onSelect={(v) => setPreferences({ preferredDifficulty: v })} />
       </ScrollView>
     </Screen>
   );

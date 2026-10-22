@@ -1,0 +1,9 @@
+{
+  "ios": {
+    "CFBundleDisplayName": "PitchGym",
+    "NSMicrophoneUsageDescription": "A PitchGym ouve-o cantar para lhe mostrar que nota está a dar. O áudio nunca sai do seu dispositivo."
+  },
+  "android": {
+    "app_name": "PitchGym"
+  }
+}

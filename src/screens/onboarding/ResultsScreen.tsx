@@ -5,10 +5,12 @@ import { useProfileStore } from '@/entities/profile';
 import { ResultsCard } from '@/features/vocal-range';
 import type { OnboardingScreenProps } from '@/app/navigation/types';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from '@/shared/i18n';
 
 /** The end of first-launch onboarding: celebratory-but-professional summary, then into the app. */
 export function ResultsScreen({ navigation, route }: OnboardingScreenProps<'Results'>) {
   const { low, high } = route.params;
+  const { t } = useTranslation();
   const { palette, spacing } = useTheme();
   const insets = useSafeAreaInsets();
   const setDetectedRange = useProfileStore((s) => s.setDetectedRange);
@@ -30,10 +32,10 @@ export function ResultsScreen({ navigation, route }: OnboardingScreenProps<'Resu
         <View style={{ flex: 1, paddingBottom: insets.bottom + spacing.lg }}>
 
         <AppText variant="title" color={palette.white} style={{ fontSize: 32, lineHeight: 34, textAlign: "center", marginTop: spacing.lg, paddingBottom: 4 }}>
-          You’ve found your range!
+          {t('onboarding.results.title')}
         </AppText>
         <AppText color={palette.white} gradient style={{ fontSize: 16, lineHeight: 18, textAlign: 'center', marginTop: spacing.sm, paddingHorizontal: spacing.xl }}>
-          Every exercise from here will fit your voice.
+          {t('onboarding.results.subtitle')}
         </AppText>
 
         <View style={{ marginTop: spacing.xxl }}>
@@ -43,8 +45,8 @@ export function ResultsScreen({ navigation, route }: OnboardingScreenProps<'Resu
         <View style={{ flex: 1 }} />
 
         <View style={{ gap: spacing.md }}>
-          <Button title="Start over" variant="transparent" onPress={() => navigation.navigate('Reminder')} />
-          <Button title="Save & continue" onPress={save} />
+          <Button title={t('onboarding.results.startOver')} variant="transparent" onPress={() => navigation.navigate('Reminder')} />
+          <Button title={t('onboarding.results.save')} onPress={save} />
         </View>
         </View>
       </ScrollView>

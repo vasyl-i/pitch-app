@@ -3,7 +3,8 @@
  *
  * Schedules a rolling window of local notifications, one per day each with a
  * randomly picked message:
- * - the daily reminder at the user's chosen time;
+ * - the daily reminder at the user's chosen time, unless that day's plan is
+ *   already finished;
  * - an evening catch-up nudge when the day's tasks are still unfinished
  *   (see CATCH_UP_RULES).
  *
@@ -19,10 +20,19 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { supabase } from './supabase';
+import type { ParseKeys } from 'i18next';
+import { t } from '@/shared/i18n';
 
 const REMINDER_ID = 'practice-reminder';
 const CATCH_UP_ID = 'catch-up-reminder';
 const TRIAL_REMINDER_ID = 'trial-ending-reminder';
+
+/**
+ * Android 8+ only shows notifications posted to a channel, and Android 13+
+ * won't even show the permission prompt until one exists — without it
+ * `requestPermissionsAsync` quietly reports "denied" and nothing gets scheduled.
+ */
+const ANDROID_CHANNEL_ID = 'practice-reminders';
 
 /**
  * How many days of notifications to schedule ahead. A repeating DAILY trigger
@@ -52,21 +62,19 @@ interface NotificationMessage {
   body: string;
 }
 
-const REMINDER_MESSAGES: readonly NotificationMessage[] = [
-  { title: 'No time for a full practice?', body: 'Five minutes is enough to show up for your voice today.' },
-  { title: 'Can you hear the difference? 👂', body: "Come back for today's pitch workout and see how you're doing." },
-  { title: 'One note closer 🎵', body: 'Build your pitch accuracy one small practice at a time.' },
-  { title: 'Your vocal gym is calling 🎤', body: 'Ready for a quick workout? Your next note is waiting.' },
-  { title: 'Your voice grows with practice. 🎶', body: 'A tiny workout. A meaningful step.' },
-  { title: "Let's make those notes yours.", body: 'Five minutes. One small win.' },
-  { title: 'Your next breakthrough starts with one note.', body: 'Keep your ears curious. 👂' },
-  { title: 'Ready to find your pitch?', body: 'Your voice deserves five minutes today.' },
-];
+/** copy is read at scheduling time, so a reminder goes out in the app's current language */
+const message = (key: 'reminders' | 'catchUp', index: number): NotificationMessage => ({
+  get title() {
+    return t(`notifications.${key}.${index}.title` as ParseKeys);
+  },
+  get body() {
+    return t(`notifications.${key}.${index}.body` as ParseKeys);
+  },
+});
 
-const CATCH_UP_MESSAGES: readonly NotificationMessage[] = [
-  { title: 'A little music before the day ends 🌙', body: 'Take five minutes for yourself and your voice.' },
-  { title: 'Every comeback counts 🩵', body: "Missed a day? No worries. Let's pick up where you left off." },
-];
+const REMINDER_MESSAGES: readonly NotificationMessage[] = [0, 1, 2, 3, 4, 5, 6, 7].map((i) => message('reminders', i));
+
+const CATCH_UP_MESSAGES: readonly NotificationMessage[] = [0, 1].map((i) => message('catchUp', i));
 
 const pad2 = (n: number) => String(n).padStart(2, '0');
 
@@ -120,13 +128,15 @@ function planNotifications(
     const reminderAt = reminder
       ? new Date(day.getFullYear(), day.getMonth(), day.getDate(), reminder.hour, reminder.minute)
       : null;
-    if (reminderAt && reminderAt > now) {
+    // nothing to remind about once the day's plan is finished
+    const dayDone = localDateKey(day) === doneDay;
+    if (reminderAt && reminderAt > now && !dayDone) {
       plan.push({ id: notificationId(REMINDER_ID, reminderAt), fireAt: reminderAt, messages: REMINDER_MESSAGES });
     }
 
     const catchUpAt = catchUpTime(day, reminderAt);
     if (!catchUpAt || catchUpAt <= now) continue;
-    if (CATCH_UP_RULES.skipWhenDailyTasksDone && localDateKey(day) === doneDay) continue;
+    if (CATCH_UP_RULES.skipWhenDailyTasksDone && dayDone) continue;
     const id = notificationId(CATCH_UP_ID, catchUpAt);
     // Today's reminder already fired before this sync. Whether it was actually
     // shown is only known from the catch-up scheduled alongside it back then.
@@ -180,6 +190,7 @@ async function applyReminderPlan(): Promise<void> {
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DATE,
         date: fireAt,
+        channelId: ANDROID_CHANNEL_ID,
       },
     });
   }
@@ -192,8 +203,39 @@ function resync(): Promise<void> {
   return run;
 }
 
+/**
+ * Already-scheduled reminders carry the copy of the language they were
+ * scheduled in — drop them and plan again after the app language changes
+ * (the Android channel's name follows the language too).
+ */
+export async function rescheduleReminders(): Promise<void> {
+  await ensureNotificationChannel();
+  if (reminderTime === undefined) return;
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  const ours = scheduled.filter((n) => n.identifier.startsWith(REMINDER_ID) || n.identifier.startsWith(CATCH_UP_ID));
+  await Promise.all(ours.map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier)));
+  await resync();
+}
+
+/**
+ * Create (or rename, after a language switch) the Android reminder channel.
+ * Its name and description are what users see in the app's notification
+ * settings. No-op on iOS.
+ */
+export async function ensureNotificationChannel(): Promise<void> {
+  if (Platform.OS !== 'android') return;
+  await Notifications.setNotificationChannelAsync(ANDROID_CHANNEL_ID, {
+    name: t('notifications.channel.name'),
+    description: t('notifications.channel.description'),
+    importance: Notifications.AndroidImportance.HIGH,
+    sound: 'default',
+  });
+}
+
 /** Request notification permissions. Returns true if granted. */
 export async function requestNotificationPermissions(): Promise<boolean> {
+  // the channel must exist first, or Android 13+ never shows the prompt
+  await ensureNotificationChannel();
   const { status: existing } = await Notifications.getPermissionsAsync();
   if (existing === 'granted') return true;
 
@@ -219,8 +261,8 @@ export function schedulePracticeReminder(hour: number, minute: number): Promise<
 
 /**
  * Tell the scheduler which day's guided tasks are finished (local
- * `YYYY-MM-DD`, or null) so that day's catch-up is dropped — or restored
- * if a step is redone.
+ * `YYYY-MM-DD`, or null) so that day's reminder and catch-up are dropped —
+ * or restored if a step is redone.
  */
 export function setDailyTasksDoneDay(dayKey: string | null): Promise<void> {
   if (dayKey === dailyTasksDoneDay) return syncQueue;
@@ -312,13 +354,14 @@ export async function scheduleTrialEndingReminder(trialEndsAt: number): Promise<
   await Notifications.scheduleNotificationAsync({
     identifier: TRIAL_REMINDER_ID,
     content: {
-      title: 'Your free trial ends tomorrow',
-      body: 'Just a heads-up — your subscription will start tomorrow. You can manage it anytime in settings.',
+      title: t('notifications.trialEnding.title'),
+      body: t('notifications.trialEnding.body'),
       sound: true,
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.DATE,
       date: fireAt,
+      channelId: ANDROID_CHANNEL_ID,
     },
   });
 }

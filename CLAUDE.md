@@ -23,6 +23,7 @@ patches/        patch-package patches
 - react-native-audio-api (mic capture)
 - @shopify/react-native-skia (staff rendering, pitch overlay)
 - react-native-reanimated 4.5 + react-native-worklets
+- i18next + react-i18next + expo-localization (English + Ukrainian)
 
 ## App architecture (Feature-Sliced Design)
 
@@ -54,6 +55,18 @@ Import direction: `app -> screens -> features -> entities -> shared` (no reverse
 5. Raw mic audio **never leaves the device**
 6. Never show raw cents/frequency numbers in the free tier UI
 
+## Localization (`src/shared/i18n`)
+
+- Languages: English, Ukrainian, Portuguese (European, i18next code `pt-PT`). Default = phone language: `uk` → Ukrainian, `pt` → Portuguese, anything else → English. A manual pick in Account → Language (`setAppLanguage()`, MMKV key `settings.language`) overrides it. Applied in `App.tsx` via `applyPreferredLanguage()`; strings, content and fonts switch live
+- **Never hardcode UI copy.** Add the key to `locales/en/<area>.ts`, `locales/uk/<area>.ts` and `locales/pt/<area>.ts`; uk/pt files are typed `LocaleShape` / `PtLocaleShape<typeof en>`, so a missing/stale key fails `npm run typecheck`
+- Components: `const { t } = useTranslation()`; non-React code: `import { t } from '@/shared/i18n'`. Module-level label tables use `translatedRecord()` so they're read lazily
+- Plurals: English `_one/_other`, Ukrainian also `_few/_many`, Portuguese also `_many` (enforced by the type)
+- Domain content (exercise titles, categories, skill tree, ear drills, plans, benefits) keeps English inline; Ukrainian/Portuguese overlays live in `locales/{uk,pt}/content.ts`, wired with `localizeContent()`. The i18n test fails if a new item has no translation
+- **Song titles are never translated** (exercise category `melody`, see `isSong()` in `entities/exercise/library.ts`) -- add only `source`/`hint` to the uk/pt overlays for a new song
+- Dates/times/numbers via `formatDate`/`formatTime`/`formatHour`/`formatNumber` (Intl), key names via `formatKeyName`
+- Native strings (app name, mic permission) in `assets/locales/*.json`; RevenueCat paywall/Customer Center copy is localized in the RevenueCat dashboard
+- Dev screens (`screens/dev`) are intentionally English-only
+
 ## Scoring pipeline
 
 - **Offline (once per track):** chroma extraction on instrumental -> key estimation -> chord segmentation -> timeline JSON `[{start, end, chord, root}]`
@@ -65,6 +78,7 @@ Import direction: `app -> screens -> features -> entities -> shared` (no reverse
 - Dark theme: background `#08070C`, lime accent `#C8DA59`, violet `#8B7CFF` (premium only)
 - All values in `shared/theme/tokens.ts` -- never hardcode colors/spacing/fonts
 - Font: **Satoshi** (Regular, Medium, Bold, Black) -- always set `fontFamily` explicitly, `fontWeight` alone doesn't work
+- Ukrainian UI uses **Manrope** (Satoshi has no Cyrillic; Portuguese stays on Satoshi, but avoid ª/º — no glyphs) -- `typography.family` swaps automatically by phone language; never name a font family directly
 - No borders on cards -- use translucent fill + soft shadow
 - Sentence case everywhere (no `.toUpperCase()`)
 - `IconBubble` for all list-row icons, plain glyphs only (not `-circle` variants)

@@ -9,20 +9,23 @@ import { Ionicons } from '@expo/vector-icons';
 import { buildJourney, useLearningStore, type JourneyArea } from '@/features/learning';
 import { AppText, Card, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
+import { useTranslation } from '@/shared/i18n';
 import type { ProgressScreenProps } from '@/app/navigation/types';
 
 export function JourneyScreen({ navigation }: ProgressScreenProps<'JourneyOverview'>) {
+  const { t, i18n } = useTranslation();
   const { spacing } = useTheme();
   const skills = useLearningStore((s) => s.skills);
-  const journey = useMemo(() => buildJourney(skills), [skills]);
+  // area copy is resolved while building, so the language is a dependency too
+  const journey = useMemo(() => buildJourney(skills), [skills, i18n.language]);
 
   return (
     <Screen>
       <AppText variant="title" style={{ fontSize: 40 }}>
-        Your journey
+        {t('journey.title')}
       </AppText>
       <AppText variant="body" style={{ marginTop: spacing.xs }}>
-        Every ability you’re building, one milestone at a time.
+        {t('journey.subtitle')}
       </AppText>
 
       <FlatList
@@ -39,6 +42,7 @@ export function JourneyScreen({ navigation }: ProgressScreenProps<'JourneyOvervi
 }
 
 function AreaCard({ area, onPress }: { area: JourneyArea; onPress: () => void }) {
+  const { t } = useTranslation();
   const { palette } = useTheme();
   const progress = area.totalCount === 0 ? 0 : area.doneCount / area.totalCount;
   return (
@@ -50,7 +54,7 @@ function AreaCard({ area, onPress }: { area: JourneyArea; onPress: () => void })
               {area.title}
             </AppText>
             <AppText variant="caption" style={{ marginTop: 3 }}>
-              {area.started ? `${area.doneCount} of ${area.totalCount} milestones` : area.tagline}
+              {area.started ? t('journey.milestonesCount', { done: area.doneCount, count: area.totalCount }) : area.tagline}
             </AppText>
             <View style={[styles.track, { backgroundColor: palette.borderSubtle }]}>
               <View

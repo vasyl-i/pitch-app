@@ -4,6 +4,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { hapticWarning } from '@/shared/audio';
 import { AppText, Button } from '@/shared/ui';
 import { typography, useTheme } from '@/shared/theme';
+import { useTranslation } from '@/shared/i18n';
+import type { ParseKeys } from 'i18next';
 import { useMicCalibration, type CalibrationStatus } from '../lib/calibration';
 import { AudioManager } from 'react-native-audio-api';
 import {
@@ -17,19 +19,13 @@ import {
 } from '../../../../assets/svg';
 
 
-const COPY: Record<string, { title: string; body: string }> = {
-    checking: { title: 'Checking your microphone…', body: 'One moment.' },
-    'listen-quiet': { title: 'Give us a second of quiet…', body: 'Stay still — we’re measuring the room.' },
-    'listen-level': { title: 'Now hum any note', body: 'Comfortably loud, like you would when practicing.' },
-    'too-noisy': {
-        title: 'This space is a little noisy',
-        body: 'Find somewhere quieter, or move away from fans and traffic, then try again.'
-    },
-    'too-quiet': {
-        title: 'We barely picking up your voice',
-        body: 'Move closer to the microphone, or check that it isn’t muted, then try again.'
-    },
-    error: { title: 'Couldn’t reach the microphone', body: 'Something went wrong starting the recorder.' },
+const COPY: Record<string, { title: ParseKeys; body: ParseKeys }> = {
+    checking: { title: 'vocalRange.mic.checkingTitle', body: 'vocalRange.mic.checkingBody' },
+    'listen-quiet': { title: 'vocalRange.mic.quietTitle', body: 'vocalRange.mic.quietBody' },
+    'listen-level': { title: 'vocalRange.mic.humTitle', body: 'vocalRange.mic.humBody' },
+    'too-noisy': { title: 'vocalRange.mic.noisyTitle', body: 'vocalRange.mic.noisyBody' },
+    'too-quiet': { title: 'vocalRange.mic.tooQuietTitle', body: 'vocalRange.mic.tooQuietBody' },
+    error: { title: 'vocalRange.mic.errorTitle', body: 'vocalRange.mic.errorBody' },
 };
 
 /**
@@ -45,6 +41,7 @@ export interface MicCalibrationGateProps extends PropsWithChildren {
 }
 
 export function MicCalibrationGate({ children, __devStatusOverride }: MicCalibrationGateProps) {
+    const { t } = useTranslation();
     const { palette, spacing, radii, gradient } = useTheme();
     const calibration = useMicCalibration({ skip: !!__devStatusOverride });
     const status = __devStatusOverride ?? calibration.status;
@@ -68,15 +65,15 @@ export function MicCalibrationGate({ children, __devStatusOverride }: MicCalibra
                     fontFamily: typography.family.bold,
                     lineHeight: 40
                 }}>
-                    Microphone access needed
+                    {t('vocalRange.mic.neededTitle')}
                 </AppText>
                 <AppText variant="body" color={palette.textSecondaryElevated}
                          style={{ fontSize: 20, marginTop: spacing.sm, textAlign: 'center' }}>
-                    {errorMessage ?? 'Enable microphone access in Settings to measure your vocal range.'}
+                    {t('vocalRange.mic.neededBody')}
                 </AppText>
                 <View style={{ marginTop: spacing.xl, width: '100%', gap: spacing.md }}>
-                    <Button title="Open Settings" onPress={() => void Linking.openSettings()}/>
-                    <Button title="Try again" variant="transparent" onPress={retry}/>
+                    <Button title={t('common.openSettings')} onPress={() => void Linking.openSettings()}/>
+                    <Button title={t('common.tryAgain')} variant="transparent" onPress={retry}/>
                 </View>
             </View>
         );
@@ -104,11 +101,11 @@ export function MicCalibrationGate({ children, __devStatusOverride }: MicCalibra
             ) : <MicChecking size={118}/>}
             <AppText variant="title" gradient
                      style={{ textAlign: 'center', fontSize: 40, fontFamily: typography.family.bold, lineHeight: 40 }}>
-                {copy.title}
+                {t(copy.title)}
             </AppText>
             <AppText variant="body" color={palette.textSecondaryElevated}
                      style={{ fontSize: 20, marginTop: spacing.sm, textAlign: 'center' }}>
-                {copy.body}
+                {t(copy.body)}
             </AppText>
 
             {isHumming && (
@@ -130,7 +127,7 @@ export function MicCalibrationGate({ children, __devStatusOverride }: MicCalibra
 
             {warning && (
                 <View style={{ marginTop: spacing.xl, width: '100%' }}>
-                    <Button variant="transparent" title="Try again" onPress={retry}/>
+                    <Button variant="transparent" title={t('common.tryAgain')} onPress={retry}/>
                 </View>
             )}
         </View>

@@ -16,6 +16,7 @@
  */
 import { centsToNearestOctave, median, PERFECT_CENTS, pitchClassName, SLIGHT_CENTS } from '@/shared/lib/music';
 import { segmentNotes, type SungFrame, type SungNote } from './capture';
+import { t } from '@/shared/i18n';
 import { chordDegreeName, noteName, type MelodyNote } from './theory';
 
 /** ear training is more forgiving than melody grading: still "close", not "off" */
@@ -51,6 +52,8 @@ export interface RoundScore {
   ok: boolean;
   /** 0–100 */
   score: number;
+  /** stable outcome the UI keys mascots and colors off — never the translated `label` */
+  verdict: RoundVerdict;
   /** headline: "Love it!", "Almost", "Try once more", "Couldn't hear you" */label: string;
   /** coaching line, e.g. "just a touch sharp" */
   detail: string;
@@ -63,6 +66,11 @@ export interface RoundScore {
   pitchAccuracy: number | null;
   rhythmAccuracy: number | null;
   notes?: NoteOutcome[];
+  /**
+   * single-target rounds: the one target as an outcome row, for the live dots.
+   * Kept apart from `notes` — those mark a round as multi-note for progress.
+   */
+  target?: NoteOutcome;
   /** target vs sung, register-aligned, for the melody overlay */
   overlay?: { target: OverlayNote[]; sung: OverlayNote[] };
 }
@@ -74,22 +82,43 @@ export function centsScore(absCents: number): number {
   return clamp(Math.round(100 - Math.max(0, absCents - PERFECT_CENTS) * 0.9), 0, 100);
 }
 
-function sharpFlat(cents: number, mild: string, stronger: string): string {
-  const word = cents > 0 ? 'sharp' : 'flat';
-  return Math.abs(cents) <= SLIGHT_CENTS ? `${mild} ${word}` : `${stronger} ${word}`;
+export type RoundVerdict = 'love' | 'almost' | 'retry' | 'unheard';
+
+export function verdictLabel(verdict: RoundVerdict): string {
+  switch (verdict) {
+    case 'love':
+      return t('earTraining.verdict.love');
+    case 'almost':
+      return t('earTraining.verdict.almost');
+    case 'retry':
+      return t('earTraining.verdict.retry');
+    case 'unheard':
+      return t('earTraining.verdict.unheard');
+  }
 }
 
-const NOT_HEARD: Omit<RoundScore, 'expected'> = {
+const withVerdict = (verdict: RoundVerdict) => ({ verdict, label: verdictLabel(verdict) });
+
+/** "just a touch sharp" inside the slight band, "a little flat" beyond it */
+function sharpFlat(cents: number): string {
+  const touch = Math.abs(cents) <= SLIGHT_CENTS;
+  if (cents > 0) return touch ? t('earTraining.feedback.touchSharp') : t('earTraining.feedback.littleSharp');
+  return touch ? t('earTraining.feedback.touchFlat') : t('earTraining.feedback.littleFlat');
+}
+
+// a function, not a constant, so the copy follows the current language
+const notHeard = (expected: string): RoundScore => ({
   ok: false,
   score: 0,
-  label: "Couldn't hear you",
-  detail: 'Please, try again',
+  ...withVerdict('unheard'),
+  detail: t('earTraining.feedback.tryAgain'),
+  expected,
   actual: '—',
   avgCents: null,
   signedCents: null,
   pitchAccuracy: null,
   rhythmAccuracy: null,
-};
+});
 
 /* ------------------------------------------------------------------ *
  * Single target note (echo, pitch memory, interval, finish melody)    *
@@ -99,8 +128,14 @@ const NOT_HEARD: Omit<RoundScore, 'expected'> = {
  * Grade a window where the user sings one target pitch class. Median cents
  * over the whole log, so a shaky attack doesn't dominate a settled note.
  */
-export function evaluateSingleTarget(frames: SungFrame[], targetPc: number, expectedName: string): RoundScore {
-  if (frames.length < MIN_FRAMES) return { ...NOT_HEARD, expected: expectedName };
+export function evaluateSingleTarget(
+  frames: SungFrame[],
+  targetPc: number,
+  expectedName: string,
+  /** short label for the live dot; defaults to `expectedName` */
+  targetLabel = expectedName,
+): RoundScore {
+  if (frames.length < MIN_FRAMES) return notHeard(expectedName);
 
   const deviation = median(frames.map((f) => centsToNearestOctave(f.midi, targetPc)));
   const off = Math.abs(deviation);
@@ -113,29 +148,34 @@ export function evaluateSingleTarget(frames: SungFrame[], targetPc: number, expe
     pitchAccuracy: centsScore(off),
     rhythmAccuracy: null,
     score: centsScore(off),
+    target: {
+      label: targetLabel,
+      status: (off <= SLIGHT_CENTS ? 'hit' : off <= CLOSE_CENTS ? 'close' : 'wrong') as OutcomeStatus,
+      cents: Math.round(deviation),
+    },
   };
 
   if (off <= SLIGHT_CENTS) {
     return {
       ...base,
       ok: true,
-      label: 'Love it!',
-      detail: off <= PERFECT_CENTS ? 'dead center' : sharpFlat(deviation, 'just a touch', 'a little'),
+      ...withVerdict('love'),
+      detail: off <= PERFECT_CENTS ? t('earTraining.feedback.deadCenter') : sharpFlat(deviation),
     };
   }
   if (off <= CLOSE_CENTS) {
     return {
       ...base,
       ok: false,
-      label: 'Almost',
-      detail: deviation > 0 ? 'slightly sharp — relax down into the note' : 'slightly flat — lift up into the note',
+      ...withVerdict('almost'),
+      detail: deviation > 0 ? t('earTraining.feedback.almostSharp') : t('earTraining.feedback.almostFlat'),
     };
   }
   return {
     ...base,
     ok: false,
-    label: 'Try once more',
-    detail: `we heard ${sungName} — take another listen, you'll get it`,
+    ...withVerdict('retry'),
+    detail: t('earTraining.feedback.heardInstead', { note: sungName }),
   };
 }
 
@@ -172,7 +212,7 @@ export function evaluateChordTones(frames: SungFrame[], target: ChordToneTarget)
   const expectedNames = target.intervals.map((i) => noteName(target.rootMidi + i));
   const expectedText = expectedNames.join('  ·  ');
 
-  if (frames.length < MIN_FRAMES) return { ...NOT_HEARD, expected: expectedText };
+  if (frames.length < MIN_FRAMES) return notHeard(expectedText);
 
   const sung = segmentNotes(frames);
   // best sung note per chord tone, plus everything that matched nothing
@@ -229,26 +269,26 @@ export function evaluateChordTones(frames: SungFrame[], target: ChordToneTarget)
     cents: m === null ? null : Math.round(m.cents),
   }));
   for (const extra of dedupedExtras) {
-    notes.push({ label: `sung ${noteName(extra.midi)}`, status: 'extra', cents: null });
+    notes.push({ label: t('earTraining.feedback.sung', { note: noteName(extra.midi) }), status: 'extra', cents: null });
   }
 
   const missingNames = matches.flatMap((m, i) => (m === null ? [expectedNames[i]] : []));
   const allFound = missingNames.length === 0;
   const detail = !allFound
-    ? `${missingNames.join(' and ')} got away — hear it again and hunt ${missingNames.length > 1 ? 'them' : 'it'} down`
+    ? t('earTraining.feedback.missing', { notes: missingNames.join(t('common.and')), count: missingNames.length })
     : !orderOk
       ? target.order === 'ascending'
-        ? 'all the notes are there — now try them from the bottom up'
-        : 'all the notes are there — now in the order asked'
+        ? t('earTraining.feedback.bottomUp')
+        : t('earTraining.feedback.orderAsked')
       : hits.every((m) => Math.abs(m.cents) <= SLIGHT_CENTS)
-        ? 'every chord tone, right in tune'
-        : 'you found every note — polish the tuning and it’s perfect';
+        ? t('earTraining.feedback.chordInTune')
+        : t('earTraining.feedback.chordPolish');
 
   const signed = hits.map((m) => m.cents);
   return {
     ok: allFound && orderOk,
     score,
-    label: allFound && orderOk ? 'Love it!' : coverage >= 0.5 ? 'Almost' : 'Try once more',
+    ...withVerdict(allFound && orderOk ? 'love' : coverage >= 0.5 ? 'almost' : 'retry'),
     detail,
     expected: expectedText,
     actual: sungOrder.map((m) => noteName(Math.round(m.note.midi))).join('  ·  ') || '—',
@@ -281,10 +321,10 @@ function dedupeByPitchClass(notes: SungNote[]): SungNote[] {
  */
 export function evaluateMelodyEcho(frames: SungFrame[], target: MelodyNote[]): RoundScore {
   const expectedText = target.map((n) => noteName(n.midi)).join('  ·  ');
-  if (frames.length < MIN_FRAMES) return { ...NOT_HEARD, expected: expectedText };
+  if (frames.length < MIN_FRAMES) return notHeard(expectedText);
 
   const sung = segmentNotes(frames);
-  if (sung.length === 0) return { ...NOT_HEARD, expected: expectedText };
+  if (sung.length === 0) return notHeard(expectedText);
 
   const pairs = Math.min(sung.length, target.length);
   const pairCents: number[] = [];
@@ -349,7 +389,7 @@ export function evaluateMelodyEcho(frames: SungFrame[], target: MelodyNote[]): R
     return { label: noteName(n.midi), midi: n.midi, status, cents: Math.round(cents) };
   });
   for (let i = target.length; i < sung.length; i++) {
-    notes.push({ label: `sung ${noteName(Math.round(sung[i].midi))}`, status: 'extra', cents: null });
+    notes.push({ label: t('earTraining.feedback.sung', { note: noteName(Math.round(sung[i].midi)) }), status: 'extra', cents: null });
   }
 
   // register-align the sung line to the target for the overlay
@@ -361,19 +401,19 @@ export function evaluateMelodyEcho(frames: SungFrame[], target: MelodyNote[]): R
 
   const detail =
     sung.length < target.length
-      ? `we heard ${sung.length} of ${target.length} notes — let the whole phrase land, then sing`
+      ? t('earTraining.feedback.heardCount', { sung: sung.length, count: target.length })
       : score >= 85
-        ? 'shape, notes and timing all together'
+        ? t('earTraining.feedback.melodyAll')
         : contourAccuracy >= 99 && pitchAccuracy < 70
-          ? 'great shape — now aim each note a little more precisely'
+          ? t('earTraining.feedback.melodyShape')
           : rhythmAccuracy !== null && rhythmAccuracy < 60
-            ? 'the notes are there — keep the timing as even as the original'
-            : 'good line — one more listen and it’s yours';
+            ? t('earTraining.feedback.melodyTiming')
+            : t('earTraining.feedback.melodyGood');
 
   return {
     ok: score >= 70,
     score,
-    label: score >= 85 ? 'Love it!' : score >= 55 ? 'Almost' : 'Try once more',
+    ...withVerdict(score >= 85 ? 'love' : score >= 55 ? 'almost' : 'retry'),
     detail,
     expected: expectedText,
     actual: sung.map((n) => noteName(Math.round(n.midi))).join('  ·  '),
@@ -401,7 +441,7 @@ export function evaluateChoice(options: {
   return {
     ok,
     score: ok ? 100 : 0,
-    label: ok ? 'Love it!' : 'Try once more',
+    ...withVerdict(ok ? 'love' : 'retry'),
     detail: options.detail,
     expected: options.expectedLabel,
     actual: options.chosenLabel,
@@ -440,13 +480,13 @@ export function summarizeSession(results: RoundScore[]): SessionSummary {
   const tendency = meanOf(results.flatMap((r) => (r.signedCents !== null ? [r.signedCents] : [])));
 
   const improvements: string[] = [];
-  if (tendency !== null && tendency > 15) improvements.push('You tend to land a touch sharp — ease into notes from just below.');
-  if (tendency !== null && tendency < -15) improvements.push('You tend to land a touch flat — think of lifting up into each note.');
-  if (rhythmAccuracy !== null && rhythmAccuracy < 70) improvements.push('Timing drifted — try tapping the pulse while you listen.');
+  if (tendency !== null && tendency > 15) improvements.push(t('earTraining.summary.sharp'));
+  if (tendency !== null && tendency < -15) improvements.push(t('earTraining.summary.flat'));
+  if (rhythmAccuracy !== null && rhythmAccuracy < 70) improvements.push(t('earTraining.summary.timing'));
   const unheard = results.filter((r) => r.actual === '—').length;
-  if (unheard > 0) improvements.push('Some rounds we couldn’t hear you — sing out right after the prompt.');
+  if (unheard > 0) improvements.push(t('earTraining.summary.unheard'));
   if (improvements.length === 0) {
-    improvements.push(overall >= 85 ? 'Your ear is wide awake — try a harder level next.' : 'Keep the daily reps going — this is exactly how ears get sharp.');
+    improvements.push(overall >= 85 ? t('earTraining.summary.harder') : t('earTraining.summary.keepGoing'));
   }
 
   return {

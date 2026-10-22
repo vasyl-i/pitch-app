@@ -47,6 +47,7 @@ import { freqToMidi } from '@/shared/lib/music';
 import { noteName } from '@/shared/lib/staff';
 import { AppText, BackButton, Button, Card, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
+import { formatKeyName, useTranslation } from '@/shared/i18n';
 import type { RootScreenProps } from '@/app/navigation/types';
 
 const UI_TICK_MS = 66;
@@ -75,6 +76,7 @@ const RANGE_SLACK_SEMITONES = 5;
 const CLARITY_MIN = CLARITY_MIN_RELIABLE;
 
 export function InstrumentalSingScreen({ navigation, route }: RootScreenProps<'InstrumentalSing'>) {
+  const { t } = useTranslation();
   const { palette, spacing } = useTheme();
   const track = useInstrumentalStore((s) => s.tracks.find((t) => t.id === route.params.trackId));
 
@@ -162,8 +164,8 @@ export function InstrumentalSingScreen({ navigation, route }: RootScreenProps<'I
       .catch((err) => {
         setMicError(
           err instanceof MicPermissionError
-            ? 'Microphone access is needed to grade your singing.'
-            : 'The microphone could not be started.'
+            ? t('sing.track.micPermission')
+            : t('sing.track.micFailed')
         );
       });
 
@@ -225,7 +227,7 @@ export function InstrumentalSingScreen({ navigation, route }: RootScreenProps<'I
       <Screen>
         <BackButton onPress={() => navigation.goBack()} />
         <View style={styles.center}>
-          <AppText variant="body">This track isn’t ready yet.</AppText>
+          <AppText variant="body">{t('sing.track.notReady')}</AppText>
         </View>
       </Screen>
     );
@@ -241,7 +243,7 @@ export function InstrumentalSingScreen({ navigation, route }: RootScreenProps<'I
           <AppText variant="label" numberOfLines={1}>
             {track.filename}
           </AppText>
-          <AppText variant="caption">{track.key.keyName}</AppText>
+          <AppText variant="caption">{formatKeyName(track.key.keyName)}</AppText>
         </View>
       </View>
 
@@ -273,10 +275,13 @@ export function InstrumentalSingScreen({ navigation, route }: RootScreenProps<'I
               {finalScore.score}
             </AppText>
             <View style={{ flex: 1 }}>
-              <AppText variant="label">Take score</AppText>
+              <AppText variant="label">{t('sing.track.takeScore')}</AppText>
               <AppText variant="caption" style={{ marginTop: 2 }}>
-                In key {Math.round(finalScore.inKeyFraction * 100)}% of the time · {finalScore.avgCents}¢ average deviation ·{' '}
-                {finalScore.notes} {finalScore.notes === 1 ? 'note' : 'notes'}
+                {t('sing.track.takeSummary', {
+                  inKey: Math.round(finalScore.inKeyFraction * 100),
+                  cents: finalScore.avgCents,
+                  count: finalScore.notes,
+                })}
               </AppText>
             </View>
           </View>
@@ -290,13 +295,13 @@ export function InstrumentalSingScreen({ navigation, route }: RootScreenProps<'I
       )}
       {playing && !privateOutput && (
         <AppText variant="caption" style={{ marginTop: spacing.sm, textAlign: 'center' }}>
-          Headphones give a truer reading — on the speaker the mic hears the track too.
+          {t('sing.track.headphonesHint')}
         </AppText>
       )}
 
       <View style={{ gap: spacing.sm, marginTop: spacing.md }}>
-        <Button title={playing ? 'Stop track' : 'Play track'} onPress={playing ? stopPlayback : startPlayback} />
-        <Button title="Done" variant="ghost" onPress={() => navigation.goBack()} />
+        <Button title={playing ? t('sing.track.stop') : t('sing.track.play')} onPress={playing ? stopPlayback : startPlayback} />
+        <Button title={t('common.done')} variant="ghost" onPress={() => navigation.goBack()} />
       </View>
     </Screen>
   );

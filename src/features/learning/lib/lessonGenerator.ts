@@ -21,6 +21,7 @@ import type {
   SkillId,
   SkillState,
 } from '../model/types';
+import { t } from '@/shared/i18n';
 import { SKILL_LABELS } from '../model/types';
 import { pickChallengeDifficultyId, pickDifficultyId, targetChallenge } from './adaptiveDifficulty';
 import { FREE_CATALOG } from './catalog';
@@ -103,7 +104,10 @@ export function generateDailyLesson(input: LessonInput): DailyLesson {
   /** need-based score + the dominant reason, per activity */
   const scoreActivity = (activity: Activity, challengeTarget: number): Scored => {
     const primary = activity.skills[0];
-    let best = { score: skillNeed(skills, primary) * 0.5, why: `${SKILL_LABELS[primary]} is at ${skills[primary].mastery}/100 — room to grow` };
+    let best: { score: number; why: string } = {
+      score: skillNeed(skills, primary) * 0.5,
+      why: t('learning.reasons.roomToGrow', { skill: SKILL_LABELS[primary], mastery: skills[primary].mastery }),
+    };
 
     const bump = (score: number, why: string) => {
       if (score > best.score) best = { score, why };
@@ -112,24 +116,26 @@ export function generateDailyLesson(input: LessonInput): DailyLesson {
     if (goalSkills.has(primary) && prefs) {
       bump(
         skillNeed(skills, primary) * 0.5 + 15,
-        `${SKILL_LABELS[primary]} (${skills[primary].mastery}/100) is central to your goal`
+        t('learning.reasons.centralToGoal', { skill: SKILL_LABELS[primary], mastery: skills[primary].mastery })
       );
     }
     if (focus && activity.skills.includes(focus)) {
-      bump(skillNeed(skills, focus) * 0.5 + 20, `trains ${SKILL_LABELS[focus]} — this week's focus`);
+      bump(skillNeed(skills, focus) * 0.5 + 20, t('learning.reasons.weekFocus', { skill: SKILL_LABELS[focus] }));
     }
     const dueSkill = activity.skills.find((s) => dueSet.has(s));
     if (dueSkill) {
       const d = due.find((x) => x.skill === dueSkill);
       bump(
         skillNeed(skills, dueSkill) * 0.5 + 25,
-        `${SKILL_LABELS[dueSkill]} is due for review — last practiced ${d?.daysSincePracticed ?? '?'} days ago`
+        t('learning.reasons.dueReview', { skill: SKILL_LABELS[dueSkill], days: d?.daysSincePracticed ?? '?' })
       );
     }
     if (tendency && (primary === 'pitch-accuracy' || primary === 'interval-singing')) {
       bump(
         skillNeed(skills, primary) * 0.5 + 12,
-        `you tend to sing ${tendency.name} slightly ${tendency.avgCents > 0 ? 'sharp' : 'flat'} — targeted pitch work helps`
+        tendency.avgCents > 0
+          ? t('learning.reasons.tendencySharp', { note: tendency.name })
+          : t('learning.reasons.tendencyFlat', { note: tendency.name })
       );
     }
 
@@ -177,7 +183,7 @@ export function generateDailyLesson(input: LessonInput): DailyLesson {
     (a) => a.challenge <= 0.3 && a.skills.some((s) => s === 'voice-control' || s === 'pitch-stability' || s === 'pitch-accuracy')
   );
   push('warmup', firstUnused(rankFor(warmupPool, 0.2)), {
-    reason: 'gentle start to wake up your voice and ear',
+    reason: t('learning.reasons.warmup'),
   });
 
   // cores: chase the weakest needs at a comfortable challenge level
@@ -202,7 +208,7 @@ export function generateDailyLesson(input: LessonInput): DailyLesson {
       const pool = catalog.filter((a) => a.skills.includes(target.skill) && skills[target.skill].exercisesCompleted > 0);
       const idx = input.reviews[target.skill]?.intervalIndex ?? 0;
       push('review', firstUnused(rankFor(pool, 0.3)), {
-        reason: `spaced review: ${SKILL_LABELS[target.skill]} comes back after ${REVIEW_INTERVALS_DAYS[idx]} day${REVIEW_INTERVALS_DAYS[idx] === 1 ? '' : 's'} so it sticks`,
+        reason: t('learning.reasons.spacedReview', { skill: SKILL_LABELS[target.skill], count: REVIEW_INTERVALS_DAYS[idx] }),
       });
     }
   }
@@ -212,7 +218,7 @@ export function generateDailyLesson(input: LessonInput): DailyLesson {
     if (fatigued) {
       const easyPool = catalog.filter((a) => a.challenge <= 0.3);
       push('challenge', firstUnused(rankFor(easyPool, 0.2)), {
-        reason: 'you already practiced a lot today — something light instead of a push',
+        reason: t('learning.reasons.fatigued'),
       });
     } else {
       const strong = (Object.keys(skills) as SkillId[])
@@ -223,8 +229,8 @@ export function generateDailyLesson(input: LessonInput): DailyLesson {
       if (scored) {
         push('challenge', scored, {
           reason: strong
-            ? `stretch goal: ${SKILL_LABELS[strong]} is strong (${skills[strong].mastery}/100) — push it one level up`
-            : 'a stretch beyond your comfort zone — misses here are progress',
+            ? t('learning.reasons.stretchStrong', { skill: SKILL_LABELS[strong], mastery: skills[strong].mastery })
+            : t('learning.reasons.stretch'),
           difficultyId: pickChallengeDifficultyId(scored.activity, skills, prefs, input.annotations),
         });
       }
@@ -234,7 +240,7 @@ export function generateDailyLesson(input: LessonInput): DailyLesson {
   // cool down: easy and familiar, end on a win
   const coolPool = catalog.filter((a) => a.challenge <= 0.3);
   push('cooldown', firstUnused(rankFor(coolPool, 0.15)), {
-    reason: 'finish relaxed — an easy rep you can nail',
+    reason: t('learning.reasons.cooldown'),
   });
 
   return {

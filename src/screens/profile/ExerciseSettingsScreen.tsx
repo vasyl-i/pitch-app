@@ -12,20 +12,10 @@ import {
 } from '@/features/learning';
 import { AppText, BackButton, ChipGroup, Screen, type ChipOption } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
+import { useTranslation } from '@/shared/i18n';
 import type { RootScreenProps } from '@/app/navigation/types';
 
-const BALANCE_OPTIONS: ChipOption<number>[] = [
-  { value: 0.2, label: 'More ear training' },
-  { value: 0.5, label: 'Balanced' },
-  { value: 0.8, label: 'More melodies' },
-];
-
-const MINUTES: ChipOption<LearningPreferences['dailyMinutes']>[] = [5, 10, 15, 20, 30].map(
-  (m) => ({
-    value: m as LearningPreferences['dailyMinutes'],
-    label: `${m} min`,
-  }),
-);
+const MINUTES = [5, 10, 15, 20, 30] as LearningPreferences['dailyMinutes'][];
 
 const earActivities = CATALOG.filter((a) => a.kind === 'ear');
 const melodyActivities = CATALOG.filter((a) => a.kind === 'melody');
@@ -33,7 +23,17 @@ const melodyActivities = CATALOG.filter((a) => a.kind === 'melody');
 export function ExerciseSettingsScreen({
   navigation,
 }: RootScreenProps<'ExerciseSettings'>) {
+  const { t } = useTranslation();
   const { palette, spacing } = useTheme();
+  const balanceOptions: ChipOption<number>[] = [
+    { value: 0.2, label: t('profile.exerciseSettingsScreen.moreEar') },
+    { value: 0.5, label: t('profile.exerciseSettingsScreen.balanced') },
+    { value: 0.8, label: t('profile.exerciseSettingsScreen.moreMelodies') },
+  ];
+  const minuteOptions: ChipOption<LearningPreferences['dailyMinutes']>[] = MINUTES.map((m) => ({
+    value: m,
+    label: t('common.minutesShort', { count: m }),
+  }));
   const prefs =
     usePreferencesStore((s) => s.preferences) ?? {
       ...DEFAULT_PREFERENCES,
@@ -64,23 +64,22 @@ export function ExerciseSettingsScreen({
         contentContainerStyle={{ paddingBottom: spacing.xxl }}
       >
         <AppText variant="title" style={{ fontSize: 34, marginTop: spacing.sm }}>
-          Exercise settings
+          {t('profile.exerciseSettings')}
         </AppText>
         <AppText variant="body" style={{ marginTop: spacing.xs }}>
-          Customise your daily practice plan. Changes take effect from
-          tomorrow's lesson.
+          {t('profile.exerciseSettingsScreen.subtitle')}
         </AppText>
 
         <ChipGroup
-          title="Daily practice time"
-          options={MINUTES}
+          title={t('profile.prefs.dailyTime')}
+          options={minuteOptions}
           selected={[prefs.dailyMinutes]}
           onSelect={(v) => setPreferences({ dailyMinutes: v })}
         />
 
         <ChipGroup
-          title="Exercise balance"
-          options={BALANCE_OPTIONS}
+          title={t('profile.exerciseSettingsScreen.balance')}
+          options={balanceOptions}
           selected={[balance]}
           onSelect={(v) => setPreferences({ exerciseBalance: v })}
         />
@@ -91,7 +90,7 @@ export function ExerciseSettingsScreen({
             variant="caption"
             style={{ fontSize: 13, color: palette.textSecondary }}
           >
-            Ear training exercises
+            {t('profile.exerciseSettingsScreen.earExercises')}
           </AppText>
           <View style={{ marginTop: spacing.sm, gap: spacing.xs }}>
             {earActivities.map((a) => (
@@ -111,7 +110,7 @@ export function ExerciseSettingsScreen({
             variant="caption"
             style={{ fontSize: 13, color: palette.textSecondary }}
           >
-            Melody exercises
+            {t('profile.exerciseSettingsScreen.melodyExercises')}
           </AppText>
           <View style={{ marginTop: spacing.sm, gap: spacing.xs }}>
             {melodyActivities.map((a) => (
@@ -140,7 +139,7 @@ export function ExerciseSettingsScreen({
                 opacity: pressed ? 0.7 : 1,
               }}
             >
-              Reset to defaults
+              {t('profile.exerciseSettingsScreen.reset')}
             </AppText>
           )}
         </Pressable>

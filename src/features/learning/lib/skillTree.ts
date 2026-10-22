@@ -5,6 +5,7 @@
  * this data is the Journey (`./journey.ts`) — progress markers, not a menu.
  */
 import type { Activity, SkillId } from '../model/types';
+import { localizeContent } from '@/shared/i18n';
 import { activityById } from './catalog';
 
 export type SkillCategory =
@@ -43,7 +44,7 @@ const node = (
   difficultyId?: string
 ): LessonNode => ({ id, title, category, activity: { kind, id: activityId }, difficultyId, primarySkill, requires });
 
-export const SKILL_TREE: LessonNode[] = [
+export const SKILL_TREE: LessonNode[] = localizeContent('skillTree', [
   // Pitch — hear a note, land it, hold it in mind
   node('pitch-1', 'Echo the note', 'pitch', 'ear', 'note-echo', 'pitch-accuracy'),
   node('pitch-2', 'Scale in tune', 'pitch', 'melody', 'c-major-scale', 'pitch-accuracy', [{ skill: 'pitch-accuracy', mastery: 35 }]),
@@ -106,7 +107,7 @@ export const SKILL_TREE: LessonNode[] = [
     { skill: 'chord-singing', mastery: 70 },
     { skill: 'pitch-stability', mastery: 60 },
   ], 'advanced'),
-];
+], (n) => n.id, ['title']);
 
 export const SKILL_TREE_CATEGORIES: SkillCategory[] = [
   'pitch',

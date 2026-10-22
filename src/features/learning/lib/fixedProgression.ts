@@ -17,15 +17,16 @@
  * Pure — runs under `node --test`.
  */
 import type { DailyLesson, LessonSlot, LessonStep } from '../model/types';
+import { translatedRecord } from '@/shared/i18n';
 import { hashSeed, mulberry32 } from './seeded';
 import { jsDateToWeekdayIndex, planVariedWeek, type VariedDayRole } from './weeklyPlan';
 
 /** why each step is here — fixed copy, because there is no personal reason to give */
-const FREE_REASONS: Record<VariedDayRole, string> = {
-  warmup: 'gentle start to wake up your voice and ear',
-  core: 'core practice from the free library',
-  cooldown: 'finish relaxed — an easy rep you can nail',
-};
+const FREE_REASONS = translatedRecord<VariedDayRole>({
+  warmup: 'learning.reasons.warmup',
+  core: 'learning.reasons.freeCore',
+  cooldown: 'learning.reasons.cooldown',
+});
 
 export interface FixedLessonInput {
   /** local calendar day key (`YYYY-MM-DD`) — the determinism anchor */

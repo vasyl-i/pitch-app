@@ -69,6 +69,21 @@ explicitly (`typography.family.bold`, etc.) when you need real boldness, not
 `fontWeight: '700'`. This has bitten the design work more than once — see
 [Gotchas](#gotchas).
 
+**Cyrillic → Manrope.** Satoshi has no Cyrillic glyphs, so when the phone
+language is Ukrainian `typography.family` resolves to Manrope instead
+(`Manrope-Regular` / `-Medium` / `-Bold`, with `-ExtraBold` standing in for
+`black`). The swap is the whole family, not per glyph — RN can't chain custom
+fallback fonts. It follows the app language live: `ThemeProvider` serves the
+matching set through `useTheme()`, and `AppText` remaps Satoshi/Manrope names
+in styles that module-level `StyleSheet`s captured at launch. So components keep
+using `typography.family.*` and never name a font directly — and text should go
+through `AppText` (a raw `<Text>`/`<TextInput>` only picks up the font of the
+launch language). Sizes and line heights
+are shared. Skia canvases get the same fallback through `useCanvasFont`.
+Manrope is SIL OFL 1.1 (`assets/fonts/Manrope-OFL.txt`).
+Portuguese stays on Satoshi, which has every Portuguese letter except the
+ordinal signs ª / º — the pt catalog avoids them, and the i18n test enforces it.
+
 Base sizes: `xs: 12, sm: 14, md: 16, lg: 18, xl: 26, display: 72`.
 
 **Sentence case only, everywhere.** No `UPPERCASE` section labels, no

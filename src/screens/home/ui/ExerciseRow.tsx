@@ -5,10 +5,11 @@
  */
 import { Image, Pressable, View } from 'react-native';
 import type { GuidedStep } from '@/features/learning';
-import { SLOT_LABELS } from '@/features/learning';
+import { SLOT_LABELS, guidedStepTitle } from '@/features/learning';
 import type { TodayExerciseStat } from '@/features/progress';
 import { AppText, ProgressCircle } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
+import { useTranslation } from '@/shared/i18n';
 import { todayColor } from '../todayPalette';
 import { EXERCISE_CAT_ICONS, DEFAULT_CAT_ICON, EXERCISE_DESCRIPTIONS } from './exerciseIcons';
 
@@ -29,6 +30,7 @@ export function ExerciseRow({
   partialRounds?: number;
   onPress: () => void;
 }) {
+  const { t } = useTranslation();
   const { typography, spacing, radii } = useTheme();
   const done = status === 'completed';
   const catIcon = EXERCISE_CAT_ICONS[step.activityId] ?? DEFAULT_CAT_ICON;
@@ -61,14 +63,14 @@ export function ExerciseRow({
           }}
           numberOfLines={1}
         >
-          {step.title}
+          {guidedStepTitle(step)}
         </AppText>
         <AppText
           color={todayColor.inkFaint}
           style={{ fontFamily: typography.family.regular, fontSize: 14, lineHeight: 16, marginTop: 6 }}
           numberOfLines={1}
         >
-          {EXERCISE_DESCRIPTIONS[step.activityId] ?? `${SLOT_LABELS[step.slot] ?? 'Practice'} · ${step.estMinutes} min`}
+          {EXERCISE_DESCRIPTIONS[step.activityId] ?? `${SLOT_LABELS[step.slot] ?? t('home.practice')} · ${t('common.minutesShort', { count: step.estMinutes })}`}
         </AppText>
       </View>
 

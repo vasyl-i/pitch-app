@@ -1,0 +1,9 @@
+{
+  "ios": {
+    "CFBundleDisplayName": "PitchGym",
+    "NSMicrophoneUsageDescription": "PitchGym listens while you sing to show you the note you are hitting. Audio never leaves your device."
+  },
+  "android": {
+    "app_name": "PitchGym"
+  }
+}

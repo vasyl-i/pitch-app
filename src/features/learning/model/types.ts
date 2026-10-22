@@ -7,6 +7,8 @@
  * anywhere in the lib layer).
  */
 
+import { translatedRecord } from '@/shared/i18n';
+
 /* ------------------------------------------------------------------ *
  * Skills                                                              *
  * ------------------------------------------------------------------ */
@@ -43,21 +45,21 @@ export const ALL_SKILLS: readonly SkillId[] = [
   'voice-control',
 ];
 
-export const SKILL_LABELS: Record<SkillId, string> = {
-  'pitch-accuracy': 'Pitch accuracy',
-  'pitch-stability': 'Pitch stability',
-  'rhythm-accuracy': 'Rhythm accuracy',
-  'rhythm-memory': 'Rhythm memory',
-  'interval-recognition': 'Interval recognition',
-  'interval-singing': 'Interval singing',
-  'chord-recognition': 'Chord recognition',
-  'chord-singing': 'Chord singing',
-  'melody-reproduction': 'Melody reproduction',
-  'pitch-memory': 'Pitch memory',
-  'musical-memory': 'Musical memory',
-  'sight-singing': 'Sight singing',
-  'voice-control': 'Voice control',
-};
+export const SKILL_LABELS: Record<SkillId, string> = translatedRecord<SkillId>({
+  'pitch-accuracy': 'learning.skills.pitchAccuracy',
+  'pitch-stability': 'learning.skills.pitchStability',
+  'rhythm-accuracy': 'learning.skills.rhythmAccuracy',
+  'rhythm-memory': 'learning.skills.rhythmMemory',
+  'interval-recognition': 'learning.skills.intervalRecognition',
+  'interval-singing': 'learning.skills.intervalSinging',
+  'chord-recognition': 'learning.skills.chordRecognition',
+  'chord-singing': 'learning.skills.chordSinging',
+  'melody-reproduction': 'learning.skills.melodyReproduction',
+  'pitch-memory': 'learning.skills.pitchMemory',
+  'musical-memory': 'learning.skills.musicalMemory',
+  'sight-singing': 'learning.skills.sightSinging',
+  'voice-control': 'learning.skills.voiceControl',
+});
 
 export type Trend = 'improving' | 'steady' | 'declining';
 
@@ -111,11 +113,11 @@ export type DailyMinutes = 5 | 10 | 15 | 20 | 30;
 /** Goals selected during the simplified onboarding flow. */
 export type ImprovementGoal = 'sing-in-tune' | 'hit-notes' | 'feel-confident';
 
-export const IMPROVEMENT_GOAL_LABELS: Record<ImprovementGoal, string> = {
-  'sing-in-tune': 'Sing more in tune',
-  'hit-notes': 'Hit notes more accurately',
-  'feel-confident': 'Feel more confident singing',
-};
+export const IMPROVEMENT_GOAL_LABELS: Record<ImprovementGoal, string> = translatedRecord<ImprovementGoal>({
+  'sing-in-tune': 'learning.improvementGoals.singInTune',
+  'hit-notes': 'learning.improvementGoals.hitNotes',
+  'feel-confident': 'learning.improvementGoals.feelConfident',
+});
 
 /* ------------------------------------------------------------------ *
  * Weekly exercise plan                                                *
@@ -163,16 +165,16 @@ export interface LearningPreferences {
   updatedAt: number;
 }
 
-export const GOAL_LABELS: Record<LearningGoal, string> = {
-  'sing-in-tune': 'Sing in tune',
-  'train-ear': 'Train my ear',
-  'expand-range': 'Expand my vocal range',
-  'vocal-control': 'Improve vocal control',
-  'learn-songs': 'Learn songs faster',
-  'sight-singing': 'Sight singing',
-  performance: 'Prepare for performances',
-  'complete-beginner': 'Complete beginner',
-};
+export const GOAL_LABELS: Record<LearningGoal, string> = translatedRecord<LearningGoal>({
+  'sing-in-tune': 'learning.goals.singInTune',
+  'train-ear': 'learning.goals.trainEar',
+  'expand-range': 'learning.goals.expandRange',
+  'vocal-control': 'learning.goals.vocalControl',
+  'learn-songs': 'learning.goals.learnSongs',
+  'sight-singing': 'learning.goals.sightSinging',
+  performance: 'learning.goals.performance',
+  'complete-beginner': 'learning.goals.completeBeginner',
+});
 
 /* ------------------------------------------------------------------ *
  * Activities (the lesson-generation catalog)                          *
@@ -226,14 +228,14 @@ export interface Activity {
  */
 export type LessonSlot = 'warmup' | 'core-1' | 'core-2' | 'review' | 'challenge' | 'cooldown' | (string & {});
 
-export const SLOT_LABELS: Record<string, string> = {
-  warmup: 'Warm-up',
-  'core-1': 'Focus practice',
-  'core-2': 'Focus practice',
-  review: 'Review',
-  challenge: 'Challenge',
-  cooldown: 'Cool down',
-};
+export const SLOT_LABELS: Partial<Record<string, string>> = translatedRecord({
+  warmup: 'learning.slots.warmup',
+  'core-1': 'learning.slots.focus',
+  'core-2': 'learning.slots.focus',
+  review: 'learning.slots.review',
+  challenge: 'learning.slots.challenge',
+  cooldown: 'learning.slots.cooldown',
+});
 
 export interface LessonStep {
   slot: LessonSlot;

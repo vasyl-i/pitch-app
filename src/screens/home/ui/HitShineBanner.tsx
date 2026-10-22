@@ -2,8 +2,10 @@ import { ImageBackground, View } from 'react-native';
 import { AppText } from '@/shared/ui';
 import { SuccessCat } from '../../../../assets/svg';
 import { typography, useTheme } from '@/shared/theme';
+import { useTranslation } from '@/shared/i18n';
 
 export const HitShineBanner = () => {
+    const { t } = useTranslation();
     const { palette } = useTheme();
 
     return (
@@ -22,11 +24,10 @@ export const HitShineBanner = () => {
                 }}>
                     <AppText variant={'body'} color={palette.buttonPrimaryText}
                              style={{ fontSize: 24, fontFamily: typography.family.medium }}>
-                    Find. Hit. Shine!
+                    {t('home.shine.title')}
                     </AppText>
                     <AppText color={"#3D3E42"} style={{ fontSize: 16, fontFamily: typography.family.regular  }}>
-                        Practice a little every day
-                        and see the difference!
+                        {t('home.shine.body')}
                     </AppText>
                 </View>
                 <SuccessCat/>

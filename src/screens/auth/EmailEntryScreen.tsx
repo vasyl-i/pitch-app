@@ -5,11 +5,13 @@ import { AmpMaskView } from '@amplitude/plugin-session-replay-react-native';
 import { AppText, BackButton, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
 import { supabase } from '@/shared/lib/supabase';
+import { useTranslation } from '@/shared/i18n';
 import type { AuthScreenProps } from '@/app/navigation/types';
 
 const EMAIL_RE = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
 export function EmailEntryScreen({ navigation }: AuthScreenProps<'EmailEntry'>) {
+    const { t } = useTranslation();
     const { spacing, palette, radii, blur, typography } = useTheme();
     const [email, setEmail] = useState('');
     const [error, setError] = useState('');
@@ -20,7 +22,7 @@ export function EmailEntryScreen({ navigation }: AuthScreenProps<'EmailEntry'>) 
 
     const handleProceed = async () => {
         if (!valid) {
-            setError('Please enter a valid email address');
+            setError(t('auth.invalidEmail'));
             return;
         }
 
@@ -32,7 +34,7 @@ export function EmailEntryScreen({ navigation }: AuthScreenProps<'EmailEntry'>) 
             });
 
             if (rpcError) {
-                Alert.alert('Something went wrong', rpcError.message);
+                Alert.alert(t('common.somethingWentWrong'), rpcError.message);
                 return;
             }
 
@@ -42,8 +44,8 @@ export function EmailEntryScreen({ navigation }: AuthScreenProps<'EmailEntry'>) 
                 navigation.navigate('EmailSignUp', { email: trimmed });
             }
         } catch (e: unknown) {
-            const message = e instanceof Error ? e.message : 'Something went wrong';
-            Alert.alert('Error', message);
+            const message = e instanceof Error ? e.message : t('common.somethingWentWrong');
+            Alert.alert(t('common.error'), message);
         } finally {
             setLoading(false);
         }
@@ -58,10 +60,10 @@ export function EmailEntryScreen({ navigation }: AuthScreenProps<'EmailEntry'>) 
             <View style={styles.content}>
                 <View style={styles.header}>
                     <AppText variant="title" style={{ fontSize: 26, textAlign: 'center' }}>
-                        What's your email?
+                        {t('auth.emailEntry.title')}
                     </AppText>
                     <AppText variant="body" style={{ textAlign: 'center', color: palette.textSecondary }}>
-                        We'll use this to sign you in or create your account.
+                        {t('auth.emailEntry.subtitle')}
                     </AppText>
                 </View>
                 <View>
@@ -70,7 +72,7 @@ export function EmailEntryScreen({ navigation }: AuthScreenProps<'EmailEntry'>) 
                         <View style={[StyleSheet.absoluteFill, { backgroundColor: palette.surface }]} />
                         <TextInput
                             style={[styles.input, { color: palette.textPrimary, fontFamily: typography.family.regular }]}
-                            placeholder="Email address"
+                            placeholder={t('auth.emailPlaceholder')}
                             placeholderTextColor={palette.textSecondary}
                             keyboardType="email-address"
                             autoCapitalize="none"
@@ -108,7 +110,7 @@ export function EmailEntryScreen({ navigation }: AuthScreenProps<'EmailEntry'>) 
                     ]}
                 >
                     <AppText variant="label" color={palette.buttonPrimaryText}>
-                        {loading ? 'Checking...' : 'Proceed'}
+                        {loading ? t('auth.emailEntry.checking') : t('auth.emailEntry.proceed')}
                     </AppText>
                 </Pressable>
             </View>

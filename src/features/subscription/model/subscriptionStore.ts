@@ -12,6 +12,7 @@ import { type BillingAdapter, type PurchaseOutcome } from '../lib/billing';
 import { RevenueCatAdapter } from '../lib/revenueCatAdapter';
 import { isTrialEligible } from '../lib/entitlements';
 import { freeSubscription, type PlanId, type SubscriptionState } from './types';
+import { t } from '@/shared/i18n';
 
 interface SubscriptionStoreState {
   subscription: SubscriptionState;
@@ -57,7 +58,7 @@ export const useSubscriptionStore = create<SubscriptionStoreState>()(
           }
           return outcome;
         } catch (e) {
-          const message = e instanceof Error ? e.message : 'Purchase failed. Please try again.';
+          const message = e instanceof Error ? e.message : t('subscription.errors.purchaseFailed');
           set({ pending: false, error: message });
           return { kind: 'failed', message } as const;
         }
@@ -75,7 +76,7 @@ export const useSubscriptionStore = create<SubscriptionStoreState>()(
           }
           return outcome;
         } catch (e) {
-          const message = e instanceof Error ? e.message : 'Could not restore purchases.';
+          const message = e instanceof Error ? e.message : t('subscription.errors.restoreFailed');
           set({ pending: false, error: message });
           return { kind: 'failed', message } as const;
         }

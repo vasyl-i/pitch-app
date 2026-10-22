@@ -11,6 +11,7 @@ import { IMPROVEMENT_GOAL_LABELS, type ImprovementGoal, usePreferencesStore } fr
 import { useProfileStore } from '@/entities/profile';
 import { AppText, Button, ProgressCircle, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
+import { useTranslation } from '@/shared/i18n';
 import type { OnboardingScreenProps } from '@/app/navigation/types';
 
 const GOAL_OPTIONS: { id: ImprovementGoal; icon: ImageSourcePropType }[] = [
@@ -27,6 +28,7 @@ function derivePrimaryGoal(goals: ImprovementGoal[]): 'sing-in-tune' | 'train-ea
 }
 
 export function GoalsScreen({ navigation }: OnboardingScreenProps<'Goals'>) {
+    const { t } = useTranslation();
     const { palette, spacing, radii, typography } = useTheme();
     const insets = useSafeAreaInsets();
     const setPreferences = usePreferencesStore((s) => s.setPreferences);
@@ -71,14 +73,14 @@ export function GoalsScreen({ navigation }: OnboardingScreenProps<'Goals'>) {
                             // marginTop: 60
                         }}
                     >
-                        What would you{'\n'}like to improve?
+                        {t('onboarding.goals.title')}
                     </AppText>
                     <AppText
                         variant="body"
                         color={palette.textPrimary}
                         style={{ textAlign: 'center', marginTop: spacing.sm }}
                     >
-                        Choose all that apply
+                        {t('onboarding.goals.subtitle')}
                     </AppText>
 
                     <View style={{ marginTop: spacing.xxl, gap: spacing.md }}>
@@ -118,11 +120,11 @@ export function GoalsScreen({ navigation }: OnboardingScreenProps<'Goals'>) {
                 <View>
                     <Pressable onPress={skip} style={{ alignSelf: 'center', marginBottom: spacing.md }}>
                         <AppText variant="body" color={palette.textPrimary}>
-                            Skip
+                            {t('common.skip')}
                         </AppText>
                     </Pressable>
                     <Button
-                        title="Continue"
+                        title={t('common.continue')}
                         onPress={finish}
                         disabled={selected.length === 0}
                         style={{ backgroundColor: '#ffffff' }}

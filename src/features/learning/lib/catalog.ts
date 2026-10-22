@@ -14,7 +14,8 @@
  * under plain `node --test`.)
  */
 import { categoryTier, type ExerciseCategory } from '../../../entities/exercise/categories';
-import { exercises as melodyLibrary } from '../../../entities/exercise/library';
+import { exercises as melodyLibrary, isSong } from '../../../entities/exercise/library';
+import { localizeContent } from '../../../shared/i18n';
 import type { Activity, SkillId } from '../model/types';
 
 /**
@@ -192,7 +193,9 @@ export function displayMinutes(seconds: number): number {
 
 const withMinutes = (a: Omit<Activity, 'minutes'>): Activity => ({ ...a, minutes: displayMinutes(sessionSeconds(a)) });
 
-const EAR_ACTIVITIES: Activity[] = EAR_DRILLS.map(withMinutes);
+// titles are localised after `withMinutes`, whose spread would otherwise freeze them;
+// ear drills share their content ids with the ear-training definitions
+const EAR_ACTIVITIES: Activity[] = localizeContent('earExercise', EAR_DRILLS.map(withMinutes), (a) => a.id, ['title']);
 
 export const MELODY_ACTIVITIES: Activity[] = melodyLibrary.map((e) => {
   const profile = CATEGORY_PROFILE[e.category];
@@ -212,6 +215,8 @@ export const MELODY_ACTIVITIES: Activity[] = melodyLibrary.map((e) => {
     rounds: 1,
   });
 });
+// song titles stay as written (see `isSong`)
+localizeContent('exercise', MELODY_ACTIVITIES.filter((_, i) => !isSong(melodyLibrary[i])), (a) => a.id, ['title']);
 
 export const CATALOG: Activity[] = [...EAR_ACTIVITIES, ...MELODY_ACTIVITIES];
 

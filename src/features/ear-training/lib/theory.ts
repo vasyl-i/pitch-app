@@ -8,6 +8,8 @@
  * from recordings — see the product's content policy.
  */
 import { pitchClassName } from '@/shared/lib/music';
+import { t } from '@/shared/i18n';
+import type { ParseKeys } from 'i18next';
 
 /* ------------------------------------------------------------------ *
  * Chords                                                              *
@@ -22,30 +24,39 @@ export interface ChordType {
   intervals: number[];
 }
 
+// `label` is a getter so it always reads the current language
+const chordType = (id: ChordTypeId, labelKey: ParseKeys, intervals: number[]): ChordType => ({
+  id,
+  get label() {
+    return t(labelKey);
+  },
+  intervals,
+});
+
 export const CHORD_TYPES: Record<ChordTypeId, ChordType> = {
-  maj: { id: 'maj', label: 'Major', intervals: [0, 4, 7] },
-  min: { id: 'min', label: 'Minor', intervals: [0, 3, 7] },
-  aug: { id: 'aug', label: 'Augmented', intervals: [0, 4, 8] },
-  dim: { id: 'dim', label: 'Diminished', intervals: [0, 3, 6] },
-  dom7: { id: 'dom7', label: 'Dominant 7', intervals: [0, 4, 7, 10] },
-  maj7: { id: 'maj7', label: 'Major 7', intervals: [0, 4, 7, 11] },
-  min7: { id: 'min7', label: 'Minor 7', intervals: [0, 3, 7, 10] },
+  maj: chordType('maj', 'earTraining.chords.maj', [0, 4, 7]),
+  min: chordType('min', 'earTraining.chords.min', [0, 3, 7]),
+  aug: chordType('aug', 'earTraining.chords.aug', [0, 4, 8]),
+  dim: chordType('dim', 'earTraining.chords.dim', [0, 3, 6]),
+  dom7: chordType('dom7', 'earTraining.chords.dom7', [0, 4, 7, 10]),
+  maj7: chordType('maj7', 'earTraining.chords.maj7', [0, 4, 7, 11]),
+  min7: chordType('min7', 'earTraining.chords.min7', [0, 3, 7, 10]),
 };
 
 /** Chord-member name for a result row, e.g. "root", "third", "seventh". */
 export function chordDegreeName(semitonesAboveRoot: number): string {
   switch (semitonesAboveRoot) {
     case 0:
-      return 'root';
+      return t('earTraining.degrees.root');
     case 3:
     case 4:
-      return 'third';
+      return t('earTraining.degrees.third');
     case 6:
     case 7:
     case 8:
-      return 'fifth';
+      return t('earTraining.degrees.fifth');
     default:
-      return 'seventh';
+      return t('earTraining.degrees.seventh');
   }
 }
 
@@ -62,23 +73,30 @@ export interface IntervalSpec {
   label: string;
 }
 
-export const INTERVALS: IntervalSpec[] = [
-  { semitones: 1, label: 'Minor second' },
-  { semitones: 2, label: 'Major second' },
-  { semitones: 3, label: 'Minor third' },
-  { semitones: 4, label: 'Major third' },
-  { semitones: 5, label: 'Perfect fourth' },
-  { semitones: 6, label: 'Tritone' },
-  { semitones: 7, label: 'Perfect fifth' },
-  { semitones: 8, label: 'Minor sixth' },
-  { semitones: 9, label: 'Major sixth' },
-  { semitones: 10, label: 'Minor seventh' },
-  { semitones: 11, label: 'Major seventh' },
-  { semitones: 12, label: 'Octave' },
+const INTERVAL_KEYS: [number, ParseKeys][] = [
+  [1, 'earTraining.intervals.m2'],
+  [2, 'earTraining.intervals.M2'],
+  [3, 'earTraining.intervals.m3'],
+  [4, 'earTraining.intervals.M3'],
+  [5, 'earTraining.intervals.P4'],
+  [6, 'earTraining.intervals.tritone'],
+  [7, 'earTraining.intervals.P5'],
+  [8, 'earTraining.intervals.m6'],
+  [9, 'earTraining.intervals.M6'],
+  [10, 'earTraining.intervals.m7'],
+  [11, 'earTraining.intervals.M7'],
+  [12, 'earTraining.intervals.octave'],
 ];
 
+export const INTERVALS: IntervalSpec[] = INTERVAL_KEYS.map(([semitones, key]) => ({
+  semitones,
+  get label() {
+    return t(key);
+  },
+}));
+
 export function intervalLabel(semitones: number): string {
-  return INTERVALS.find((i) => i.semitones === Math.abs(semitones))?.label ?? `${semitones} semitones`;
+  return INTERVALS.find((i) => i.semitones === Math.abs(semitones))?.label ?? t('vocalRange.semitones', { count: semitones });
 }
 
 /* ------------------------------------------------------------------ *

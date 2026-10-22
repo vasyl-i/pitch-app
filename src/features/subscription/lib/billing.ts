@@ -17,6 +17,7 @@
  */
 import { planById } from '../model/plans';
 import type { PlanId, SubscriptionState } from '../model/types';
+import { t } from '../../../shared/i18n';
 
 export type PurchaseOutcome =
   | { kind: 'purchased'; state: SubscriptionState }
@@ -117,6 +118,6 @@ export class MockBillingAdapter implements BillingAdapter {
     const found = this.opts.restorable?.() ?? null;
     return found
       ? { kind: 'restored', state: found }
-      : { kind: 'failed', message: 'No previous purchase found for this account.' };
+      : { kind: 'failed', message: t('subscription.errors.noPrevious') };
   }
 }

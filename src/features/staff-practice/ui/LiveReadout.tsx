@@ -1,6 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 import { AppText } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
+import { useTranslation } from '@/shared/i18n';
 import { colorForCents, midiToFreq } from '@/shared/lib/music';
 import { noteName } from '@/shared/lib/staff';
 import { useStabilizedNote } from '@/features/pitch-visualization';
@@ -8,6 +9,7 @@ import { useStaffStore } from '../model/staffStore';
 
 /** The live note name + cents deviation, shown large and calm above the staff. */
 export function LiveReadout({ showHz = false }: { showHz?: boolean }) {
+  const { t } = useTranslation();
   const { palette } = useTheme();
   const liveMidi = useStaffStore((s) => s.liveMidi);
   const liveCents = useStaffStore((s) => s.liveCents);
@@ -28,7 +30,7 @@ export function LiveReadout({ showHz = false }: { showHz?: boolean }) {
       </AppText>
       {showHz && liveMidi !== null && (
         <AppText variant="caption" style={styles.hz}>
-          {Math.round(midiToFreq(liveMidi))} Hz
+          {t('pitch.hz', { value: Math.round(midiToFreq(liveMidi)) })}
         </AppText>
       )}
     </View>

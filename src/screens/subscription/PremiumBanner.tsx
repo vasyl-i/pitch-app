@@ -2,16 +2,20 @@
  * Premium banner: "Unlock all exercises" for free users, plan and time left
  * for subscribers. Tapping opens the paywall, Manage subscription, or — for
  * guests — offers to sign in first, since a purchase needs an account.
+ * A trial on its last day adds a reminder pill pinned over the top-right
+ * corner (absolutely positioned, so it never shifts the layout).
  *
  * Lives with the subscription screens rather than in `shared/ui` because it
  * composes the auth and subscription features.
  */
 import { Alert, Image, ImageBackground, Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useAuthStore } from '@/features/auth';
 import { usePaywall, usePremiumStatus, type PaywallSource } from '@/features/subscription';
 import { AppText } from '@/shared/ui';
 import { typography } from '@/shared/theme';
+import { t, useTranslation } from '@/shared/i18n';
 
 const UNLOCK_BG = require('../../../assets/background-unlock.png');
 const UNLOCK_CAT = require('../../../assets/unlock-cat.png');
@@ -19,13 +23,12 @@ const ARROW_RIGHT = require('../../../assets/account-tab/arrow-right.png');
 
 function formatTimeLeft(endMs: number): string {
   const diff = endMs - Date.now();
-  if (diff <= 0) return 'Expired';
+  if (diff <= 0) return t('subscription.banner.expired');
   const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
   if (days > 60) {
-    const months = Math.round(days / 30);
-    return `${months} month${months === 1 ? '' : 's'} left`;
+    return t('subscription.banner.monthsLeft', { count: Math.round(days / 30) });
   }
-  return `${days} day${days === 1 ? '' : 's'} left`;
+  return t('subscription.banner.daysLeft', { count: days });
 }
 
 interface PremiumBannerProps {
@@ -35,6 +38,7 @@ interface PremiumBannerProps {
 }
 
 export function PremiumBanner({ source, style }: PremiumBannerProps) {
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const premium = usePremiumStatus();
   const openPaywall = usePaywall(source);
@@ -44,11 +48,11 @@ export function PremiumBanner({ source, style }: PremiumBannerProps) {
   const handlePress = () => {
     if (guest) {
       Alert.alert(
-        'Sign in required',
-        'Create an account or sign in to unlock Premium and keep your progress safe across devices.',
+        t('subscription.banner.signInTitle'),
+        t('subscription.banner.signInMessage'),
         [
-          { text: 'Not now', style: 'cancel' },
-          { text: 'Sign in', onPress: () => signOut() },
+          { text: t('common.notNow'), style: 'cancel' },
+          { text: t('auth.signInCta'), onPress: () => signOut() },
         ],
       );
     } else if (premium.isPremium) {
@@ -58,15 +62,18 @@ export function PremiumBanner({ source, style }: PremiumBannerProps) {
     }
   };
 
-  const title = premium.isPremium ? 'PitchGym Premium' : 'Unlock all exercises';
+  const trialEnding = premium.trialDaysLeft !== null && premium.trialDaysLeft <= 1;
+
+  const planName = premium.plan?.name ?? t('subscription.premium');
+  const title = premium.isPremium ? 'PitchGym Premium' : t('session.complete.unlockTitle');
 
   const subtitle = premium.isPremium
     ? premium.status === 'trialing'
-      ? `Free trial · ${premium.trialDaysLeft ?? 0} day${premium.trialDaysLeft === 1 ? '' : 's'} left`
+      ? t('subscription.banner.trial', { count: premium.trialDaysLeft ?? 0 })
       : premium.currentPeriodEnd
-        ? `${premium.plan?.name ?? 'Premium'} · ${formatTimeLeft(premium.currentPeriodEnd)}`
-        : `${premium.plan?.name ?? 'Premium'} · Active`
-    : 'Get unlimited access to improve your voice';
+        ? `${planName} · ${formatTimeLeft(premium.currentPeriodEnd)}`
+        : `${planName} · ${t('subscription.banner.active')}`
+    : t('subscription.banner.freeSubtitle');
 
   return (
     <Pressable onPress={handlePress} style={[styles.banner, style]}>
@@ -82,14 +89,35 @@ export function PremiumBanner({ source, style }: PremiumBannerProps) {
         </View>
         <Image source={ARROW_RIGHT} style={styles.chevron} tintColor="#21222C" />
       </ImageBackground>
+      {trialEnding && (
+        <Pressable onPress={() => navigation.navigate('ManageSubscription' as never)} style={styles.trialReminder}>
+          <Ionicons name="alert-circle" size={13} color="#F0943A" />
+          <AppText variant="caption" color="#F0943A" style={{ fontSize: 12, lineHeight: 16, fontFamily: typography.family.medium }}>
+            {t('home.trialEndsTomorrow')}
+          </AppText>
+        </Pressable>
+      )}
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  banner: { width: '100%', overflow: 'hidden', borderRadius: 10 },
+  banner: { width: '100%', overflow: 'visible', borderRadius: 10 },
   bannerBg: { flexDirection: 'row', alignItems: 'center', height: 72 },
   bannerCat: { width: 64, height: 64, marginLeft: 12, marginBottom: -8 },
   bannerTextWrap: { flex: 1, marginLeft: 24, gap: 2 },
   chevron: { width: 16, height: 16, marginRight: 16 },
+  trialReminder: {
+    position: 'absolute',
+    top: -10,
+    right: -6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    // opaque (14% orange over the app background): it straddles the banner edge
+    backgroundColor: '#291B12',
+  },
 });

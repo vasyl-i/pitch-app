@@ -3,6 +3,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } f
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/shared/theme';
 import { AppText } from './AppText';
+import { formatHour, useTranslation } from '@/shared/i18n';
 
 const ROW_HEIGHT = 44;
 const MAX_VISIBLE_ROWS = 5;
@@ -10,10 +11,9 @@ const LIST_GAP = 6;
 
 type Option = { value: number; label: string };
 
-const HOUR_OPTIONS: Option[] = Array.from({ length: 24 }, (_, h) => ({
-    value: h,
-    label: `${h % 12 || 12} ${h < 12 ? 'AM' : 'PM'}`,
-}));
+function hourOptions(): Option[] {
+    return Array.from({ length: 24 }, (_, h) => ({ value: h, label: formatHour(h) }));
+}
 
 function minuteOptions(step: number): Option[] {
     return Array.from({ length: Math.ceil(60 / step) }, (_, i) => ({
@@ -32,6 +32,7 @@ export function TimeDropdown({ value, onChange, minuteInterval = 5 }: {
     onChange: (date: Date) => void;
     minuteInterval?: number;
 }) {
+    const { t } = useTranslation();
     const { palette, spacing, typography } = useTheme();
     const minutes = minuteOptions(minuteInterval);
     const minute = Math.floor(value.getMinutes() / minuteInterval) * minuteInterval;
@@ -45,8 +46,8 @@ export function TimeDropdown({ value, onChange, minuteInterval = 5 }: {
     return (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, alignSelf: 'stretch', marginTop: spacing.sm }}>
             <Dropdown
-                accessibilityLabel="Reminder hour"
-                options={HOUR_OPTIONS}
+                accessibilityLabel={t('common.reminderHour')}
+                options={hourOptions()}
                 selected={value.getHours()}
                 onSelect={(h) => update(h, minute)}
             />
@@ -59,7 +60,7 @@ export function TimeDropdown({ value, onChange, minuteInterval = 5 }: {
                 :
             </AppText>
             <Dropdown
-                accessibilityLabel="Reminder minute"
+                accessibilityLabel={t('common.reminderMinute')}
                 options={minutes}
                 selected={minute}
                 onSelect={(m) => update(value.getHours(), m)}
@@ -76,6 +77,7 @@ function Dropdown({ options, selected, onSelect, accessibilityLabel }: {
     onSelect: (value: number) => void;
     accessibilityLabel: string;
 }) {
+    const { t } = useTranslation();
     const { palette, radii, spacing, typography } = useTheme();
     const { height: windowHeight } = useWindowDimensions();
     const fieldRef = useRef<View>(null);
@@ -117,7 +119,7 @@ function Dropdown({ options, selected, onSelect, accessibilityLabel }: {
             </Pressable>
 
             <Modal visible={anchor != null} transparent animationType="fade" onRequestClose={close} statusBarTranslucent>
-                <Pressable style={StyleSheet.absoluteFill} onPress={close} accessibilityLabel="Close" />
+                <Pressable style={StyleSheet.absoluteFill} onPress={close} accessibilityLabel={t('common.close')} />
                 {anchor && (
                     <View
                         style={[

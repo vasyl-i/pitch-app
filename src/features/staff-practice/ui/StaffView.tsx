@@ -4,6 +4,7 @@ import { Canvas, Circle, Group, Line, Path, RoundedRect, Skia, useClock, vec } f
 import { useDerivedValue } from 'react-native-reanimated';
 import { AppText } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
+import { formatLyric } from '@/shared/i18n';
 import type { Exercise } from '@/entities/exercise';
 import { isSharp, ledgerSteps, MIDDLE_C_STEP, noteName, STAFF_LINE_STEPS, yOfMidi, yOfMidiContinuous, yOfStep, type StaffLayout } from '@/shared/lib/staff';
 import { colorForCents, NOTICEABLE_CENTS, PERFECT_CENTS, SLIGHT_CENTS } from '@/shared/lib/music';
@@ -191,7 +192,7 @@ export function StaffView({ exercise, rate }: { exercise: Exercise; rate: number
                   </AppText>
                 )}
                 <AppText variant="caption" style={{ fontSize: 12 }}>
-                  {n.lyric ?? noteName(n.midi)}
+                  {n.lyric ? formatLyric(n.lyric) : noteName(n.midi)}
                 </AppText>
               </View>
             );

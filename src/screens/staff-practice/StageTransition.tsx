@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { AppText } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
+import { useTranslation } from '@/shared/i18n';
 
 /**
  * The beat between the assisted attempt and the unaided one.
@@ -13,6 +14,7 @@ import { useTheme } from '@/shared/theme';
  * fresh. This is only the card; the timing lives in `runController`.
  */
 export function StageTransition({ startingNote = false }: { startingNote?: boolean }) {
+  const { t } = useTranslation();
   const { palette, spacing } = useTheme();
   const opacity = useSharedValue(0);
   const lift = useSharedValue(12);
@@ -31,10 +33,10 @@ export function StageTransition({ startingNote = false }: { startingNote?: boole
     <View style={styles.center}>
       <Animated.View style={style}>
         <AppText variant="title" style={[styles.text, { marginBottom: spacing.sm }]}>
-          Now it’s your turn!
+          {t('staff.transition.title')}
         </AppText>
         <AppText variant="body" color={palette.textSecondary} style={styles.text}>
-          {startingNote ? 'Here’s your first note — start from it.' : 'Sing the melody on your own.'}
+          {startingNote ? t('staff.transition.firstNote') : t('staff.transition.onYourOwn')}
         </AppText>
       </Animated.View>
     </View>

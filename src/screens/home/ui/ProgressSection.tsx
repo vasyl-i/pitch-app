@@ -1,6 +1,8 @@
 import { StyleSheet, View } from 'react-native';
 import { AppText } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
+import { useTranslation } from '@/shared/i18n';
+import { formatPracticeTime } from '@/features/progress';
 import { todayColor } from '../todayPalette';
 
 const DIVIDER_COLOR = 'rgba(255, 255, 255, 0.14)';
@@ -12,17 +14,18 @@ interface Props {
 }
 
 export function ProgressSection({ accuracy, streak, practiceTime }: Props) {
+  const { t } = useTranslation();
   const { typography, spacing } = useTheme();
 
   return (
     <View style={{ marginTop: spacing.xl }}>
       <AppText color={todayColor.ink} style={{ fontFamily: typography.family.medium, fontSize: 16 }}>
-        Your progress
+        {t('home.progress.title')}
       </AppText>
       <View style={[styles.row, { marginTop: spacing.md }]}>
-        <Stat value={accuracy > 0 ? `${accuracy}%` : '—'} label="Accuracy" />
-        <Stat value={streak > 0 ? `${streak}d` : '—'} label="In a row" divider />
-        <Stat value={practiceTime && practiceTime !== '0m' ? practiceTime : '—'} label="Practice time" divider />
+        <Stat value={accuracy > 0 ? `${accuracy}%` : '—'} label={t('home.stats.accuracy')} />
+        <Stat value={streak > 0 ? t('common.daysShort', { count: streak }) : '—'} label={t('home.stats.inARow')} divider />
+        <Stat value={practiceTime && practiceTime !== formatPracticeTime(0) ? practiceTime : '—'} label={t('home.stats.practiceTime')} divider />
       </View>
     </View>
   );

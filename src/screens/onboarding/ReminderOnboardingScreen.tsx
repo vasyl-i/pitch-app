@@ -14,11 +14,13 @@ import { useProfileStore } from '@/entities/profile';
 import { requestNotificationPermissions, schedulePracticeReminder } from '@/shared/lib/notifications';
 import { AppText, BackButton, Button, Screen, TimeDropdown } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
+import { intlLocale, useTranslation } from '@/shared/i18n';
 import type { OnboardingScreenProps } from '@/app/navigation/types';
 
 const BELL_IMAGE = require('../../../assets/notification-bell.png');
 
 export function ReminderOnboardingScreen({ navigation }: OnboardingScreenProps<'Reminder'>) {
+  const { t } = useTranslation();
   const { palette, spacing, typography } = useTheme();
   const insets = useSafeAreaInsets();
   const setPreferences = usePreferencesStore((s) => s.setPreferences);
@@ -69,21 +71,21 @@ export function ReminderOnboardingScreen({ navigation }: OnboardingScreenProps<'
             variant="title"
             style={{ fontSize: 40, textAlign: 'center', fontFamily: typography.family.bold, marginTop: 20 }}
           >
-            Daily reminder
+            {t('onboarding.reminder.title')}
           </AppText>
           <AppText
             variant="body"
             gradient
             style={{ textAlign: 'center', marginTop: spacing.lg, fontSize: 20 }}
           >
-            Get notifications to speed up your{'\n'}progress.
+            {t('onboarding.reminder.subtitle')}
           </AppText>
           {/* Middle: time picker */}
           <View style={styles.pickerSection}>
             <View style={styles.labelRow}>
               <Ionicons name="time-outline" size={18} color={palette.textPrimary} />
               <AppText variant="body" style={{ fontFamily: typography.family.medium, color: palette.textPrimary, fontSize: 18 }}>
-                Set reminder time
+                {t('onboarding.reminder.setTime')}
               </AppText>
             </View>
             {Platform.OS === 'ios' ? (
@@ -95,6 +97,7 @@ export function ReminderOnboardingScreen({ navigation }: OnboardingScreenProps<'
                   onChange={handleTimeChange}
                   minuteInterval={5}
                   themeVariant="dark"
+                  locale={intlLocale()}
               />
             ) : (
               <TimeDropdown value={date} onChange={setDate} minuteInterval={5} />
@@ -107,11 +110,11 @@ export function ReminderOnboardingScreen({ navigation }: OnboardingScreenProps<'
         <View>
           <Pressable onPress={skip} style={{ alignSelf: 'center', marginBottom: spacing.md }}>
             <AppText variant="body" color={palette.textPrimary}>
-              Skip
+              {t('common.skip')}
             </AppText>
           </Pressable>
           <Button
-            title="Save"
+            title={t('common.save')}
             onPress={save}
             style={{ backgroundColor: '#ffffff' }}
           />

@@ -1,0 +1,55 @@
+import type { PtLocaleShape } from '../../types';
+import type { progress as en } from '../en/progress';
+
+export const progress: PtLocaleShape<typeof en> = {
+  empty: 'Ainda não há nada aqui. Conclua a prática de hoje no Início e o seu progresso começa a crescer.',
+  perfectRuns: 'Execuções perfeitas',
+  daysPracticed: 'Dias de prática',
+  afterLast: 'Depois da última sessão',
+  weeklyAccuracy: 'Precisão semanal',
+  vsLastWeek: '{{delta}} face à semana passada',
+  avgSummary: 'pontuação média · desvio médio de {{cents}}¢',
+  accuracyTrend: 'Evolução da precisão',
+  masteryOverTime: 'Domínio das capacidades ao longo do tempo',
+  weeklyReview: 'Resumo semanal',
+  weeklyReviewSubtitle: 'O que mudou esta semana e o que vem a seguir',
+  review: {
+    days: 'Dias',
+    sessions: 'Sessões',
+    time: 'Tempo',
+    streak: 'Dias seguidos',
+    plainLanguage: 'Esta semana, em palavras simples',
+    masteryChanges: 'Alterações de domínio',
+    nextWeek: 'Próxima semana',
+  },
+  perfect: {
+    title: 'Tarefas perfeitas',
+    subtitle: 'Exercícios que concluiu com uma execução de 3 estrelas',
+    empty: 'Ainda não há nada aqui. Obtenha 90 ou mais em qualquer exercício para ganhar 3 estrelas e ele aparece nesta lista.',
+    meta: 'Melhor {{best}} · {{runs}} · {{date}}',
+    runs_one: '{{count}} execução perfeita',
+    runs_many: '{{count}} execuções perfeitas',
+    runs_other: '{{count}} execuções perfeitas',
+  },
+  calendar: {
+    previous: 'Mês anterior',
+    next: 'Mês seguinte',
+  },
+  charts: {
+    heatmapEmpty: 'Cante alguns exercícios e as suas tendências para agudo/grave aparecem aqui.',
+    heatmapLegend: '↑ agudo · ↓ grave · últimos 30 dias',
+    accuracyEmpty: 'Pratique durante algumas semanas para ver a evolução da sua precisão.',
+    weeksAgo_one: 'há {{count}} semana',
+    weeksAgo_many: 'há {{count}} semanas',
+    weeksAgo_other: 'há {{count}} semanas',
+    thisWeek: 'esta semana',
+    sparklineEmpty: 'Conclua algumas frases para ver a sua evolução.',
+    skillsEmpty: 'Pratique durante algumas semanas para ver aqui a evolução das suas capacidades.',
+  },
+  duration: {
+    underMinute: '<1 min',
+    minutes: '{{m}} min',
+    hours: '{{h}} h',
+    hoursMinutes: '{{h}} h {{m}} min',
+  },
+};

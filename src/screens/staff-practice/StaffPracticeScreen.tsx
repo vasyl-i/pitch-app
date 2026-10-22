@@ -29,6 +29,7 @@ import {
 import { StaticPitchCanvas } from '@/features/pitch-visualization';
 import { AppText, BackButton, Button, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
+import { formatKeyName, useTranslation } from '@/shared/i18n';
 import type { RootScreenProps } from '@/app/navigation/types';
 import { resetToTab } from '@/app/navigation/resetToTab';
 import { useLessonSessionStore } from '@/features/learning';
@@ -41,6 +42,7 @@ import { StageTransition } from './StageTransition';
 const NEXT_RUN_DELAY_MS = 600;
 
 export function StaffPracticeScreen({ navigation, route }: RootScreenProps<'MelodyPractice'>) {
+  const { t } = useTranslation();
   const original = exercises.find((e) => e.id === route.params.exerciseId) ?? odeToJoy;
   const guided = route.params.guided === true;
   // the speed picked for this exercise in the library, for preview and singing alike
@@ -110,10 +112,10 @@ export function StaffPracticeScreen({ navigation, route }: RootScreenProps<'Melo
     previousShift === null || previousShift === roundShift
       ? null
       : roundShift - previousShift === 1
-        ? 'A semitone higher'
+        ? t('staff.keyChange.higher')
         : roundShift - previousShift === -1
-          ? 'A semitone lower'
-          : 'A new key';
+          ? t('staff.keyChange.lower')
+          : t('staff.keyChange.newKey');
 
   // every key the rounds can visit on one fixed pitch axis, so each new key
   // visibly sits above or below the last
@@ -199,7 +201,9 @@ function StaffSession({
   autoTranspose: boolean;
   setAutoTranspose: (v: boolean) => void;
 }) {
+  const { t } = useTranslation();
   const { palette, spacing } = useTheme();
+  const keyLabel = formatKeyName(exercise.key);
   const { restart, skipListen } = useStaffSession(exercise, rate);
 
   const status = useStaffStore((s) => s.status);
@@ -273,26 +277,26 @@ function StaffSession({
   const { promptTitle, promptSubtitle } = ((): { promptTitle: string; promptSubtitle: string } => {
     if (status === 'listen') {
       return keyChange
-        ? { promptTitle: `Now in ${exercise.key}`, promptSubtitle: `${keyChange} — listen first` }
-        : { promptTitle: 'Listen to the example', promptSubtitle: 'Follow the notes' };
+        ? { promptTitle: t('staff.prompt.nowIn', { key: keyLabel }), promptSubtitle: t('staff.prompt.listenFirst', { change: keyChange }) }
+        : { promptTitle: t('staff.prompt.listen'), promptSubtitle: t('staff.prompt.follow') };
     }
     if (status === 'accompanied') {
       return {
-        promptTitle: 'Sing with the accompaniment',
+        promptTitle: t('staff.prompt.accompanied'),
         promptSubtitle: lastVerdict
           ? VERDICT_LABEL[lastVerdict.verdict]
           : outputIsolated
-            ? 'Match each note as closely as possible'
-            : 'Match each note — headphones give a truer score',
+            ? t('staff.prompt.match')
+            : t('staff.prompt.matchHeadphones'),
       };
     }
     return {
-      promptTitle: 'Your turn',
+      promptTitle: t('staff.prompt.yourTurn'),
       promptSubtitle: lastVerdict
         ? VERDICT_LABEL[lastVerdict.verdict]
         : loop
-          ? 'Looping — sing it again'
-          : 'Sing without the guide',
+          ? t('staff.prompt.looping')
+          : t('staff.prompt.solo'),
     };
   })();
 
@@ -306,13 +310,13 @@ function StaffSession({
               <AppText variant="label">{exercise.title}</AppText>
               <AppText variant="caption">
                 {guided
-                    ? `${activeStepLabel() ?? "Today's practice"}${rounds > 1 ? ` · ${exercise.key} · Round ${round + 1} of ${rounds}` : ''}`
+                    ? `${activeStepLabel() ?? t('staff.header.todaysPractice')}${rounds > 1 ? ` · ${keyLabel} · ${t('session.round.counter', { round: round + 1, total: rounds })}` : ''}`
                     : endless
-                      ? `${exercise.key} · Round ${round + 1}`
+                      ? `${keyLabel} · ${t('session.results.round', { number: round + 1 })}`
                     : shift !== 0
-                        ? `${exercise.key} · ${shift > 0 ? '+' : ''}${shift} for your range`
+                        ? `${keyLabel} · ${t('staff.header.forRange', { shift: `${shift > 0 ? '+' : ''}${shift}` })}`
                         : exercise.source}
-                {rate !== 1 ? ` · ${speedBpm(exercise.bpm, rate)} bpm` : ''}
+                {rate !== 1 ? ` · ${t('exercises.bpm', { bpm: speedBpm(exercise.bpm, rate) })}` : ''}
               </AppText>
             </View>
           </View>
@@ -353,11 +357,11 @@ function StaffSession({
         {!showOverlay && (
           <>
             <PianoKeyboard lowMidi={lowMidi} highMidi={highMidi} />
-            <Button title="Restart" variant="ghost" onPress={() => restart()} style={{ marginTop: spacing.md }} />
+            <Button title={t('staff.restart')} variant="ghost" onPress={() => restart()} style={{ marginTop: spacing.md }} />
             {/* always laid out, only shown during the preview, so the canvas
                 above never resizes between stages */}
             <Button
-              title="Skip preview"
+              title={t('staff.skipPreview')}
               variant="transparent"
               onPress={() => skipListen()}
               disabled={status !== 'listen'}
@@ -379,20 +383,20 @@ function StaffSession({
       {status === 'no-input' && (
         <View style={styles.overlay}>
           <AppText variant="body" style={{ textAlign: 'center' }}>
-            We didn't hear any singing.
+            {t('staff.noInputTitle')}
           </AppText>
           <AppText variant="caption" color={palette.textSecondary} style={{ textAlign: 'center', marginTop: 8 }}>
-            Check your mic, then give it a try — you'll hear the melody first, then sing it on your own.
+            {t('staff.noInputBody')}
           </AppText>
           <View style={{ marginTop: spacing.lg, gap: spacing.md }}>
-            <Button title="Try again" onPress={() => restart()} />
+            <Button title={t('common.tryAgain')} onPress={() => restart()} />
             {guided ? (
               <>
-                <Button title="Skip this step" variant="ghost" onPress={() => advanceAfterStep(navigation)} />
-                <Button title="Back to home" variant="ghost" onPress={() => { useLessonSessionStore.getState().completeActive(); resetToTab(navigation, 'HomeTab'); }} />
+                <Button title={t('session.ear.skipStep')} variant="ghost" onPress={() => advanceAfterStep(navigation)} />
+                <Button title={t('session.ear.backHome')} variant="ghost" onPress={() => { useLessonSessionStore.getState().completeActive(); resetToTab(navigation, 'HomeTab'); }} />
               </>
             ) : (
-              <Button title="Done" variant="ghost" onPress={() => navigation.goBack()} />
+              <Button title={t('common.done')} variant="ghost" onPress={() => navigation.goBack()} />
             )}
           </View>
         </View>
@@ -409,17 +413,17 @@ function StaffSession({
             comparison={comparison}
             primary={
               guided
-                ? { title: 'Continue practice', onPress: () => advanceAfterStep(navigation) }
-                : { title: 'Sing again', onPress: () => restart() }
+                ? { title: t('session.ear.continue'), onPress: () => advanceAfterStep(navigation) }
+                : { title: t('staff.singAgain'), onPress: () => restart() }
             }
             secondary={
               guided
-                ? { title: 'Sing it again', onPress: () => restart() }
-                : { title: 'Done', onPress: () => navigation.goBack() }
+                ? { title: t('staff.singItAgain'), onPress: () => restart() }
+                : { title: t('common.done'), onPress: () => navigation.goBack() }
             }
             tertiary={
               guided
-                ? { title: 'Back to home', onPress: () => resetToTab(navigation, 'HomeTab') }
+                ? { title: t('session.ear.backHome'), onPress: () => resetToTab(navigation, 'HomeTab') }
                 : undefined
             }
           />

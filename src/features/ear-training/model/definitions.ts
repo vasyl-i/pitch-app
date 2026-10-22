@@ -43,7 +43,23 @@ import {
   type ChordTypeId,
 } from '../lib/theory';
 import { pitchClassOf } from '@/shared/lib/music';
+import { localizeContent, t } from '@/shared/i18n';
+import type { ParseKeys } from 'i18next';
 import type { EarRound, ExerciseDefinition, RoundContext } from './types';
+
+/** a difficulty tier whose label follows the current language */
+const level = (id: string, labelKey: ParseKeys, params?: Record<string, unknown>) => ({
+  id,
+  get label() {
+    return t(labelKey, params) as string;
+  },
+});
+
+const STANDARD_LEVELS = () => [
+  level('beginner', 'earTraining.levels.beginner'),
+  level('intermediate', 'earTraining.levels.intermediate'),
+  level('advanced', 'earTraining.levels.advanced'),
+];
 
 /** sing window for one sustained answer note (matches the pre-refactor feel) */
 const SINGLE_NOTE_WINDOW_MS = 2400;
@@ -72,7 +88,7 @@ const noteEcho: ExerciseDefinition = {
     const pc = pitchClassOf(midi);
     return {
       prompt: noteScript(midi),
-      instruction: 'Sing it back — any octave',
+      instruction: t('earTraining.instructions.anyOctave'),
       answerPc: pc,
       response: {
         kind: 'sing',
@@ -109,29 +125,27 @@ const chordTones: ExerciseDefinition = {
   tagline: 'Hear a chord, then sing every note inside it.',
   needsMic: true,
   rounds: 4,
-  difficulties: [
-    { id: 'beginner', label: 'Beginner' },
-    { id: 'intermediate', label: 'Intermediate' },
-    { id: 'advanced', label: 'Advanced' },
-  ],
+  difficulties: STANDARD_LEVELS(),
   defaultDifficulty: 'beginner',
   resultMs: 3200,
   makeRound(ctx: RoundContext): EarRound {
-    const level = ctx.difficulty ?? 'beginner';
-    const type = CHORD_TYPES[pick(CHORD_POOLS[level] ?? CHORD_POOLS.beginner)];
+    const tier = ctx.difficulty ?? 'beginner';
+    const type = CHORD_TYPES[pick(CHORD_POOLS[tier] ?? CHORD_POOLS.beginner)];
     const span = type.intervals[type.intervals.length - 1];
     const hi = Math.max(ctx.range.low, ctx.range.high - span);
     const rootMidi = randomMidiAvoiding(ctx.range.low, hi, ctx.previousPc);
     const midis = chordMidis(rootMidi, type.id);
 
-    const order = level === 'advanced' ? 'requested' : level === 'intermediate' ? 'ascending' : 'any';
+    const order = tier === 'advanced' ? 'requested' : tier === 'intermediate' ? 'ascending' : 'any';
     const requestedOrder = order === 'requested' ? shuffled(type.intervals.map((_, i) => i)) : undefined;
     const instruction =
       order === 'any'
-        ? `Sing every note of the chord — any order (${midis.length} notes)`
+        ? t('earTraining.instructions.chordAnyOrder', { count: midis.length })
         : order === 'ascending'
-          ? `Sing every note, from the bottom up (${midis.length} notes)`
-          : `Sing: ${requestedOrder!.map((i) => chordDegreeName(type.intervals[i])).join(' · ')}`;
+          ? t('earTraining.instructions.chordBottomUp', { count: midis.length })
+          : t('earTraining.instructions.chordRequested', {
+              degrees: requestedOrder!.map((i) => chordDegreeName(type.intervals[i])).join(' · '),
+            });
 
     return {
       prompt: chordScript(midis),
@@ -165,26 +179,29 @@ const majorMinor: ExerciseDefinition = {
     const rootMidi = randomMidiAvoiding(ctx.range.low, hi, ctx.previousPc);
     const quality: ChordTypeId = Math.random() < 0.5 ? 'maj' : 'min';
     const midis = chordMidis(rootMidi, quality);
-    const qualityWord = quality === 'min' ? 'minor' : 'major';
+    const qualityLabel = (q: string) => (q === 'min' ? t('earTraining.quality.minor') : t('earTraining.quality.major'));
 
     return {
       prompt: chordScript(midis),
       answerPrompt: answerArpeggio(midis),
-      instruction: 'Major or minor?',
+      instruction: t('earTraining.instructions.majorMinor'),
       answerPc: pitchClassOf(rootMidi),
       response: {
         kind: 'choice',
         options: [
-          { id: 'maj', label: 'Major' },
-          { id: 'min', label: 'Minor' },
+          { id: 'maj', label: qualityLabel('maj') },
+          { id: 'min', label: qualityLabel('min') },
         ],
         evaluate: (chosenId) =>
           evaluateChoice({
             chosen: chosenId,
             correct: quality,
-            expectedLabel: qualityWord[0].toUpperCase() + qualityWord.slice(1),
-            chosenLabel: chosenId === 'maj' ? 'Major' : 'Minor',
-            detail: `that was a ${qualityWord} chord on ${noteName(rootMidi)}`,
+            expectedLabel: qualityLabel(quality),
+            chosenLabel: qualityLabel(chosenId),
+            detail:
+              quality === 'min'
+                ? t('earTraining.feedback.wasMinor', { note: noteName(rootMidi) })
+                : t('earTraining.feedback.wasMajor', { note: noteName(rootMidi) }),
           }),
       },
     };
@@ -204,10 +221,10 @@ const pitchMemory: ExerciseDefinition = {
   needsMic: true,
   rounds: 3,
   difficulties: [
-    { id: 'easy', label: '5 sec' },
-    { id: 'medium', label: '10 sec' },
-    { id: 'hard', label: '20 sec' },
-    { id: 'expert', label: '30 sec' },
+    level('easy', 'earTraining.levels.seconds', { count: 5 }),
+    level('medium', 'earTraining.levels.seconds', { count: 10 }),
+    level('hard', 'earTraining.levels.seconds', { count: 20 }),
+    level('expert', 'earTraining.levels.seconds', { count: 30 }),
   ],
   defaultDifficulty: 'easy',
   makeRound(ctx: RoundContext): EarRound {
@@ -216,7 +233,7 @@ const pitchMemory: ExerciseDefinition = {
     return {
       prompt: noteScript(midi),
       answerPrompt: noteScript(midi),
-      instruction: 'Sing the note you remembered',
+      instruction: t('earTraining.instructions.remembered'),
       answerPc: pc,
       response: {
         kind: 'sing',
@@ -246,9 +263,9 @@ const melodyEcho: ExerciseDefinition = {
   needsMic: true,
   rounds: 4,
   difficulties: [
-    { id: 'beginner', label: '2 notes' },
-    { id: 'intermediate', label: '3–4 notes' },
-    { id: 'advanced', label: '5–8 notes' },
+    level('beginner', 'earTraining.levels.notes', { range: '2' }),
+    level('intermediate', 'earTraining.levels.notes', { range: '3–4' }),
+    level('advanced', 'earTraining.levels.notes', { range: '5–8' }),
   ],
   defaultDifficulty: 'beginner',
   resultMs: 3200,
@@ -258,7 +275,7 @@ const melodyEcho: ExerciseDefinition = {
     return {
       prompt,
       answerPrompt: prompt,
-      instruction: 'Sing it back',
+      instruction: t('earTraining.instructions.singBack'),
       answerPc: pitchClassOf(notes[notes.length - 1].midi),
       response: {
         kind: 'sing',
@@ -283,10 +300,10 @@ const CONFUSABLE_CHORDS: [ChordTypeId, ChordTypeId][] = [
   ['min7', 'dom7'],
 ];
 
-const SCALE_RUNS: { label: string; steps: number[] }[] = [
-  { label: 'major', steps: [0, 2, 4, 5, 7] },
-  { label: 'minor', steps: [0, 2, 3, 5, 7] },
-  { label: 'lydian', steps: [0, 2, 4, 6, 7] },
+const SCALE_RUNS: { labelKey: ParseKeys; steps: number[] }[] = [
+  { labelKey: 'earTraining.scales.major', steps: [0, 2, 4, 5, 7] },
+  { labelKey: 'earTraining.scales.minor', steps: [0, 2, 3, 5, 7] },
+  { labelKey: 'earTraining.scales.lydian', steps: [0, 2, 4, 6, 7] },
 ];
 
 function runScript(root: number, steps: number[]): PromptScript {
@@ -318,7 +335,11 @@ function makeOddSet(variant: string, range: { low: number; high: number }): OddS
     return {
       slots,
       oddIndex,
-      explanation: `two were ${CHORD_TYPES[baseType].label.toLowerCase()} chords — number ${oddIndex + 1} was ${CHORD_TYPES[oddType].label.toLowerCase()}`,
+      explanation: t('earTraining.feedback.oddChords', {
+        base: CHORD_TYPES[baseType].label.toLowerCase(),
+        odd: CHORD_TYPES[oddType].label.toLowerCase(),
+        number: oddIndex + 1,
+      }),
     };
   }
 
@@ -329,7 +350,11 @@ function makeOddSet(variant: string, range: { low: number; high: number }): OddS
     return {
       slots,
       oddIndex,
-      explanation: `two runs were ${base.label} — number ${oddIndex + 1} was ${odd.label}`,
+      explanation: t('earTraining.feedback.oddScales', {
+        base: t(base.labelKey),
+        odd: t(odd.labelKey),
+        number: oddIndex + 1,
+      }),
     };
   }
 
@@ -344,7 +369,11 @@ function makeOddSet(variant: string, range: { low: number; high: number }): OddS
   return {
     slots,
     oddIndex,
-    explanation: `two were ${intervalLabel(base).toLowerCase()}s — number ${oddIndex + 1} was a ${intervalLabel(odd).toLowerCase()}`,
+    explanation: t('earTraining.feedback.oddIntervals', {
+      base: intervalLabel(base).toLowerCase(),
+      odd: intervalLabel(odd).toLowerCase(),
+      number: oddIndex + 1,
+    }),
   };
 }
 
@@ -355,9 +384,9 @@ const oddOneOut: ExerciseDefinition = {
   needsMic: false,
   rounds: 6,
   difficulties: [
-    { id: 'intervals', label: 'Intervals' },
-    { id: 'chords', label: 'Chords' },
-    { id: 'scales', label: 'Scales' },
+    level('intervals', 'earTraining.levels.intervals'),
+    level('chords', 'earTraining.levels.chords'),
+    level('scales', 'earTraining.levels.scales'),
   ],
   defaultDifficulty: 'intervals',
   makeRound(ctx: RoundContext): EarRound {
@@ -365,7 +394,7 @@ const oddOneOut: ExerciseDefinition = {
     return {
       prompt: sequenceScripts(set.slots, 0.8),
       answerPrompt: set.slots[set.oddIndex],
-      instruction: 'Which one was different?',
+      instruction: t('earTraining.instructions.whichDifferent'),
       answerPc: set.oddIndex, // not a pitch class; harmless variety seed
       response: {
         kind: 'choice',
@@ -378,8 +407,8 @@ const oddOneOut: ExerciseDefinition = {
           evaluateChoice({
             chosen: chosenId,
             correct: String(set.oddIndex),
-            expectedLabel: `Number ${set.oddIndex + 1}`,
-            chosenLabel: `Number ${Number(chosenId) + 1}`,
+            expectedLabel: t('earTraining.number', { number: set.oddIndex + 1 }),
+            chosenLabel: t('earTraining.number', { number: Number(chosenId) + 1 }),
             detail: set.explanation,
           }),
       },
@@ -405,7 +434,7 @@ const finishMelody: ExerciseDefinition = {
     return {
       prompt: melodyScript(melody.played),
       answerPrompt: melodyScript(melody.full),
-      instruction: 'Sing the missing last note',
+      instruction: t('earTraining.instructions.missingLast'),
       answerPc: pc,
       response: {
         kind: 'sing',
@@ -454,11 +483,7 @@ const singInterval: ExerciseDefinition = {
   tagline: 'Hear a full interval, then sing the target note back from memory.',
   needsMic: true,
   rounds: 5,
-  difficulties: [
-    { id: 'beginner', label: 'Beginner' },
-    { id: 'intermediate', label: 'Intermediate' },
-    { id: 'advanced', label: 'Advanced' },
-  ],
+  difficulties: STANDARD_LEVELS(),
   defaultDifficulty: 'beginner',
   makeRound(ctx: RoundContext): EarRound {
     const task = pick(INTERVAL_POOLS[ctx.difficulty ?? 'beginner'] ?? INTERVAL_POOLS.beginner);
@@ -467,18 +492,21 @@ const singInterval: ExerciseDefinition = {
     const refMidi = randomMidiAvoiding(Math.min(refLow, refHigh), Math.max(refLow, refHigh), ctx.previousPc);
     const targetMidi = refMidi + task.direction * task.semitones;
     const pc = pitchClassOf(targetMidi);
-    const dirWord = task.direction === 1 ? 'above' : 'below';
     const label = intervalLabel(task.semitones).toLowerCase();
+    const relation =
+      task.direction === 1
+        ? t('earTraining.intervalAbove', { interval: label })
+        : t('earTraining.intervalBelow', { interval: label });
 
     return {
       prompt: sequenceScripts([noteScript(refMidi, 0.8), noteScript(targetMidi, 1.2)], 0.15),
-      instruction: `Remember it — sing the second note back (a ${label} ${dirWord})`,
+      instruction: t('earTraining.instructions.rememberSecond', { relation }),
       answerPc: pc,
       response: {
         kind: 'sing',
         windowMs: SINGLE_NOTE_WINDOW_MS + 600,
-        countdownSec: 3,
-        evaluate: (frames) => evaluateSingleTarget(frames, pc, `${noteName(targetMidi)} (${label} ${dirWord})`),
+        countdownSec: 0,
+        evaluate: (frames) => evaluateSingleTarget(frames, pc, `${noteName(targetMidi)} (${relation})`, noteName(targetMidi)),
       },
     };
   },
@@ -494,11 +522,7 @@ const echoInterval: ExerciseDefinition = {
   tagline: 'Hear two notes together, then sing that same interval back.',
   needsMic: true,
   rounds: 5,
-  difficulties: [
-    { id: 'beginner', label: 'Beginner' },
-    { id: 'intermediate', label: 'Intermediate' },
-    { id: 'advanced', label: 'Advanced' },
-  ],
+  difficulties: STANDARD_LEVELS(),
   defaultDifficulty: 'beginner',
   resultMs: 3200,
   makeRound(ctx: RoundContext): EarRound {
@@ -516,7 +540,7 @@ const echoInterval: ExerciseDefinition = {
     return {
       prompt,
       answerPrompt: prompt,
-      instruction: 'Sing it back — both notes',
+      instruction: t('earTraining.instructions.bothNotes'),
       answerPc: pitchClassOf(targetMidi),
       response: {
         kind: 'sing',
@@ -532,18 +556,19 @@ const echoInterval: ExerciseDefinition = {
  * Registry                                                            *
  * ------------------------------------------------------------------ */
 
-export const EXERCISES: ExerciseDefinition[] = [
-  noteEcho,
-  chordTones,
-  melodyEcho,
-  pitchMemory,
-  echoInterval,
-  singInterval,
-  finishMelody,
-  majorMinor,
-  oddOneOut,
-];
+// titles/taglines share the `earExercise` content ids with the learning catalog
+export const EXERCISES: ExerciseDefinition[] = localizeContent(
+  'earExercise',
+  [noteEcho, chordTones, melodyEcho, pitchMemory, echoInterval, singInterval, finishMelody, majorMinor, oddOneOut],
+  (e) => e.id,
+  ['title', 'tagline']
+);
 
 export function exerciseById(id: string): ExerciseDefinition | undefined {
   return EXERCISES.find((e) => e.id === id);
+}
+
+/** Localised label of one difficulty tier, falling back to the raw id. */
+export function difficultyLabel(exerciseId: string, difficultyId: string): string {
+  return exerciseById(exerciseId)?.difficulties?.find((d) => d.id === difficultyId)?.label ?? difficultyId;
 }

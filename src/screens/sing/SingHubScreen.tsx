@@ -25,6 +25,7 @@ import { PremiumGate, useEntitlement } from '@/features/subscription';
 import { RangeSuggestionBanner } from '@/features/vocal-range';
 import { AppText, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
+import { useTranslation } from '@/shared/i18n';
 import { useFloatingTabBarClearance } from '@/app/navigation/FloatingTabBar';
 import type { SingScreenProps } from '@/app/navigation/types';
 import { beginStep, continuePractice, ensureTodaysLesson } from '../session/lessonFlow';
@@ -39,10 +40,8 @@ import { PlanCard } from '../home/ui/PlanCard';
 import { SoftCard } from '../home/ui/SoftCard';
 import { SoftRow } from '../home/ui/SoftRow';
 
-const GENERIC_HERO_TITLE = 'Build a consistent habit';
-const GENERIC_HERO_SUBCOPY = 'Practice a little every day and see the difference.';
-
 export function SingHubScreen({ navigation }: SingScreenProps<'SingHub'>) {
+  const { t } = useTranslation();
   const { spacing, typography } = useTheme();
   const tabBarClearance = useFloatingTabBarClearance(spacing.xl);
   const sessions = useProgressStore((s) => s.sessions);
@@ -87,18 +86,18 @@ export function SingHubScreen({ navigation }: SingScreenProps<'SingHub'>) {
    */
   const coachTeaser = useMemo(() => {
     const strongest = noteHeatmap(sessions)
-      .filter((t) => t.count >= 5 && Math.abs(t.avgCents) >= 20)
+      .filter((n) => n.count >= 5 && Math.abs(n.avgCents) >= 20)
       .sort((a, b) => Math.abs(b.avgCents) - Math.abs(a.avgCents))[0];
     if (!strongest) return undefined;
-    const direction = strongest.avgCents > 0 ? 'sharp' : 'flat';
-    return `Already measured: on ${strongest.name} you average ${Math.round(Math.abs(strongest.avgCents))}¢ ${direction}.`;
-  }, [sessions]);
+    const params = { note: strongest.name, cents: Math.round(Math.abs(strongest.avgCents)) };
+    return strongest.avgCents > 0 ? t('sing.hub.coachTeaserSharp', params) : t('sing.hub.coachTeaserFlat', params);
+  }, [sessions, t]);
 
   const next = planReady ? nextGuidedStep({ steps, completedSlots }) : null;
   const doneCount = steps.filter((s) => completedSlots.includes(s.slot)).length;
   const allDone = planReady && steps.length > 0 && next === null;
 
-  const heroTitle = adaptive && weeklyFocus ? FOCUS_TITLES[weeklyFocus.skill] : GENERIC_HERO_TITLE;
+  const heroTitle = adaptive && weeklyFocus ? FOCUS_TITLES[weeklyFocus.skill] : t('sing.hub.heroTitle');
 
   return (
     <Screen backdrop={<TodayBackground />} noBottomPadding>
@@ -107,16 +106,16 @@ export function SingHubScreen({ navigation }: SingScreenProps<'SingHub'>) {
           color={todayColor.ink}
           style={{ fontFamily: typography.family.bold, fontSize: 40, lineHeight: 44, letterSpacing: -0.8 }}
         >
-          Sing
+          {t('sing.hub.title')}
         </AppText>
 
         <View style={{ marginTop: spacing.xl }}>
-          <HeroFocusCard eyebrow="This week's focus" title={heroTitle} subcopy={GENERIC_HERO_SUBCOPY} />
+          <HeroFocusCard eyebrow={t('sing.hub.weekFocus')} title={heroTitle} subcopy={t('sing.hub.heroSubcopy')} />
         </View>
 
         <View style={{ marginTop: spacing.xl }}>
           <AppText color={todayColor.ink} style={{ fontFamily: typography.family.medium, fontSize: 16, marginBottom: spacing.md }}>
-            Daily progress
+            {t('sing.hub.dailyProgress')}
           </AppText>
           <DailyStats accuracy={todayStats.accuracy} streak={streak} practiceLabel={todayStats.practiceLabel} />
         </View>
@@ -126,8 +125,8 @@ export function SingHubScreen({ navigation }: SingScreenProps<'SingHub'>) {
           <View style={{ marginTop: spacing.xl }}>
             <SoftRow
               icon="flag"
-              title="Set your goal"
-              subtitle="Tell us what you're working toward — your daily practice is built around it."
+              title={t('sing.hub.setGoal')}
+              subtitle={t('sing.hub.setGoalSubtitle')}
               onPress={() => navigation.navigate('LearningPreferences')}
             />
           </View>
@@ -149,8 +148,8 @@ export function SingHubScreen({ navigation }: SingScreenProps<'SingHub'>) {
         <View style={{ marginTop: spacing.xl }}>
           <SoftRow
             icon="cloud-upload"
-            title="Sing with instrumental"
-            subtitle="Upload a backing track — we'll detect its key and grade you against it"
+            title={t('sing.upload.title')}
+            subtitle={t('sing.hub.instrumentalSubtitle')}
             onPress={() => navigation.navigate('InstrumentalUpload')}
           />
         </View>
@@ -161,10 +160,10 @@ export function SingHubScreen({ navigation }: SingScreenProps<'SingHub'>) {
             source="today-coach-card"
             fallback={(openPaywall) => (
               <LightLockedCard
-                title="Your AI vocal coach"
-                description="Get a read on every session — what improved, what slipped, and the one thing worth fixing next."
+                title={t('sing.hub.coachLockedTitle')}
+                description={t('sing.hub.coachLockedBody')}
                 preview={coachTeaser}
-                cta="Meet your coach"
+                cta={t('sing.hub.coachLockedCta')}
                 onPress={openPaywall}
               />
             )}
@@ -172,7 +171,7 @@ export function SingHubScreen({ navigation }: SingScreenProps<'SingHub'>) {
             <SoftCard tint={todayColor.indigoTint} style={{ padding: spacing.lg }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <AppText color={todayColor.inkSecondary} style={{ fontFamily: typography.family.medium, fontSize: 15 }}>
-                  Your coach
+                  {t('sing.hub.yourCoach')}
                 </AppText>
                 <LightPremiumBadge />
               </View>
@@ -189,17 +188,17 @@ export function SingHubScreen({ navigation }: SingScreenProps<'SingHub'>) {
             source="weak-spots"
             fallback={(openPaywall) => (
               <LightLockedCard
-                title="Practice your weak spots"
-                description="Drills generated from the exact intervals, notes and transitions you keep missing — not a generic plan."
-                bullets={['Named from your own history', 'Updates as you improve', 'Every drill shows its evidence']}
+                title={t('sing.hub.weakSpotsTitle')}
+                description={t('sing.hub.weakSpotsLockedBody')}
+                bullets={[t('sing.hub.weakSpotsBullet1'), t('sing.hub.weakSpotsBullet2'), t('sing.hub.weakSpotsBullet3')]}
                 onPress={openPaywall}
               />
             )}
           >
             <SoftRow
               icon="analytics"
-              title="Practice your weak spots"
-              subtitle="Drills built from what you keep slipping on"
+              title={t('sing.hub.weakSpotsTitle')}
+              subtitle={t('sing.hub.weakSpotsSubtitle')}
               onPress={() => navigation.navigate('WeakSpots')}
             />
           </PremiumGate>
@@ -212,7 +211,7 @@ export function SingHubScreen({ navigation }: SingScreenProps<'SingHub'>) {
         {allDone && (
           <View style={{ marginTop: spacing.md }}>
             <PillButton
-              title="Sing something for fun"
+              title={t('sing.hub.forFun')}
               onPress={() => navigation.navigate('ExercisesTab', { screen: 'ExercisesHub' })}
             />
           </View>

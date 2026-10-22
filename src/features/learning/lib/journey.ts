@@ -7,36 +7,37 @@
  * Pure functions over skill state, like the rest of the lib layer.
  */
 import type { SkillId, SkillState } from '../model/types';
+import { t, translatedRecord } from '@/shared/i18n';
 import { SKILL_LABELS } from '../model/types';
 import { BAND_LABELS, masteryBand } from './mastery';
 import { SKILL_TREE, SKILL_TREE_CATEGORIES, type LessonNode, type SkillCategory } from './skillTree';
 
 /** outcome-language area titles — never expose internal category names */
-export const JOURNEY_AREA_TITLES: Record<SkillCategory, string> = {
-  pitch: 'Sing in Tune',
-  intervals: 'Hear Intervals',
-  chords: 'Hear Chords',
-  melody: 'Master Melodies',
-  rhythm: 'Keep the Beat',
-  tonality: 'Feel the Key',
-  'voice-control': 'Control Your Voice',
-  'musical-memory': 'Remember Music',
-  'sight-singing': 'Sing from Notation',
-  performance: 'Put It All Together',
-};
+export const JOURNEY_AREA_TITLES: Record<SkillCategory, string> = translatedRecord<SkillCategory>({
+  pitch: 'learning.journeyAreas.pitch.title',
+  intervals: 'learning.journeyAreas.intervals.title',
+  chords: 'learning.journeyAreas.chords.title',
+  melody: 'learning.journeyAreas.melody.title',
+  rhythm: 'learning.journeyAreas.rhythm.title',
+  tonality: 'learning.journeyAreas.tonality.title',
+  'voice-control': 'learning.journeyAreas.voiceControl.title',
+  'musical-memory': 'learning.journeyAreas.musicalMemory.title',
+  'sight-singing': 'learning.journeyAreas.sightSinging.title',
+  performance: 'learning.journeyAreas.performance.title',
+});
 
-export const JOURNEY_AREA_TAGLINES: Record<SkillCategory, string> = {
-  pitch: 'Land the note you hear, every time',
-  intervals: 'Know the distance between any two notes',
-  chords: 'Recognize harmony and sing along with it',
-  melody: 'Pick up tunes quickly and sing them back',
-  rhythm: 'Stay in time without thinking about it',
-  tonality: 'Sense major, minor, and where home is',
-  'voice-control': 'A steady, even tone across your range',
-  'musical-memory': 'Hold more music in mind, for longer',
-  'sight-singing': 'Sing straight from written music',
-  performance: 'Bring every ability together',
-};
+export const JOURNEY_AREA_TAGLINES: Record<SkillCategory, string> = translatedRecord<SkillCategory>({
+  pitch: 'learning.journeyAreas.pitch.tagline',
+  intervals: 'learning.journeyAreas.intervals.tagline',
+  chords: 'learning.journeyAreas.chords.tagline',
+  melody: 'learning.journeyAreas.melody.tagline',
+  rhythm: 'learning.journeyAreas.rhythm.tagline',
+  tonality: 'learning.journeyAreas.tonality.tagline',
+  'voice-control': 'learning.journeyAreas.voiceControl.tagline',
+  'musical-memory': 'learning.journeyAreas.musicalMemory.tagline',
+  'sight-singing': 'learning.journeyAreas.sightSinging.tagline',
+  performance: 'learning.journeyAreas.performance.tagline',
+});
 
 /** mastery of a milestone's primary skill at which it counts as achieved */
 export const MILESTONE_DONE_MASTERY = 55;
@@ -69,7 +70,7 @@ export interface JourneyArea {
 
 function lockedHint(node: LessonNode): string {
   const skills = [...new Set(node.requires.map((r) => SKILL_LABELS[r.skill].toLowerCase()))];
-  return `Grows out of your ${skills.join(' and ')} — it unlocks as you keep practicing`;
+  return t('learning.journeyLockedHint', { skills: skills.join(t('common.and')) });
 }
 
 export function buildJourneyArea(category: SkillCategory, skills: Record<SkillId, SkillState>): JourneyArea {

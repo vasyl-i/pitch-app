@@ -15,12 +15,17 @@ import {
 } from '@/features/learning';
 import { AppText, BackButton, Card, IconBubble, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
+import { useTranslation } from '@/shared/i18n';
 import type { ProgressScreenProps } from '@/app/navigation/types';
 
 export function JourneyAreaScreen({ navigation, route }: ProgressScreenProps<'JourneyArea'>) {
+  const { t, i18n } = useTranslation();
   const { palette, spacing } = useTheme();
   const skills = useLearningStore((s) => s.skills);
-  const area = useMemo(() => buildJourneyArea(route.params.category, skills), [route.params.category, skills]);
+  const area = useMemo(
+    () => buildJourneyArea(route.params.category, skills),
+    [route.params.category, skills, i18n.language]
+  );
 
   const strongest = area.skills.find((s) => s.state.exercisesCompleted > 0);
   const workingOn = [...area.skills].reverse().find((s) => s.state.exercisesCompleted > 0);
@@ -48,9 +53,9 @@ export function JourneyAreaScreen({ navigation, route }: ProgressScreenProps<'Jo
 
         <Card style={[styles.card, { marginTop: spacing.lg }]}>
           <View style={styles.rowBetween}>
-            <AppText variant="caption">Where you are</AppText>
+            <AppText variant="caption">{t('journey.whereYouAre')}</AppText>
             <AppText variant="caption">
-              {area.doneCount} of {area.totalCount} milestones
+              {t('journey.milestonesCount', { done: area.doneCount, count: area.totalCount })}
             </AppText>
           </View>
           <View style={[styles.track, { backgroundColor: palette.borderSubtle, marginTop: spacing.md }]}>
@@ -70,7 +75,7 @@ export function JourneyAreaScreen({ navigation, route }: ProgressScreenProps<'Jo
                 <View style={styles.skillRow}>
                   <Ionicons name="sparkles" size={13} color={palette.accent} />
                   <AppText variant="caption">
-                    Strongest: {strongest.label} — {strongest.bandLabel.toLowerCase()}
+                    {t('journey.strongest', { skill: strongest.label, band: strongest.bandLabel.toLowerCase() })}
                   </AppText>
                 </View>
               )}
@@ -78,19 +83,19 @@ export function JourneyAreaScreen({ navigation, route }: ProgressScreenProps<'Jo
                 <View style={styles.skillRow}>
                   <Ionicons name="trending-up" size={13} color={palette.textFaint} />
                   <AppText variant="caption">
-                    Growing: {workingOn.label} — {workingOn.bandLabel.toLowerCase()}
+                    {t('journey.growing', { skill: workingOn.label, band: workingOn.bandLabel.toLowerCase() })}
                   </AppText>
                 </View>
               )}
             </View>
           )}
           <AppText variant="caption" style={{ marginTop: spacing.md }}>
-            Your daily practice on Home moves this forward automatically.
+            {t('journey.autoProgress')}
           </AppText>
         </Card>
 
         <AppText variant="caption" style={[styles.sectionHeader, { color: palette.textFaint }]}>
-          Milestones
+          {t('journey.milestones')}
         </AppText>
         {area.milestones.map((m) => (
           <MilestoneRow key={m.node.id} milestone={m} onReplay={() => replay(m)} />
@@ -101,6 +106,7 @@ export function JourneyAreaScreen({ navigation, route }: ProgressScreenProps<'Jo
 }
 
 function MilestoneRow({ milestone, onReplay }: { milestone: JourneyMilestone; onReplay: () => void }) {
+  const { t } = useTranslation();
   const m = milestone;
   const actionable = m.state === 'done' || m.state === 'current';
   // plain glyphs, not the filled "-circle" variants — those draw their own
@@ -109,12 +115,12 @@ function MilestoneRow({ milestone, onReplay }: { milestone: JourneyMilestone; on
   const icon = m.state === 'done' ? 'checkmark' : m.state === 'current' ? 'play' : m.state === 'upcoming' ? 'ellipse-outline' : 'lock-closed';
   const caption =
     m.state === 'done'
-      ? 'Completed'
+      ? t('home.status.completed')
       : m.state === 'current'
-        ? 'Where you are now'
+        ? t('journey.current')
         : m.state === 'upcoming'
-          ? 'Coming up'
-          : (m.lockedHint ?? 'Locked for now');
+          ? t('journey.upcoming')
+          : (m.lockedHint ?? t('journey.locked'));
 
   const content = (pressed?: boolean) => (
     <Card style={[styles.milestone, m.state === 'locked' && { opacity: 0.55 }, pressed && { opacity: 0.85 }]}>
@@ -133,7 +139,7 @@ function MilestoneRow({ milestone, onReplay }: { milestone: JourneyMilestone; on
   if (!actionable) return content();
 
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={m.state === 'done' ? 'Replay' : 'Practice'} onPress={onReplay}>
+    <Pressable accessibilityRole="button" accessibilityLabel={m.state === 'done' ? t('journey.replay') : t('home.practice')} onPress={onReplay}>
       {({ pressed }) => content(pressed)}
     </Pressable>
   );

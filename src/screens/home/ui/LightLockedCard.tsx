@@ -2,6 +2,7 @@ import { View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
+import { useTranslation } from '@/shared/i18n';
 import { todayColor } from '../todayPalette';
 import { LightPremiumBadge } from './LightPremiumBadge';
 import { SoftCard } from './SoftCard';
@@ -18,7 +19,7 @@ export function LightLockedCard({
   description,
   preview,
   bullets,
-  cta = 'See Premium',
+  cta,
   onPress,
 }: {
   title: string;
@@ -28,6 +29,7 @@ export function LightLockedCard({
   cta?: string;
   onPress: () => void;
 }) {
+  const { t } = useTranslation();
   const { spacing } = useTheme();
 
   return (
@@ -67,7 +69,7 @@ export function LightLockedCard({
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: spacing.md }}>
         <AppText color={todayColor.indigoDeep} variant="label" style={{ fontSize: 13.5 }}>
-          {cta}
+          {cta ?? t('subscription.seePremium')}
         </AppText>
         <Ionicons name="arrow-forward" size={13} color={todayColor.indigoDeep} />
       </View>

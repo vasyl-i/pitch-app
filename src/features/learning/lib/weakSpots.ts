@@ -18,6 +18,8 @@
  * the injected `now`. Runs under `node --test`.
  */
 import type { Activity, SkillId, SkillState } from '../model/types';
+import type { ParseKeys } from 'i18next';
+import { t } from '@/shared/i18n';
 import { SKILL_LABELS } from '../model/types';
 
 /* ------------------------------------------------------------------ *
@@ -98,21 +100,21 @@ const SKILL_GAP = 12;
 
 const PITCH_NAMES = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
 
-/** interval names by absolute semitones */
-const INTERVAL_NAMES = [
-  'unison',
-  'minor 2nds',
-  'major 2nds',
-  'minor 3rds',
-  'major 3rds',
-  'perfect 4ths',
-  'tritones',
-  'perfect 5ths',
-  'minor 6ths',
-  'major 6ths',
-  'minor 7ths',
-  'major 7ths',
-  'octaves',
+/** interval names (plural, lower-case) by absolute semitones */
+const INTERVAL_NAME_KEYS: ParseKeys[] = [
+  'learning.weakSpots.intervals.unison',
+  'learning.weakSpots.intervals.m2',
+  'learning.weakSpots.intervals.M2',
+  'learning.weakSpots.intervals.m3',
+  'learning.weakSpots.intervals.M3',
+  'learning.weakSpots.intervals.P4',
+  'learning.weakSpots.intervals.tritone',
+  'learning.weakSpots.intervals.P5',
+  'learning.weakSpots.intervals.m6',
+  'learning.weakSpots.intervals.M6',
+  'learning.weakSpots.intervals.m7',
+  'learning.weakSpots.intervals.M7',
+  'learning.weakSpots.intervals.octave',
 ];
 
 export function midiName(midi: number): string {
@@ -124,16 +126,16 @@ export function intervalName(key: string): string {
   const semitones = Number(key);
   if (!Number.isFinite(semitones) || semitones === 0) return key;
   const abs = Math.abs(semitones);
-  const name = INTERVAL_NAMES[abs] ?? `${abs}-semitone leaps`;
-  if (abs > 12) return `${semitones > 0 ? 'Ascending' : 'Descending'} leaps over an octave`;
-  return `${semitones > 0 ? 'Ascending' : 'Descending'} ${name}`;
+  if (abs > 12) return semitones > 0 ? t('learning.weakSpots.ascendingOverOctave') : t('learning.weakSpots.descendingOverOctave');
+  const name = t(INTERVAL_NAME_KEYS[abs]);
+  return semitones > 0 ? t('learning.weakSpots.ascending', { name }) : t('learning.weakSpots.descending', { name });
 }
 
 const accuracy = (t: Tally): number => (t.count === 0 ? 1 : t.perfect / t.count);
 const avgCents = (t: Tally): number => (t.count === 0 ? 0 : t.centsSum / t.count);
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
-const sharpFlat = (cents: number) => (cents > 0 ? 'sharp' : 'flat');
+
 
 /* ------------------------------------------------------------------ *
  * Activity matching                                                   *
@@ -176,8 +178,11 @@ export function findWeakSpots(input: WeakSpotInput, limit = 5): WeakSpot[] {
       title: intervalName(key),
       evidence:
         Math.abs(cents) >= WEAK_CENTS
-          ? `You land these about ${Math.round(Math.abs(cents))}¢ ${sharpFlat(cents)}, across ${tally.count} attempts.`
-          : `You hit these cleanly ${Math.round(acc * 100)}% of the time, across ${tally.count} attempts.`,
+          ? t(cents > 0 ? 'learning.weakSpots.intervalSharp' : 'learning.weakSpots.intervalFlat', {
+              cents: Math.round(Math.abs(cents)),
+              count: tally.count,
+            })
+          : t('learning.weakSpots.intervalClean', { pct: Math.round(acc * 100), count: tally.count }),
       severity: clamp((1 - acc) * 60 + Math.min(Math.abs(cents), 50), 0, 100),
       observations: tally.count,
       skill,
@@ -203,8 +208,12 @@ export function findWeakSpots(input: WeakSpotInput, limit = 5): WeakSpot[] {
     spots.push({
       id: `note:${midiKey}`,
       kind: 'note',
-      title: `${midiName(midi)} accuracy`,
-      evidence: `On ${midiName(midi)} you average ${Math.round(Math.abs(cents))}¢ ${sharpFlat(cents)} over ${tally.count} notes.`,
+      title: t('learning.weakSpots.noteTitle', { note: midiName(midi) }),
+      evidence: t(cents > 0 ? 'learning.weakSpots.noteSharp' : 'learning.weakSpots.noteFlat', {
+        note: midiName(midi),
+        cents: Math.round(Math.abs(cents)),
+        count: tally.count,
+      }),
       severity: clamp((1 - acc) * 50 + Math.min(Math.abs(cents), 45), 0, 100),
       observations: tally.count,
       skill,
@@ -218,8 +227,8 @@ export function findWeakSpots(input: WeakSpotInput, limit = 5): WeakSpot[] {
     spots.push({
       id: 'stability',
       kind: 'stability',
-      title: 'Sustained note stability',
-      evidence: `Your held notes score ${Math.round(input.avgStability)}/100 — the pitch drifts while you hold it.`,
+      title: t('learning.weakSpots.stabilityTitle'),
+      evidence: t('learning.weakSpots.stabilityEvidence', { score: Math.round(input.avgStability) }),
       severity: clamp(WEAK_SCORE - input.avgStability + 25, 0, 100),
       observations: input.skills[skill].exercisesCompleted,
       skill,
@@ -233,8 +242,8 @@ export function findWeakSpots(input: WeakSpotInput, limit = 5): WeakSpot[] {
     spots.push({
       id: 'rhythm',
       kind: 'rhythm',
-      title: 'Timing & rhythm',
-      evidence: `Your rhythm scores average ${Math.round(input.avgRhythm)}/100 — notes land early or late.`,
+      title: t('learning.weakSpots.rhythmTitle'),
+      evidence: t('learning.weakSpots.rhythmEvidence', { score: Math.round(input.avgRhythm) }),
       severity: clamp(WEAK_SCORE - input.avgRhythm + 20, 0, 100),
       observations: input.skills[skill].exercisesCompleted,
       skill,
@@ -256,7 +265,7 @@ export function findWeakSpots(input: WeakSpotInput, limit = 5): WeakSpot[] {
         id: `skill:${skill}`,
         kind: 'skill',
         title: SKILL_LABELS[skill],
-        evidence: `At ${state.mastery}/100 this trails your other skills, which average ${Math.round(mean)}.`,
+        evidence: t('learning.weakSpots.skillGap', { mastery: state.mastery, mean: Math.round(mean) }),
         severity: clamp(mean - state.mastery, 0, 100),
         observations: state.exercisesCompleted,
         skill,
@@ -333,14 +342,20 @@ function findRegisterWeakness(
   if (!best || best.gap < 0.2) return undefined;
 
   const skill: SkillId = 'pitch-stability';
-  const where = `${best.direction} ${midiName(best.boundary)}`;
+  const params = {
+    from: Math.round((accuracy(best.high) + best.gap) * 100),
+    to: Math.round(accuracy(best.high) * 100),
+    note: midiName(best.boundary),
+    count: best.high.count,
+  };
   return {
     id: `register:${best.boundary}`,
     kind: 'register',
-    title: best.direction === 'above' ? 'High register stability' : 'Low register control',
-    evidence: `Your accuracy drops from ${Math.round(
-      (accuracy(best.high) + best.gap) * 100
-    )}% to ${Math.round(accuracy(best.high) * 100)}% ${where}, across ${best.high.count} notes.`,
+    title: best.direction === 'above' ? t('learning.weakSpots.highRegister') : t('learning.weakSpots.lowRegister'),
+    evidence:
+      best.direction === 'above'
+        ? t('learning.weakSpots.registerAbove', params)
+        : t('learning.weakSpots.registerBelow', params),
     severity: clamp(best.gap * 120, 0, 100),
     observations: best.high.count,
     skill,

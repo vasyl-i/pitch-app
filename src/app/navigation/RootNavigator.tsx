@@ -4,6 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Image } from 'react-native';
 import { FloatingTabBar } from './FloatingTabBar';
+import { useTranslation } from '@/shared/i18n';
 import { TabBlurTarget, TabBlurTargetsProvider } from './tabBlurTargets';
 import { TodayScreen } from '@/screens/home';
 import { SingHubScreen, InstrumentalUploadScreen, InstrumentalAnalyzingScreen, InstrumentalSingScreen } from '@/screens/sing';
@@ -11,7 +12,7 @@ import { ExercisesHubScreen } from '@/screens/exercises';
 import { NotificationsScreen } from '@/screens/notifications';
 import { ProgressScreen, WeeklyReviewScreen, PerfectExercisesScreen } from '@/screens/progress';
 import { JourneyScreen, JourneyAreaScreen } from '@/screens/journey';
-import { ProfileScreen, LearningPreferencesScreen, ExerciseSettingsScreen, WeeklyPlanScreen, ExercisePickerScreen, SoundSettingsScreen, ReminderSettingsScreen } from '@/screens/profile';
+import { ProfileScreen, LearningPreferencesScreen, ExerciseSettingsScreen, WeeklyPlanScreen, ExercisePickerScreen, SoundSettingsScreen, LanguageSettingsScreen, ReminderSettingsScreen } from '@/screens/profile';
 import { EarSessionScreen, PracticeCompleteScreen } from '@/screens/session';
 import { PaywallScreen } from '@/screens/paywall';
 import { WeakSpotsScreen } from '@/screens/weak-spots';
@@ -125,6 +126,7 @@ function OnboardingNavigator({ initialRoute = 'Welcome' }: { initialRoute?: keyo
 
 function MainTabs() {
   const { palette } = useTheme();
+  const { t } = useTranslation();
 
   return (
     <TabBlurTargetsProvider>
@@ -145,7 +147,7 @@ function MainTabs() {
         name="HomeTab"
         component={HomeNavigator}
         options={{
-          title: 'Home',
+          title: t('nav.home'),
           tabBarIcon: ({ color, size }) => <Image source={require('../../../assets/bottom-bar/home.png')} style={{ width: size, height: size, tintColor: color }} />,
         }}
       />
@@ -161,7 +163,7 @@ function MainTabs() {
         name="ExercisesTab"
         component={ExercisesNavigator}
         options={{
-          title: 'Exercises',
+          title: t('nav.exercises'),
           tabBarIcon: ({ color, size }) => <Image source={require('../../../assets/bottom-bar/ear.png')} style={{ width: size, height: size, tintColor: color }} />,
         }}
       />
@@ -169,7 +171,7 @@ function MainTabs() {
         name="ProgressTab"
         component={ProgressNavigator}
         options={{
-          title: 'Progress',
+          title: t('nav.progress'),
           tabBarIcon: ({ color, size }) => <Image source={require('../../../assets/bottom-bar/Chart.png')} style={{ width: size, height: size, tintColor: color }} />,
         }}
       />
@@ -177,7 +179,7 @@ function MainTabs() {
         name="AccountTab"
         component={AccountNavigator}
         options={{
-          title: 'Account',
+          title: t('nav.account'),
           tabBarIcon: ({ color, size }) => <Image source={require('../../../assets/bottom-bar/gear.png')} style={{ width: size, height: size, tintColor: color }} />,
         }}
       />
@@ -253,6 +255,7 @@ export function RootNavigator() {
       <RootStack.Screen name="WeeklyPlan" component={WeeklyPlanScreen} />
       <RootStack.Screen name="ExercisePicker" component={ExercisePickerScreen} />
       <RootStack.Screen name="SoundSettings" component={SoundSettingsScreen} />
+      <RootStack.Screen name="LanguageSettings" component={LanguageSettingsScreen} />
       <RootStack.Screen name="ManageSubscription" component={ManageSubscriptionScreen} />
       <RootStack.Screen name="VocalRangeSettings" component={VocalRangeSettingsScreen} />
       <RootStack.Screen name="RedetectLow" component={RedetectLowScreen} />

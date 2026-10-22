@@ -4,6 +4,7 @@ import { starsForScore } from '@/features/progress';
 import { PremiumGate } from '@/features/subscription';
 import { AppText, Button, Card, Screen } from '@/shared/ui';
 import { typography, useTheme } from '@/shared/theme';
+import { useTranslation } from '@/shared/i18n';
 import type { AttemptComparison, PhraseSummary } from '@/features/staff-practice';
 import { midiToName } from '@/shared/lib/music';
 import { voiceType } from '@/entities/profile';
@@ -36,6 +37,7 @@ export function PhraseSummaryCard({
   secondary: SummaryAction;
   tertiary?: SummaryAction;
 }) {
+  const { t } = useTranslation();
   const { palette, spacing } = useTheme();
   // single source of truth — the same helper decides the stars we persist
   const stars = starsForScore(summary.score);
@@ -47,7 +49,7 @@ export function PhraseSummaryCard({
         <View style={{ flex: 1, justifyContent: 'flex-start', alignItems: 'center', paddingTop: 80 }}>
           <View style={styles.scoreFrame}>
             <AppText color={palette.textSecondaryElevated} style={{ fontSize: 14, lineHeight: 16, marginBottom: 12 }}>
-              Phrase score
+              {t('staff.summary.title')}
             </AppText>
             <Image
                 source={require('../../../assets/Score.png')}
@@ -67,7 +69,7 @@ export function PhraseSummaryCard({
                 {`${summary.score}%`}
               </AppText>
               <AppText color={palette.textSecondaryElevated} style={{ fontSize: 12, lineHeight: 14 }}>
-                {`${Math.round(summary.avgCents)}¢ average off  ·  ${summary.rhythm}% rhythm`}
+                {t('staff.summary.meta', { cents: Math.round(summary.avgCents), rhythm: summary.rhythm })}
               </AppText>
             </View>
           </View>
@@ -90,26 +92,27 @@ export function PhraseSummaryCard({
  * unlock feel like claiming something you earned, not buying a mystery.
  */
 function LockedComparison({ comparison, onPress }: { comparison: AttemptComparison; onPress: () => void }) {
+  const { t } = useTranslation();
   const { palette, spacing } = useTheme();
   const wentWell = comparison.trend !== 'slipped';
   return (
-    <Pressable accessibilityRole="button" accessibilityHint="Opens the Premium plans" onPress={onPress}>
+    <Pressable accessibilityRole="button" accessibilityHint={t('session.results.overlayHint')} onPress={onPress}>
       {({ pressed }) => (
         <Card variant="highlighted" style={[{ padding: spacing.md, gap: 6 }, pressed && { opacity: 0.85 }]}>
           <View style={styles.lockRow}>
             <Ionicons name="git-compare" size={15} color={palette.accent} />
             <AppText variant="label" style={{ fontSize: 14, flex: 1 }}>
-              Assisted vs. independent
+              {t('staff.summary.comparisonTitle')}
             </AppText>
             <Ionicons name="lock-closed" size={13} color={palette.textFaint} />
           </View>
           <AppText variant="caption">
             {wentWell
-              ? 'You held up well on your own this time — see the full accuracy, stability and rhythm breakdown with Premium.'
-              : 'Premium shows exactly where the guide was carrying you — accuracy, stability and rhythm, side by side.'}
+              ? t('staff.summary.comparisonWell')
+              : t('staff.summary.comparisonSlipped')}
           </AppText>
           <AppText variant="caption" color={palette.accent} style={{ fontSize: 12 }}>
-            Unlock comparison →
+            {t('staff.summary.unlockComparison')}
           </AppText>
         </Card>
       )}

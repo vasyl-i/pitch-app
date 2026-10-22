@@ -29,6 +29,8 @@ import { useSoundStore, SOUND_TYPE_LABELS } from '@/shared/audio';
 import { midiToName } from '@/shared/lib/music';
 import { AppText, Screen } from '@/shared/ui';
 import { typography, useTheme } from '@/shared/theme';
+import { currentLanguage, formatTime, LANGUAGE_NAMES, t, useTranslation } from '@/shared/i18n';
+import { languageFlag, savedLanguage } from '@/shared/i18n/device';
 import { useFloatingTabBarClearance } from '@/app/navigation/FloatingTabBar';
 import type { ProfileScreenProps } from '@/app/navigation/types';
 import { Ionicons } from '@expo/vector-icons';
@@ -40,19 +42,19 @@ const FEEDBACK_EMAIL = 'legal@anyabedrytska.com';
 /** No mail app installed (always the case on the iOS Simulator) — show the address instead. */
 function openFeedbackEmail() {
   Linking.openURL(`mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent('PitchGym Feedback')}`).catch(() => {
-    Toast.show({ type: 'info', text1: 'No email app found', text2: `Write to us at ${FEEDBACK_EMAIL}` });
+    Toast.show({ type: 'info', text1: t('profile.noEmailApp'), text2: t('profile.writeToUs', { email: FEEDBACK_EMAIL }) });
   });
 }
 
 function reminderSubtitle(hour: number | null, minute: number): string {
-  if (hour == null) return 'Off — tap to set a daily reminder';
-  const period = hour < 12 ? 'AM' : 'PM';
-  const h = hour % 12 || 12;
-  const m = minute.toString().padStart(2, '0');
-  return `Daily at ${h}:${m} ${period}`;
+  if (hour == null) return t('profile.reminderOff');
+  const at = new Date();
+  at.setHours(hour, minute, 0, 0);
+  return t('profile.reminderDaily', { time: formatTime(at) });
 }
 
 export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>) {
+  const { t } = useTranslation();
   const { palette, spacing, radii } = useTheme();
   const tabBarClearance = useFloatingTabBarClearance(spacing.xl);
   const profile = useProfileStore((s) => s.profile);
@@ -67,9 +69,9 @@ export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>)
   const range = profile?.comfortRange ?? null;
 
   const handleLogout = () => {
-    Alert.alert('Log out', 'Are you sure you want to log out?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Log out', style: 'destructive', onPress: () => signOut() },
+    Alert.alert(t('profile.logOut'), t('profile.logOutConfirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('profile.logOut'), style: 'destructive', onPress: () => signOut() },
     ]);
   };
 
@@ -79,13 +81,13 @@ export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>)
         ? 'https://apps.apple.com/account/subscriptions'
         : 'https://play.google.com/store/account/subscriptions';
       Alert.alert(
-        'Active subscription',
-        'You have an active Premium subscription. Please cancel it in your device\'s subscription settings first, then delete your account. Deleting your account will not automatically cancel your subscription.',
+        t('profile.activeSub.title'),
+        t('profile.activeSub.message'),
         [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Manage subscription', onPress: () => Linking.openURL(manageUrl) },
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('profile.activeSub.manage'), onPress: () => Linking.openURL(manageUrl) },
           {
-            text: 'Delete anyway',
+            text: t('profile.activeSub.deleteAnyway'),
             style: 'destructive',
             onPress: () => confirmDeleteAccount(),
           },
@@ -98,19 +100,19 @@ export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>)
 
   const confirmDeleteAccount = () => {
     Alert.alert(
-      'Delete account',
-      'This will permanently delete your account and all your data. This action cannot be undone.',
+      t('profile.deleteAccount'),
+      t('profile.delete.message'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: () => {
-            Alert.alert('Are you sure?', 'All your progress, settings, and practice history will be lost forever.', [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Delete my account', style: 'destructive', onPress: () => {
+            Alert.alert(t('profile.delete.sureTitle'), t('profile.delete.sureMessage'), [
+              { text: t('common.cancel'), style: 'cancel' },
+              { text: t('profile.delete.confirm'), style: 'destructive', onPress: () => {
                 deleteAccount().catch(() => {
-                  Toast.show({ type: 'error', text1: 'Something went wrong', text2: 'Please try again later' });
+                  Toast.show({ type: 'error', text1: t('common.somethingWentWrong'), text2: t('common.tryAgainLater') });
                 });
               }},
             ]);
@@ -126,7 +128,7 @@ export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>)
         <View style={{ paddingHorizontal: spacing.lg }}>
           <AppText color={palette.textPrimary}
                    style={[styles.heading, { fontFamily: typography.family.bold }]}>
-            Account
+            {t('profile.title')}
           </AppText>
         </View>
 
@@ -136,96 +138,107 @@ export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>)
         </View>
 
         {/* Settings */}
-        <SectionHeader label="Settings" />
+        <SectionHeader label={t('profile.sections.settings')} />
         <View style={[styles.card, { marginHorizontal: spacing.lg, borderRadius: 10 }]}>
           <Row
             icon={ICONS.microphone}
-            title="Vocal range"
+            title={t('vocalRange.settings.title')}
             subtitle={
               range
                 ? `${midiToName(range.lowMidi)} — ${midiToName(range.highMidi)} · ≈${voiceType(range)}`
-                : 'Not measured yet'
+                : t('profile.notMeasured')
             }
             onPress={() => navigation.navigate('VocalRangeSettings')}
           />
           <Row
             icon={ICONS.sound}
-            title="Sound"
-            subtitle={`${SOUND_TYPE_LABELS[soundType]} wave`}
+            title={t('profile.sound')}
+            subtitle={t('profile.soundWave', { sound: SOUND_TYPE_LABELS[soundType] })}
             onPress={() => navigation.navigate('SoundSettings')}
           />
           <Row
             icon={ICONS.goals}
-            title="Goal & preferences"
+            title={t('profile.goal')}
             subtitle={
               prefs
-                ? `${GOAL_LABELS[prefs.primaryGoal]} · ${prefs.dailyMinutes} min a day`
-                : "Set what you're working toward"
+                ? `${GOAL_LABELS[prefs.primaryGoal]} · ${t('profile.minutesADay', { count: prefs.dailyMinutes })}`
+                : t('profile.goalUnset')
             }
             onPress={() => navigation.navigate('LearningPreferences')}
           />
           <Row
             icon={ICONS.settings}
-            title="Exercise settings"
-            subtitle="Choose which exercises appear in your daily plan"
+            title={t('profile.exerciseSettings')}
+            subtitle={t('profile.exerciseSettingsSubtitle')}
             onPress={() => navigation.navigate('ExerciseSettings')}
           />
           <Row
             icon={ICONS.weeklyPlan}
-            title="Weekly plan"
-            subtitle="Customize exercises for each day of the week"
+            title={t('profile.weeklyPlan')}
+            subtitle={t('profile.weeklyPlanSubtitle')}
             onPress={() => navigation.navigate('WeeklyPlan')}
           />
           <Row
             icon={ICONS.reminder}
-            title="Practice reminder"
+            title={t('profile.reminder')}
             subtitle={reminderSubtitle(prefs?.reminderHour ?? null, prefs?.reminderMinute ?? 0)}
-            last
             onPress={() => navigation.navigate('ReminderSettings')}
+          />
+          {/* follows the phone until a language is picked here */}
+          <Row
+            emoji={languageFlag(currentLanguage())}
+            title={t('profile.language')}
+            subtitle={
+              savedLanguage()
+                ? LANGUAGE_NAMES[currentLanguage()]
+                : t('profile.languageSubtitle', { language: LANGUAGE_NAMES[currentLanguage()] })
+            }
+            last
+            onPress={() => navigation.navigate('LanguageSettings')}
           />
         </View>
 
         {/* Legal */}
-        <SectionHeader label="Legal" />
+        <SectionHeader label={t('profile.sections.legal')} />
         <View style={[styles.card, { marginHorizontal: spacing.lg, borderRadius: 10 }]}>
           <Row
             icon={ICONS.privacyPolicy}
-            title="Privacy policy"
-            subtitle="How we handle your data"
+            title={t('profile.privacy')}
+            subtitle={t('profile.privacySubtitle')}
             onPress={() => Linking.openURL('https://pitchgym.anyabedrytska.com/privacy-policy.html')}
           />
           <Row
             icon={ICONS.terms}
-            title="Terms of service"
-            subtitle="Rules for using the app"
+            title={t('profile.terms')}
+            subtitle={t('profile.termsSubtitle')}
             last
             onPress={() => Linking.openURL('https://pitchgym.anyabedrytska.com/terms-of-service.html')}
           />
         </View>
 
         {/* Account */}
-        <SectionHeader label="Account" />
+        <SectionHeader label={t('profile.sections.account')} />
         <View style={[styles.card, { marginHorizontal: spacing.lg, borderRadius: 10 }]}>
           {isEmailUser && (
             <Row
               icon={ICONS.settings}
-              title="Change password"
-              subtitle="Update your account password"
+              title={t('auth.newPassword.changeTitle')}
+              subtitle={t('profile.changePasswordSubtitle')}
               onPress={() => navigation.navigate('NewPassword', { requireOldPassword: true })}
             />
           )}
           <Row
             icon={ICONS.logOut}
-            title="Log out"
-            subtitle={guest ? 'You are using the app as a guest' : 'Sign out of your account'}
+            title={t('profile.logOut')}
+            subtitle={guest ? t('profile.logOutGuest') : t('profile.logOutSubtitle')}
             onPress={handleLogout}
             last={!guest || !isEmailUser}
           />
           {!guest && (
             <Row
               icon={ICONS.delete}
-              title="Delete account"
-              subtitle="Permanently remove your account and all data"
+              title={t('profile.deleteAccount')}
+              subtitle={t('profile.deleteAccountSubtitle')}
               destructive
               last
               onPress={handleDeleteAccount}
@@ -234,22 +247,22 @@ export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>)
         </View>
 
         {/* Feedback & Support */}
-        <SectionHeader label="Feedback & Support" />
+        <SectionHeader label={t('profile.sections.feedback')} />
         <View style={[styles.card, { marginHorizontal: spacing.lg, borderRadius: 10 }]}>
           <Row
             icon={ICONS.message}
-            title="Share your thoughts about PitchGym"
-            subtitle="We'll be happy to hear from you"
+            title={t('profile.feedback')}
+            subtitle={t('profile.feedbackSubtitle')}
             last
             onPress={openFeedbackEmail}
           />
         </View>
 
         <AppText variant="caption" color={palette.textFaint} style={{ textAlign: 'center', marginTop: spacing.xxl }}>
-          Uses your microphone. Audio never leaves the device.
+          {t('profile.micNotice')}
         </AppText>
         <AppText variant="caption" color={palette.textFaint} style={{ textAlign: 'center', marginTop: spacing.xs, marginBottom: spacing.md }}>
-          Version {require('../../../app.json').expo.version}
+          {t('profile.version', { version: require('../../../app.json').expo.version })}
         </AppText>
       </ScrollView>
     </Screen>
@@ -271,26 +284,34 @@ function SectionHeader({ label }: { label: string }) {
 
 function Row({
   icon,
+  emoji,
   title,
   subtitle,
   onPress,
   destructive = false,
   last = false,
 }: {
-  icon: ImageSourcePropType;
   title: string;
   subtitle: string;
   onPress: () => void;
   destructive?: boolean;
   last?: boolean;
-}) {
+} & (
+  | { icon: ImageSourcePropType; emoji?: never }
+  /** an emoji (e.g. a flag) drawn in place of the icon image */
+  | { emoji: string; icon?: never }
+)) {
   const { palette } = useTheme();
   return (
     <Pressable style={styles.pressableRow} accessibilityRole="button" onPress={onPress}>
       {({ pressed }) => (
         <View style={[styles.row, !last && styles.rowBorder, pressed && { opacity: 0.7 }]}>
           <View style={styles.iconCircle}>
-            <Image source={icon} style={[styles.iconImage, destructive && { tintColor: '#F95F4F' }]} />
+            {emoji ? (
+              <AppText gradient={false} style={styles.iconEmoji}>{emoji}</AppText>
+            ) : (
+              <Image source={icon} style={[styles.iconImage, destructive && { tintColor: '#F95F4F' }]} />
+            )}
           </View>
           <View style={{ flex: 1 }}>
             <AppText variant="label" style={{ fontSize: 14 }} color={destructive ? palette.danger : palette.textPrimary}>
@@ -326,6 +347,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#525158B2',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  iconEmoji: {
+    fontSize: 20,
+    lineHeight: 24,
   },
   iconImage: {
     width: 20,

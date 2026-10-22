@@ -19,8 +19,10 @@ import { AppText, BackButton, Card, IconBubble, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
 import type { ProgressScreenProps } from '@/app/navigation/types';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from '@/shared/i18n';
 
 export function WeeklyReviewScreen({ navigation }: ProgressScreenProps<'WeeklyReview'>) {
+    const { t } = useTranslation();
     const { palette, spacing } = useTheme();
     const sessions = useProgressStore((s) => s.sessions);
     const skills = useLearningStore((s) => s.skills);
@@ -59,7 +61,7 @@ export function WeeklyReviewScreen({ navigation }: ProgressScreenProps<'WeeklyRe
                                 contentContainerStyle={{ paddingBottom: insets.bottom + 2 * spacing.xxl }}>
             <AppText variant="title"
                      style={{ fontSize: 40, marginTop: spacing.sm, }}>
-                Weekly review
+                {t('progress.weeklyReview')}
             </AppText>
             {report.focus && (
                 <AppText variant="body" style={{ marginTop: spacing.xs }}>
@@ -68,14 +70,14 @@ export function WeeklyReviewScreen({ navigation }: ProgressScreenProps<'WeeklyRe
             )}
 
             <View style={styles.tiles}>
-                <Tile label="Days" value={String(report.daysPracticed)} icon="calendar"/>
-                <Tile label="Sessions" value={String(report.sessions)} icon="musical-notes"/>
-                <Tile label="Time" value={formatPracticeTime(report.practiceSeconds)} icon="time"/>
-                <Tile label="Days in a row" value={`${report.streak}d`} icon="star"/>
+                <Tile label={t('progress.review.days')} value={String(report.daysPracticed)} icon="calendar"/>
+                <Tile label={t('progress.review.sessions')} value={String(report.sessions)} icon="musical-notes"/>
+                <Tile label={t('progress.review.time')} value={formatPracticeTime(report.practiceSeconds)} icon="time"/>
+                <Tile label={t('progress.review.streak')} value={t('common.daysShort', { count: report.streak })} icon="star"/>
             </View>
 
             <Card style={[styles.card, { marginTop: spacing.md }]}>
-                <AppText variant="caption">This week in plain language</AppText>
+                <AppText variant="caption">{t('progress.review.plainLanguage')}</AppText>
                 {report.summary.map((line) => (
                     <AppText key={line} variant="body" style={{ marginTop: 8, fontSize: 14 }}>
                         {line}
@@ -85,7 +87,7 @@ export function WeeklyReviewScreen({ navigation }: ProgressScreenProps<'WeeklyRe
 
             {report.masteryChanges.length > 0 && (
                 <Card style={[styles.card, { marginTop: spacing.md }]}>
-                    <AppText variant="caption">Mastery changes</AppText>
+                    <AppText variant="caption">{t('progress.review.masteryChanges')}</AppText>
                     {report.masteryChanges.map((change) => (
                         <View key={change.skill} style={styles.changeRow}>
                             <AppText variant="body" style={{ flex: 1, fontSize: 14 }}>
@@ -105,7 +107,7 @@ export function WeeklyReviewScreen({ navigation }: ProgressScreenProps<'WeeklyRe
             )}
 
             <Card variant="highlighted" style={[styles.card, { marginTop: spacing.md }]}>
-                <AppText variant="caption">Next week</AppText>
+                <AppText variant="caption">{t('progress.review.nextWeek')}</AppText>
                 <AppText variant="label" style={{ fontSize: 17, marginTop: 4 }}>
                     {FOCUS_TITLES[report.recommendedFocus]}
                 </AppText>

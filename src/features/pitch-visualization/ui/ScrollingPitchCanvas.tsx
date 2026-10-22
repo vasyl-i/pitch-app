@@ -1,5 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { t } from '@/shared/i18n';
+import { useCanvasFont } from '@/shared/ui/useCanvasFont';
 import { Blur, Canvas, Circle, Group, Line, Paint, Path, Rect, RoundedRect, Skia, Text as SkiaText, useFont, useClock, vec } from '@shopify/react-native-skia';
 import { useDerivedValue, useSharedValue } from 'react-native-reanimated';
 import { colorForCents, midiToName, NOTICEABLE_CENTS, PERFECT_CENTS, SLIGHT_CENTS } from '@/shared/lib/music';
@@ -334,7 +336,9 @@ export function ScrollingPitchCanvas({
 
   const shownNote = useStabilizedNote(liveMidi);
   const noteFont = useFont(require('../../../../assets/fonts/Satoshi-Medium.ttf'), 16);
-  const hzFont = useFont(require('../../../../assets/fonts/Satoshi-Regular.ttf'), 12);
+  // the unit is localised («Гц») and Satoshi has no Cyrillic — useCanvasFont falls back to Manrope
+  const { fontFor: hzFontFor } = useCanvasFont(require('../../../../assets/fonts/Satoshi-Regular.ttf'), 12);
+  const hzFont = hzFontFor(t('pitch.hzLower', { value: 0 }));
 
   const noteLabel = useMemo(() => {
     if (shownNote === null || !liveHead || !noteFont) return null;
@@ -349,7 +353,7 @@ export function ScrollingPitchCanvas({
   const hzLabel = useMemo(() => {
     if (!noteLabel || !noteFont || !hzFont || !liveFrequency) return null;
     const noteMeasured = noteFont.measureText(noteLabel.text);
-    const hzText = `${Math.round(liveFrequency)} hz`;
+    const hzText = t('pitch.hzLower', { value: Math.round(liveFrequency) });
     const spacing = 6;
     return {
       text: hzText,

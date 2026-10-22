@@ -10,6 +10,7 @@ import type { SkillId } from '@/features/learning';
 import { SKILL_LABELS } from '@/features/learning';
 import { AppText } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
+import { useTranslation } from '@/shared/i18n';
 
 export interface SnapshotPoint {
   weekKey: string;
@@ -74,6 +75,7 @@ export function SkillTrendChart({
   snapshots: SnapshotPoint[];
   skills: SkillId[];
 }) {
+  const { t } = useTranslation();
   const { palette, spacing, typography, radii } = useTheme();
   const [range, setRange] = useState<TimeRange>('3m');
   const [selected, setSelected] = useState<Set<SkillId>>(() => new Set(skills.slice(0, 3)));
@@ -138,7 +140,7 @@ export function SkillTrendChart({
     return (
       <View style={{ paddingVertical: spacing.lg }}>
         <AppText variant="caption" style={{ textAlign: 'center' }}>
-          Practice for a couple of weeks to see your skill trends here.
+          {t('progress.charts.skillsEmpty')}
         </AppText>
       </View>
     );

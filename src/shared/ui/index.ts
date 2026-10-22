@@ -10,3 +10,4 @@ export { ProgressCircle } from './ProgressCircle';
 export { Screen } from './Screen';
 export { TimeDropdown } from './TimeDropdown';
 export { VoiceWaveform } from './VoiceWaveform';
+export { useCanvasFont } from './useCanvasFont';

@@ -18,7 +18,8 @@ import {
   type WeeklyPlan,
 } from '@/features/learning';
 import { AppText, BackButton, Screen } from '@/shared/ui';
-import { typography, useTheme } from '@/shared/theme';
+import { useTheme } from '@/shared/theme';
+import { useTranslation } from '@/shared/i18n';
 import { EXERCISE_CAT_ICONS, DEFAULT_CAT_ICON } from '../home/ui/exerciseIcons';
 import type { RootScreenProps } from '@/app/navigation/types';
 
@@ -31,7 +32,8 @@ const ICON_COLORS = [
 ] as const;
 
 export function ExercisePickerScreen({ navigation, route }: RootScreenProps<'ExercisePicker'>) {
-  const { palette, spacing, radii } = useTheme();
+  const { t } = useTranslation();
+  const { palette, spacing, radii, typography } = useTheme();
   const dayIndex = route.params.dayIndex as WeekdayIndex;
   const dayLabel = WEEKDAY_LABELS[dayIndex];
 
@@ -97,10 +99,10 @@ export function ExercisePickerScreen({ navigation, route }: RootScreenProps<'Exe
         variant="title"
         style={{ fontSize: 28, marginTop: spacing.sm }}
       >
-        Add exercise
+        {t('profile.weekly.add')}
       </AppText>
       <AppText variant="body" style={{ marginTop: spacing.xs }}>
-        Choose exercises for {dayLabel} · {dayEntries.length}/{MAX_PER_DAY}
+        {t('profile.picker.subtitle', { day: dayLabel, count: dayEntries.length, max: MAX_PER_DAY })}
       </AppText>
 
       <View style={[styles.searchContainer, { backgroundColor: palette.surface, borderRadius: radii.md, marginTop: spacing.md, marginBottom: spacing.md }]}>
@@ -108,7 +110,7 @@ export function ExercisePickerScreen({ navigation, route }: RootScreenProps<'Exe
         <TextInput
           value={search}
           onChangeText={setSearch}
-          placeholder="Search exercises..."
+          placeholder={t('profile.picker.search')}
           placeholderTextColor={palette.textFaint}
           style={[styles.searchInput, { color: palette.textPrimary, fontFamily: typography.family.regular }]}
           autoCorrect={false}
@@ -126,7 +128,7 @@ export function ExercisePickerScreen({ navigation, route }: RootScreenProps<'Exe
         {filteredEar.length > 0 && (
           <View style={{ marginTop: spacing.lg }}>
             <AppText variant="label" color={palette.textPrimary} style={{ fontSize: 16, marginBottom: spacing.sm }}>
-              Listen & sing drills
+              {t('profile.picker.earDrills')}
             </AppText>
             {filteredEar.map((exercise) => {
               const count = addedCounts.get(exercise.id) ?? 0;
@@ -179,8 +181,8 @@ export function ExercisePickerScreen({ navigation, route }: RootScreenProps<'Exe
                           {e.title}
                         </AppText>
                         <AppText variant="caption" style={{ marginTop: 1 }}>
-                          {minutes} min · {e.source}
-                          {count > 0 ? ` · ${count}x added` : ''}
+                          {t('common.minutesShort', { count: minutes })} · {e.source}
+                          {count > 0 ? ` · ${t('profile.picker.added', { count })}` : ''}
                         </AppText>
                       </View>
                     </View>
@@ -194,7 +196,7 @@ export function ExercisePickerScreen({ navigation, route }: RootScreenProps<'Exe
         {filteredEar.length === 0 && filteredCategories.length === 0 && (
           <View style={{ marginTop: spacing.xxl, alignItems: 'center' }}>
             <AppText variant="body" color={palette.textSecondary}>
-              No exercises match "{search}"
+              {t('profile.picker.noMatch', { query: search })}
             </AppText>
           </View>
         )}
@@ -219,6 +221,7 @@ function EarPickerRow({
   disabled: boolean;
   onSelect: (difficultyId?: string) => void;
 }) {
+  const { t } = useTranslation();
   const { palette, spacing } = useTheme();
   const [showDifficulties, setShowDifficulties] = useState(false);
   const catIcon = EXERCISE_CAT_ICONS[exercise.id] ?? DEFAULT_CAT_ICON;
@@ -247,7 +250,7 @@ function EarPickerRow({
                 {exercise.title}
               </AppText>
               <AppText variant="caption" style={{ marginTop: 1 }}>
-                {minutes} min{count > 0 ? ` · ${count}x added` : ''}
+                {t('common.minutesShort', { count: minutes })}{count > 0 ? ` · ${t('profile.picker.added', { count })}` : ''}
               </AppText>
             </View>
           </View>

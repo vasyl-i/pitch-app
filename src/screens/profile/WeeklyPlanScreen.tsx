@@ -23,9 +23,12 @@ import {
 import { usePremiumStatus } from '@/features/subscription';
 import { AppText, BackButton, Screen } from '@/shared/ui';
 import { typography, useTheme } from '@/shared/theme';
+import { useTranslation } from '@/shared/i18n';
+import { difficultyLabel } from '@/features/ear-training';
 import type { RootScreenProps } from '@/app/navigation/types';
 
 export function WeeklyPlanScreen({ navigation }: RootScreenProps<'WeeklyPlan'>) {
+  const { t } = useTranslation();
   const { palette, spacing } = useTheme();
   const prefs = usePreferencesStore((s) => s.preferences) ?? { ...DEFAULT_PREFERENCES, updatedAt: 0 };
   const setPreferences = usePreferencesStore((s) => s.setPreferences);
@@ -63,7 +66,7 @@ export function WeeklyPlanScreen({ navigation }: RootScreenProps<'WeeklyPlan'>) 
   const removeExercise = (day: WeekdayIndex, index: number) => {
     const entries = weeklyPlan[day] ?? [];
     if (!canRemoveExercise(entries, index)) {
-      Alert.alert('Minimum time', 'Removing this exercise would make the day shorter than 5 minutes.');
+      Alert.alert(t('profile.weekly.minTitle'), t('profile.weekly.minMessage'));
       return;
     }
     const updated = entries.filter((_, i) => i !== index);
@@ -83,14 +86,14 @@ export function WeeklyPlanScreen({ navigation }: RootScreenProps<'WeeklyPlan'>) 
       </View>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: spacing.xxl }}>
         <AppText variant="title" style={{ fontSize: 34, marginTop: spacing.sm }}>
-          Weekly plan
+          {t('profile.weeklyPlan')}
         </AppText>
         <AppText variant="body" style={{ marginTop: spacing.xs }}>
-          Your daily exercises for each day of the week.
+          {t('profile.weekly.subtitle')}
         </AppText>
 
         <View style={{ marginTop: spacing.xl }}>
-          {(WEEKDAY_LABELS as readonly string[]).map((label, i) => {
+          {WEEKDAY_LABELS.map((label, i) => {
             const day = i as WeekdayIndex;
             const entries = weeklyPlan[day] ?? [];
             const isExpanded = expanded === day;
@@ -112,8 +115,8 @@ export function WeeklyPlanScreen({ navigation }: RootScreenProps<'WeeklyPlan'>) 
                         </AppText>
                         <AppText variant="caption" style={{ marginTop: 2 }}>
                           {resolved.length > 0
-                            ? `${resolved.length} exercise${resolved.length !== 1 ? 's' : ''} · ${totalMin} min`
-                            : 'No exercises'}
+                            ? `${t('profile.weekly.exerciseCount', { count: resolved.length })} · ${t('common.minutesShort', { count: totalMin })}`
+                            : t('profile.weekly.noExercises')}
                         </AppText>
                       </View>
                       <Ionicons
@@ -135,15 +138,15 @@ export function WeeklyPlanScreen({ navigation }: RootScreenProps<'WeeklyPlan'>) 
                               {activity.title}
                             </AppText>
                             <AppText variant="caption" style={{ marginTop: 1 }}>
-                              {activity.minutes} min
-                              {entry.difficultyId ? ` · ${entry.difficultyId}` : ''}
+                              {t('common.minutesShort', { count: activity.minutes })}
+                              {entry.difficultyId ? ` · ${difficultyLabel(entry.activityId, entry.difficultyId)}` : ''}
                             </AppText>
                           </View>
                           <Pressable
                             onPress={() => removeExercise(day, idx)}
                             hitSlop={12}
                             accessibilityRole="button"
-                            accessibilityLabel="Remove exercise"
+                            accessibilityLabel={t('profile.weekly.remove')}
                           >
                             <Ionicons name="close-circle" size={22} color={palette.textFaint} />
                           </Pressable>
@@ -151,7 +154,7 @@ export function WeeklyPlanScreen({ navigation }: RootScreenProps<'WeeklyPlan'>) 
                       ))
                     ) : (
                       <AppText variant="caption" style={{ paddingVertical: spacing.sm }}>
-                        No exercises for this day.
+                        {t('profile.weekly.noExercisesDay')}
                       </AppText>
                     )}
 
@@ -166,7 +169,7 @@ export function WeeklyPlanScreen({ navigation }: RootScreenProps<'WeeklyPlan'>) 
                     >
                       <Ionicons name="add" size={16} color={palette.accent} />
                       <AppText variant="caption" color={palette.accent} style={{ fontSize: 14 }}>
-                        Add exercise
+                        {t('profile.weekly.add')}
                       </AppText>
                     </Pressable>
                   </View>

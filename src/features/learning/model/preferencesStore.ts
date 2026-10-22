@@ -9,9 +9,22 @@
 import { mmkvStorage } from '@/shared/lib/storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
+import { translatedRecord } from '@/shared/i18n';
 import type { LearningPreferences } from './types';
 
+/** Stored values stay English (persisted + synced); display through `GENRE_LABELS`. */
 export const GENRE_OPTIONS = ['Pop', 'Rock', 'Classical', 'Jazz', 'Musical theatre', 'Folk', 'R&B', 'Country'] as const;
+
+export const GENRE_LABELS: Partial<Record<string, string>> = translatedRecord<(typeof GENRE_OPTIONS)[number]>({
+  Pop: 'learning.genres.pop',
+  Rock: 'learning.genres.rock',
+  Classical: 'learning.genres.classical',
+  Jazz: 'learning.genres.jazz',
+  'Musical theatre': 'learning.genres.musicalTheatre',
+  Folk: 'learning.genres.folk',
+  'R&B': 'learning.genres.rnb',
+  Country: 'learning.genres.country',
+});
 
 export const DEFAULT_PREFERENCES: Omit<LearningPreferences, 'updatedAt'> = {
   primaryGoal: 'sing-in-tune',

@@ -28,7 +28,8 @@ import { promptRange, useProfileStore } from '@/entities/profile';
 import { acquireMic, createThrottle, MicPermissionError, type MicLease, type PitchFrame } from '@/features/pitch-detection';
 import { elapsedPracticeSeconds, useProgressStore } from '@/features/progress';
 import { centsToGlowTier, micActive, micGlowTier, micRms } from '@/shared/lib/micRmsBus';
-import { hapticMicReady, playTick } from '@/shared/audio';
+import { t } from '@/shared/i18n';
+import { hapticMicReady, hapticTick, startCountIn, type CountIn } from '@/shared/audio';
 import { track } from '@/shared/lib/analytics';
 import { createSessionGuard } from '@/shared/lib/sessionGuard';
 import { createSingCapture } from '../lib/capture';
@@ -45,15 +46,16 @@ const LIVE_EVAL_MS = 150;
 const EVALUATING_MS = 400;
 const DEFAULT_RESULT_MS = 1700;
 const COUNTDOWN_STEP_MS = 800;
+const WAIT_STEP_MS = 1000;
 
 function friendlyStartupMessage(err: unknown): string {
   if (err instanceof MicPermissionError) {
-    return 'Microphone access is needed for this exercise. You can enable it in Settings.';
+    return t('earTraining.session.micNeeded');
   }
   if (err instanceof PlaybackError) {
-    return 'We couldn’t start audio playback — check your volume and try again.';
+    return t('earTraining.session.playbackFailed');
   }
-  return 'Something went wrong starting the session — give it another try.';
+  return t('earTraining.session.startFailed');
 }
 
 export function useEarTrainingSession() {
@@ -62,6 +64,8 @@ export function useEarTrainingSession() {
   const captureRef = useRef(createSingCapture());
   const throttleRef = useRef(createThrottle(LIVE_EVAL_MS));
   const leaseRef = useRef<MicLease | null>(null);
+  /** the running count-in (its tick sounds live on the audio clock) */
+  const ticksRef = useRef<CountIn | null>(null);
 
   const defRef = useRef<ExerciseDefinition | null>(null);
   const difficultyRef = useRef<string | null>(null);
@@ -82,8 +86,15 @@ export function useEarTrainingSession() {
 
   /** invalidate everything in flight and get the generation for what's next */
   const freshGeneration = () => {
+    cancelTicks();
     guard.invalidate();
     return guard.generation;
+  };
+
+  /** timers die with the generation, but scheduled tick audio has to be stopped */
+  const cancelTicks = () => {
+    ticksRef.current?.cancel();
+    ticksRef.current = null;
   };
 
   const releaseLease = () => {
@@ -93,6 +104,7 @@ export function useEarTrainingSession() {
   };
 
   const stopEverything = () => {
+    cancelTicks();
     guard.invalidate();
     player.cancel();
     listeningRef.current = false;
@@ -132,7 +144,7 @@ export function useEarTrainingSession() {
     const frames = capture.frames;
     const score = frames.length > 0 ? response.evaluate(frames) : null;
     micGlowTier.value = centsToGlowTier(score?.signedCents ?? null);
-    setStore({ live: { note: capture.live.note, score, outcomes: score?.notes ?? null } });
+    setStore({ live: { note: capture.live.note, score, outcomes: score?.notes ?? (score?.target ? [score.target] : null) } });
   };
 
   async function ensureMic(gen: number) {
@@ -144,11 +156,11 @@ export function useEarTrainingSession() {
         if (phase !== 'began') return;
         const current = useEarTrainingStore.getState().phase;
         if (current !== 'idle' && current !== 'completed') {
-          failSession('The audio was interrupted, so the session was paused. Ready when you are.');
+          failSession(t('earTraining.session.interrupted'));
         }
       },
       onError: () => {
-        failSession('The microphone hit a problem — give it another try.');
+        failSession(t('earTraining.session.micProblem'));
       },
     });
     // the session may have ended (or restarted) while the recorder spun up;
@@ -162,12 +174,24 @@ export function useEarTrainingSession() {
 
   /* --------------------------- lifecycle --------------------------- */
 
-  function afterPrompt(gen: number, round: EarRound) {
+  async function afterPrompt(gen: number, round: EarRound) {
     if (!guard.isCurrent(gen)) return;
     if (round.response.kind === 'choice') {
       setStore({ phase: 'listening', choices: round.response.options });
       return;
     }
+    // Take the mic back *before* the count-in. Switching the audio session to
+    // record takes a few hundred ms; done after the last tick it left the
+    // final number hanging out of rhythm and the "sing now" haptic late.
+    try {
+      await ensureMic(gen);
+      if (!guard.isCurrent(gen)) return;
+      await ensurePlaybackReady({ micHeld: true });
+    } catch (err) {
+      if (guard.isCurrent(gen)) failSession(friendlyStartupMessage(err));
+      return;
+    }
+    if (!guard.isCurrent(gen)) return;
     if (round.response.holdSec) startWait(gen, round.response);
     else startCountdown(gen, round.response);
   }
@@ -189,41 +213,60 @@ export function useEarTrainingSession() {
     const handle = player.play(round.prompt);
     await handle.done;
     setStore({ promptDurationMs: null, promptStartedAt: null });
-    afterPrompt(gen, round);
+    await afterPrompt(gen, round);
+  }
+
+  /**
+   * Run a ticking count down to the sing window. Each number and haptic fires
+   * when its tick is actually heard (see `startCountIn`), so sound, screen and
+   * haptic land together even if the audio engine stalls mid-count.
+   */
+  function runTicks(gen: number, steps: number, stepMs: number, show: (left: number) => void, done: () => void) {
+    cancelTicks();
+    ticksRef.current = startCountIn({
+      count: steps,
+      intervalSec: stepMs / 1000,
+      onTick: (i) => {
+        if (!guard.isCurrent(gen)) return;
+        hapticTick();
+        show(steps - i);
+      },
+      onDone: () => {
+        ticksRef.current = null;
+        if (guard.isCurrent(gen)) done();
+      },
+    });
   }
 
   function startWait(gen: number, response: SingResponse) {
-    const tick = (left: number) => {
-      if (!guard.isCurrent(gen)) return;
-      if (left <= 0) {
-        void openSingWindow(gen, response);
-        return;
-      }
-      playTick();
-      setStore({ phase: 'waiting', waitSecondsLeft: left });
-      guard.later(gen, () => tick(left - 1), 1000);
-    };
-    tick(response.holdSec ?? 0);
+    runTicks(
+      gen,
+      response.holdSec ?? 0,
+      WAIT_STEP_MS,
+      (left) => setStore({ phase: 'waiting', waitSecondsLeft: left }),
+      () => void openSingWindow(gen, response)
+    );
   }
 
   function startCountdown(gen: number, response: SingResponse) {
-    const step = (k: number) => {
-      if (!guard.isCurrent(gen)) return;
-      if (k <= 0) {
-        void openSingWindow(gen, response);
-        return;
-      }
-      playTick();
-      setStore({ phase: 'countdown', countdown: k, waitSecondsLeft: null });
-      guard.later(gen, () => step(k - 1), COUNTDOWN_STEP_MS);
-    };
-    step(response.countdownSec);
+    runTicks(
+      gen,
+      response.countdownSec,
+      COUNTDOWN_STEP_MS,
+      (k) => setStore({ phase: 'countdown', countdown: k, waitSecondsLeft: null }),
+      () => void openSingWindow(gen, response)
+    );
   }
 
   async function openSingWindow(gen: number, response: SingResponse) {
-    // Reacquire the mic (released during prompt playback for louder audio)
+    // normally reacquired before the count-in; this covers a lost lease
     if (!leaseRef.current) {
-      await ensureMic(gen);
+      try {
+        await ensureMic(gen);
+      } catch (err) {
+        if (guard.isCurrent(gen)) failSession(friendlyStartupMessage(err));
+        return;
+      }
       if (!guard.isCurrent(gen)) return;
     }
     capture.begin();

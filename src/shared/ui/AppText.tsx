@@ -1,7 +1,7 @@
 import { StyleSheet, Text, type TextProps, type TextStyle } from 'react-native';
 import MaskedView from '@react-native-masked-view/masked-view';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useTheme } from '@/shared/theme';
+import { localizeFontFamily, useTheme } from '@/shared/theme';
 
 type Variant = 'display' | 'title' | 'body' | 'caption' | 'label';
 
@@ -61,7 +61,11 @@ export function AppText({ variant = 'body', color, gradient, style, ...rest }: A
   const resolvedColor = color ?? variants[variant].color as string;
   const applyGradient = gradient === true || (gradient !== false && isWhite(resolvedColor));
 
-  const textElement = <Text style={[variants[variant], color ? { color } : null, style]} {...rest} />;
+  // module-level StyleSheets captured the font of the language at launch — keep it in step with a live switch
+  const styleFamily = StyleSheet.flatten(style)?.fontFamily;
+  const fontStyle = styleFamily ? { fontFamily: localizeFontFamily(styleFamily, typography.family) } : null;
+
+  const textElement = <Text style={[variants[variant], color ? { color } : null, style, fontStyle]} {...rest} />;
 
   if (applyGradient) {
     return (
@@ -73,7 +77,7 @@ export function AppText({ variant = 'body', color, gradient, style, ...rest }: A
           end={{ x: 1, y: 0 }}
         >
           {/* Invisible text to preserve layout size */}
-          <Text style={[variants[variant], style, { opacity: 0 }]} {...rest} />
+          <Text style={[variants[variant], style, fontStyle, { opacity: 0 }]} {...rest} />
         </LinearGradient>
       </MaskedView>
     );

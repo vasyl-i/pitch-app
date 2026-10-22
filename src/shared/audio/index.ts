@@ -13,7 +13,8 @@ export type { SoundType } from './soundStore';
 export { preloadPianoSamples, preloadSamples } from './pianoSampler';
 
 /** Haptic cues and UI sound effects. */
-export { hapticMicReady, hapticWarning, hapticTick, playTick } from './sfx';
+export { hapticMicReady, hapticWarning, hapticTick, playTick, startCountIn } from './sfx';
+export type { CountIn, CountInOptions } from './sfx';
 
 /** Where the sound is going — decides whether the interlock is needed at all. */
 export { isPrivateOutput } from './outputRoute';

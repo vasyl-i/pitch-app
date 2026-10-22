@@ -14,6 +14,7 @@ import {
   type Plan,
 } from '@/features/subscription';
 import { useTheme } from '@/shared/theme';
+import { useTranslation } from '@/shared/i18n';
 import { AppText, Card } from '@/shared/ui';
 
 interface PlanCardProps {
@@ -25,6 +26,7 @@ interface PlanCardProps {
 }
 
 export function PlanCard({ plan, selected, showTrial, onSelect }: PlanCardProps) {
+  const { t } = useTranslation();
   const { palette, spacing, radii } = useTheme();
   const savings = savingsBadge(plan);
   const withTrial = showTrial && plan.trialDays > 0;
@@ -33,7 +35,7 @@ export function PlanCard({ plan, selected, showTrial, onSelect }: PlanCardProps)
     <Pressable
       accessibilityRole="radio"
       accessibilityState={{ selected }}
-      accessibilityLabel={`${plan.name}, ${formatPlanPrice(plan)}${withTrial ? `, ${plan.trialDays} day free trial` : ''}`}
+      accessibilityLabel={`${plan.name}, ${formatPlanPrice(plan)}${withTrial ? `, ${t('subscription.trialA11y', { count: plan.trialDays })}` : ''}`}
       onPress={onSelect}
       style={styles.wrapper}
     >
@@ -42,7 +44,7 @@ export function PlanCard({ plan, selected, showTrial, onSelect }: PlanCardProps)
           {plan.recommended && (
             <View style={[styles.ribbon, { backgroundColor: palette.accent, borderRadius: radii.pill }]}>
               <AppText variant="caption" color={palette.onAccent} style={styles.ribbonText}>
-                Best value
+                {t('subscription.bestValue')}
               </AppText>
             </View>
           )}
@@ -76,7 +78,7 @@ export function PlanCard({ plan, selected, showTrial, onSelect }: PlanCardProps)
                   <View style={[styles.trialRow, { marginTop: 6 }]}>
                     <Ionicons name="gift-outline" size={13} color={palette.accent} />
                     <AppText variant="caption" color={palette.accent}>
-                      {plan.trialDays} days free, then {formatPlanPrice(plan)}
+                      {t('subscription.trialThen', { count: plan.trialDays, price: formatPlanPrice(plan) })}
                     </AppText>
                   </View>
                 )}

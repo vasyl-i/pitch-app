@@ -24,9 +24,11 @@ import { useProgressStore } from '@/features/progress';
 import { PremiumBadge } from '@/features/subscription';
 import { AppText, BackButton, Card, IconBubble, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
+import { useTranslation } from '@/shared/i18n';
 import type { RootScreenProps } from '@/app/navigation/types';
 
 export function WeakSpotsScreen({ navigation }: RootScreenProps<'WeakSpots'>) {
+  const { t, i18n } = useTranslation();
   const { palette, spacing } = useTheme();
   const sessions = useProgressStore((s) => s.sessions);
   const skills = useLearningStore((s) => s.skills);
@@ -34,7 +36,8 @@ export function WeakSpotsScreen({ navigation }: RootScreenProps<'WeakSpots'>) {
   const spots = useMemo(() => {
     const history = aggregateHistory(sessions);
     return findWeakSpots({ ...history, skills, catalog: catalogForTier('premium') }, 6);
-  }, [sessions, skills]);
+    // spot copy is built here, so rebuild it if the language changes
+  }, [sessions, skills, i18n.language]);
 
   const open = (spot: WeakSpot) => {
     const activity = spot.activity;
@@ -52,21 +55,20 @@ export function WeakSpotsScreen({ navigation }: RootScreenProps<'WeakSpots'>) {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: spacing.xxl }}>
         <PremiumBadge />
         <AppText variant="title" style={{ fontSize: 36, marginTop: spacing.sm }}>
-          Practice your weak spots
+          {t('sing.hub.weakSpotsTitle')}
         </AppText>
         <AppText variant="body" style={{ marginTop: spacing.xs }}>
-          Built from your last two months of practice. These are the specific things your voice keeps slipping on.
+          {t('weakSpots.subtitle')}
         </AppText>
 
         {spots.length === 0 ? (
           <Card style={[styles.empty, { marginTop: spacing.xl, padding: spacing.lg }]}>
             <Ionicons name="analytics-outline" size={22} color={palette.accent} />
             <AppText variant="label" style={{ fontSize: 16, marginTop: spacing.sm }}>
-              Not enough data yet
+              {t('weakSpots.emptyTitle')}
             </AppText>
             <AppText variant="body" style={{ marginTop: 4 }}>
-              Your coach needs a few more sessions before it can name a weak spot honestly. Keep practising — this fills
-              in on its own.
+              {t('weakSpots.emptyBody')}
             </AppText>
           </Card>
         ) : (
@@ -91,6 +93,7 @@ const KIND_ICON: Record<WeakSpot['kind'], keyof typeof Ionicons.glyphMap> = {
 };
 
 function SpotCard({ spot, onPress }: { spot: WeakSpot; onPress: () => void }) {
+  const { t } = useTranslation();
   const { palette, spacing } = useTheme();
   const playable = spot.activity !== undefined;
 
@@ -117,7 +120,7 @@ function SpotCard({ spot, onPress }: { spot: WeakSpot; onPress: () => void }) {
 
           {playable && (
             <AppText variant="caption" color={palette.textSecondary} style={{ marginTop: 8, fontSize: 12 }}>
-              Drill: {spot.activity?.title}
+              {t('weakSpots.drill', { title: spot.activity?.title ?? '' })}
             </AppText>
           )}
         </Card>

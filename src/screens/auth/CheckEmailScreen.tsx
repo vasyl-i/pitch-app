@@ -4,11 +4,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { AppText, BackButton, Button, Screen } from '@/shared/ui';
 import { typography, useTheme } from '@/shared/theme';
 import { supabase } from '@/shared/lib/supabase';
+import { useTranslation } from '@/shared/i18n';
 import type { AuthScreenProps } from '@/app/navigation/types';
 
 const POLL_INTERVAL = 4000;
 
 export function CheckEmailScreen({ navigation, route }: AuthScreenProps<'CheckEmail'>) {
+    const { t } = useTranslation();
     const { palette, radii } = useTheme();
     const { email, password } = route.params;
     const polling = useRef<ReturnType<typeof setInterval>>(undefined);
@@ -56,7 +58,7 @@ export function CheckEmailScreen({ navigation, route }: AuthScreenProps<'CheckEm
                         <Image source={require('../../../assets/email-solid.png')}/>
                     </View>
                     <AppText variant="title" gradient style={{ fontSize: 40, textAlign: 'center' }}>
-                        Check your email
+                        {t('auth.checkEmail.title')}
                     </AppText>
                     <View style={{
                         alignItems: 'center',
@@ -70,7 +72,7 @@ export function CheckEmailScreen({ navigation, route }: AuthScreenProps<'CheckEm
                                 textAlign: "center",
                             }}
                         >
-                            We sent a confirmation link to</AppText>
+                            {t('auth.checkEmail.sentTo')}</AppText>
                         <AppText variant="body"
                                  style={{
                                      fontSize: 20,
@@ -86,11 +88,11 @@ export function CheckEmailScreen({ navigation, route }: AuthScreenProps<'CheckEm
                                      color: palette.textSecondaryElevated,
                                      textAlign: "center",
                                  }}>
-                            Tap the link to activate your account.
+                            {t('auth.checkEmail.tapLink')}
                         </AppText>
                     </View>
                 </View>
-                <Button onPress={() => navigation.popToTop()} variant="ghost" title={"Back to sign in"} />
+                <Button onPress={() => navigation.popToTop()} variant="ghost" title={t('auth.backToSignIn')} />
             </View>
         </Screen>
     );

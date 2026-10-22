@@ -1,6 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 import { AppText } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
+import { useTranslation } from '@/shared/i18n';
 import type { HeatmapEntry } from '../lib/stats';
 
 /**
@@ -9,6 +10,7 @@ import type { HeatmapEntry } from '../lib/stats';
  * colour deepens with the size of the bias.
  */
 export function NoteHeatmap({ data }: { data: HeatmapEntry[] }) {
+  const { t } = useTranslation();
   const { palette, radii } = useTheme();
   const H = 92;
   const mid = H / 2;
@@ -17,7 +19,7 @@ export function NoteHeatmap({ data }: { data: HeatmapEntry[] }) {
   if (data.length === 0) {
     return (
       <AppText variant="caption" style={{ paddingVertical: 12 }}>
-        Sing a few exercises and your sharp/flat tendencies will show up here.
+        {t('progress.charts.heatmapEmpty')}
       </AppText>
     );
   }
@@ -58,7 +60,7 @@ export function NoteHeatmap({ data }: { data: HeatmapEntry[] }) {
       </View>
       <View style={styles.legend}>
         <AppText variant="caption" style={{ fontSize: 12 }}>
-          ↑ sharp · ↓ flat · last 30 days
+          {t('progress.charts.heatmapLegend')}
         </AppText>
       </View>
     </View>

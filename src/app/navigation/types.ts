@@ -92,6 +92,7 @@ export type RootStackParamList = {
   WeeklyPlan: undefined;
   ExercisePicker: { dayIndex: number };
   SoundSettings: undefined;
+  LanguageSettings: undefined;
   ManageSubscription: undefined;
   VocalRangeSettings: undefined;
   RedetectLow: undefined;

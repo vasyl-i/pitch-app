@@ -2,12 +2,14 @@ import { Image, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText, BackButton, Button, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
+import { useTranslation } from '@/shared/i18n';
 import type { OnboardingScreenProps } from '@/app/navigation/types';
 
 const ICON = require('../../../assets/onboarding/tune.png');
 
 /** Splash screen: treble clef icon, tagline, and a single CTA. */
 export function VocalRangeStartScreen({ navigation }: OnboardingScreenProps<'Welcome'>) {
+    const { t } = useTranslation();
     const { spacing, typography, palette } = useTheme();
     const insets = useSafeAreaInsets();
 
@@ -23,20 +25,20 @@ export function VocalRangeStartScreen({ navigation }: OnboardingScreenProps<'Wel
                         color={palette.textPrimary}
                         style={{ fontSize: 28, textAlign: 'center', fontFamily: typography.family.bold, marginTop: spacing.xl }}
                     >
-                        Let's discover your{'\n'}vocal range
+                        {t('onboarding.rangeStart.title')}
                     </AppText>
                     <AppText
                         variant="body"
                         color={palette.textSecondary}
                         style={{ textAlign: 'center', marginTop: spacing.md, lineHeight: 22 }}
                     >
-                        This helps us personalize every exercise{'\n'}and protect your voice.
+                        {t('onboarding.rangeStart.subtitle')}
                     </AppText>
                 </View>
 
                 <View style={{ paddingBottom: insets.bottom + spacing.lg }}>
                     <Button
-                        title="Start"
+                        title={t('common.start')}
                         onPress={() => navigation.navigate('Lowest')}
                         style={{ backgroundColor: '#ffffff' }}
                     />

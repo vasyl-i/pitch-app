@@ -1,3 +1,4 @@
+import { localizeContent } from '../../shared/i18n';
 import type { Exercise, TargetNote } from './types';
 
 // Build sequential notes from [midi, beats, lyric?] triples at a given tempo.
@@ -403,7 +404,16 @@ const advancedExercises: Exercise[] = [
   harmonyThirds,
 ];
 
-export const exercises: Exercise[] = [...basicExercises, ...advancedExercises];
+/** Songs (the `melody` category) are proper names — their titles stay as written in every language. */
+export function isSong(e: Pick<Exercise, 'category'>): boolean {
+  return e.category === 'melody';
+}
+
+const library: Exercise[] = [...basicExercises, ...advancedExercises];
+
+// English text above is the source; translations overlay it by id
+localizeContent('exercise', library.filter((e) => !isSong(e)), (e) => e.id, ['title']);
+export const exercises: Exercise[] = localizeContent('exercise', library, (e) => e.id, ['source', 'hint']);
 
 /** Named `melodyById` rather than `exerciseById` — ear-training already owns
  *  that name for its own drill definitions, and the two are different things. */

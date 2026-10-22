@@ -4,7 +4,8 @@
  * → round-result. One layout for all exercises.
  */
 import { Dimensions, Image, StyleSheet, View } from 'react-native';
-import { exerciseById, type NoteOutcome, useEarTrainingStore, } from '@/features/ear-training';
+import { exerciseById, type NoteOutcome, type RoundVerdict, useEarTrainingStore, } from '@/features/ear-training';
+import { useTranslation } from '@/shared/i18n';
 import { colorForCents } from '@/shared/lib/music';
 import { spacing, typography, useTheme } from '@/shared/theme';
 import { AppText, Button } from '@/shared/ui';
@@ -23,17 +24,17 @@ interface SessionControls {
 /* ---------- result mascot map ---------- */
 
 const MASCOT_IMAGES = {
-    'Love it!': require('../../../assets/love-it.png'),
-    'Almost': require('../../../assets/almost.png'),
-    'Try once more': require('../../../assets/try-once-more.png'),
-    'Couldn\'t hear you': require('../../../assets/couldnt-hear-you.png'),
-} as Record<string, ReturnType<typeof require>>;
+    love: require('../../../assets/love-it.png'),
+    almost: require('../../../assets/almost.png'),
+    retry: require('../../../assets/try-once-more.png'),
+    unheard: require('../../../assets/couldnt-hear-you.png'),
+} as Record<RoundVerdict, ReturnType<typeof require>>;
 
-const RESULT_COLORS: Record<string, string> = {
-    'Love it!': '#EEFF88',
-    'Almost': '#EDA069',
-    'Try once more': '#F95F4F',
-    'Couldn\'t hear you': '#F0F0F0',
+const RESULT_COLORS: Record<RoundVerdict, string> = {
+    love: '#EEFF88',
+    almost: '#EDA069',
+    retry: '#F95F4F',
+    unheard: '#F0F0F0',
 };
 
 /* ---------- outcome dots ---------- */
@@ -50,11 +51,11 @@ function OutcomeDots({ outcomes }: { outcomes: NoteOutcome[] }) {
             marginTop: spacing.md,
             flexWrap: 'wrap'
         }}>
-            {outcomes.map((o, i) => (
+            {outcomes.length > 0 ? (outcomes.map((o, i) => (
                 <AppText key={i} variant="caption" color={color(o)}>
                     {o.status === 'hit' ? '●' : o.status === 'close' ? '◐' : o.status === 'extra' ? '+' : '○'} {o.label}
                 </AppText>
-            ))}
+            ))) : <AppText variant="caption">{" "}</AppText>}
         </View>
     );
 }
@@ -62,6 +63,7 @@ function OutcomeDots({ outcomes }: { outcomes: NoteOutcome[] }) {
 /* ---------- main component ---------- */
 
 export function ActiveRound({ session }: { session: SessionControls }) {
+    const { t } = useTranslation();
     const { palette, spacing } = useTheme();
 
     const phase = useEarTrainingStore((s) => s.phase);
@@ -95,14 +97,14 @@ export function ActiveRound({ session }: { session: SessionControls }) {
 
     switch (phase) {
         case 'preparing':
-            subtitle = 'Getting ready...';
+            subtitle = t('session.round.preparing');
             break;
         case 'playing':
-            subtitle = 'Listen...';
+            subtitle = t('session.round.listen');
             // centerContent = <VoiceWaveform active={false}/>;
             break;
         case 'waiting':
-            subtitle = 'Hold that note in your mind';
+            subtitle = t('session.round.hold');
             centerContent = (
                 <AppText variant="display" color={palette.textPrimary} style={styles.bigNumber}>
                     {waitSecondsLeft ?? 0}
@@ -110,7 +112,7 @@ export function ActiveRound({ session }: { session: SessionControls }) {
             );
             break;
         case 'countdown':
-            subtitle = 'Get ready to sing';
+            subtitle = t('session.round.getReady');
             centerContent = (
                 <AppText variant="display" color={palette.accent} style={styles.bigNumber}>
                     {countdown ?? 0}
@@ -121,7 +123,7 @@ export function ActiveRound({ session }: { session: SessionControls }) {
             if (isChoice) {
                 subtitle = instruction;
             } else {
-                subtitle = 'Sing it back';
+                subtitle = t('earTraining.instructions.singBack');
                 const noteColor = live.score?.signedCents != null
                     ? colorForCents(live.score.signedCents)
                     : live.note ? palette.accent : palette.textPrimary;
@@ -135,7 +137,7 @@ export function ActiveRound({ session }: { session: SessionControls }) {
                             </View>
                             {(
                                 <AppText variant="caption" color={palette.white}>
-                                    {live.score && live.score.actual !== '—' ? `${live.score.score}% accuracy` : ' '}
+                                    {live.score && live.score.actual !== '—' ? t('session.round.accuracy', { score: live.score.score }) : ' '}
                                 </AppText>
                             )}
                         </View>
@@ -148,8 +150,8 @@ export function ActiveRound({ session }: { session: SessionControls }) {
             break;
         case 'round-result': {
             const label = roundResult?.label ?? '';
-            const mascot = MASCOT_IMAGES[label];
-            const labelColor = RESULT_COLORS[label] ?? (roundResult?.ok ? palette.accent : palette.warning);
+            const mascot = roundResult ? MASCOT_IMAGES[roundResult.verdict] : undefined;
+            const labelColor = (roundResult && RESULT_COLORS[roundResult.verdict]) ?? (roundResult?.ok ? palette.accent : palette.warning);
             centerContent = (
                 <View style={styles.resultContent}>
                     {mascot && (
@@ -167,7 +169,7 @@ export function ActiveRound({ session }: { session: SessionControls }) {
                     {roundResult && roundResult.expected && roundResult.actual !== '—' && (
                         <AppText variant="caption" color={palette.textFaint}
                                  style={{ textAlign: 'center', marginTop: 8 }}>
-                            Target note · {roundResult.expected} · Your result · {roundResult.actual}
+                            {t('session.round.targetVsResult', { expected: roundResult.expected, actual: roundResult.actual })}
                         </AppText>
                     )}
                 </View>
@@ -181,11 +183,11 @@ export function ActiveRound({ session }: { session: SessionControls }) {
             {/* Fixed top section: round counter + exercise title + subtitle */}
             <View style={[styles.header, isSmallScreen && { marginBottom: 0 }]}>
                 <AppText variant="caption" color={palette.white}>
-                    Round {round} of {totalRounds}
+                    {t('session.round.counter', { round, total: totalRounds })}
                 </AppText>
             </View>
             {!isResult && (
-                <View style={{ alignItems: "center", marginTop: isSmallScreen ? 0 : 60 }}>
+                <View style={{ alignItems: "center", marginTop: isSmallScreen ? 12 : 60 }}>
                     <AppText variant="display" gradient style={styles.title}>
                         {title}
                     </AppText>
@@ -202,7 +204,7 @@ export function ActiveRound({ session }: { session: SessionControls }) {
                 </View>
 
                 {/* Live outcome dots for chord/melody exercises */}
-                {phase === 'listening' && live.outcomes && <OutcomeDots outcomes={live.outcomes}/>}
+                {phase === 'listening' && <OutcomeDots outcomes={live.outcomes || []}/>}
 
                 {/* Waveform — right below note display so they stay close */}
                 {needsMic && (
@@ -223,9 +225,9 @@ export function ActiveRound({ session }: { session: SessionControls }) {
 
             {/* Footer controls */}
             <View style={styles.footer}>
-                <Button title={isResult ? "Next" : "Hear it again"} variant="ghost"
+                <Button title={isResult ? t('common.next') : t('session.round.hearAgain')} variant="ghost"
                         onPress={() => isResult ? session.next() : session.hearAgain()}/>
-                <Button title="Stop practice" variant="transparent" onPress={() => session.exit()}/>
+                <Button title={t('session.round.stop')} variant="transparent" onPress={() => session.exit()}/>
             </View>
         </View>
     );
@@ -249,7 +251,8 @@ const styles = StyleSheet.create({
         paddingTop: 0,
     },
     title: {
-        fontSize: 40,
+        fontSize: 32,
+        lineHeight: 36,
         textAlign: 'center',
     },
     subtitle: {

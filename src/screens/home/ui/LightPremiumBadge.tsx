@@ -1,10 +1,12 @@
 import { View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/shared/ui';
+import { useTranslation } from '@/shared/i18n';
 import { todayColor } from '../todayPalette';
 
 /** Today screen's premium marker — a soft filled pill, no border. */
-export function LightPremiumBadge({ label = 'Premium', locked = false }: { label?: string; locked?: boolean }) {
+export function LightPremiumBadge({ label, locked = false }: { label?: string; locked?: boolean }) {
+  const { t } = useTranslation();
   return (
     <View
       style={{
@@ -19,7 +21,7 @@ export function LightPremiumBadge({ label = 'Premium', locked = false }: { label
     >
       <Ionicons name={locked ? 'lock-closed' : 'sparkles'} size={9} color={todayColor.indigoDeep} />
       <AppText color={todayColor.indigoDeep} style={{ fontSize: 12, fontWeight: '600' }}>
-        {label}
+        {label ?? t('subscription.premium')}
       </AppText>
     </View>
   );

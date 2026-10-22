@@ -5,10 +5,12 @@ import { BlurView } from 'expo-blur';
 import { AmpMaskView } from '@amplitude/plugin-session-replay-react-native';
 import { AppText, BackButton, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
-import { useAuthStore } from '@/features/auth';
+import { reportSignInError, trackSignInAttempt, trackSignInSuccess, useAuthStore } from '@/features/auth';
+import { useTranslation } from '@/shared/i18n';
 import type { AuthScreenProps } from '@/app/navigation/types';
 
 export function EmailSignInScreen({ navigation, route }: AuthScreenProps<'EmailSignIn'>) {
+    const { t } = useTranslation();
     const { spacing, palette, radii, blur, typography } = useTheme();
     const signInWithEmail = useAuthStore((s) => s.signInWithEmail);
     const resetPassword = useAuthStore((s) => s.resetPassword);
@@ -21,11 +23,13 @@ export function EmailSignInScreen({ navigation, route }: AuthScreenProps<'EmailS
 
     const handleSignIn = async () => {
         setLoading(true);
+        trackSignInAttempt('email');
         try {
             await signInWithEmail(email, password);
+            trackSignInSuccess('email');
         } catch (e: unknown) {
-            const message = e instanceof Error ? e.message : 'Something went wrong';
-            Alert.alert('Sign in failed', message);
+            const message = reportSignInError('email', e);
+            if (message) Alert.alert(t('auth.signIn.failed'), message);
         } finally {
             setLoading(false);
         }
@@ -40,7 +44,7 @@ export function EmailSignInScreen({ navigation, route }: AuthScreenProps<'EmailS
             <View style={styles.content}>
                 <View style={styles.header}>
                     <AppText variant="title" style={{ fontSize: 26, textAlign: 'center' }}>
-                        Welcome back
+                        {t('auth.emailSignIn.title')}
                     </AppText>
                     <AppText variant="body" style={{ textAlign: 'center', color: palette.textSecondary }}>
                         {email}
@@ -51,7 +55,7 @@ export function EmailSignInScreen({ navigation, route }: AuthScreenProps<'EmailS
                     <View style={[StyleSheet.absoluteFill, { backgroundColor: palette.surface }]} />
                     <TextInput
                         style={[styles.input, { color: palette.textPrimary, fontFamily: typography.family.regular }]}
-                        placeholder="Password"
+                        placeholder={t('auth.passwordPlaceholder')}
                         placeholderTextColor={palette.textSecondary}
                         secureTextEntry
                         autoFocus
@@ -75,7 +79,7 @@ export function EmailSignInScreen({ navigation, route }: AuthScreenProps<'EmailS
                     ]}
                 >
                     <AppText variant="label" color={palette.buttonPrimaryText}>
-                        {loading ? 'Signing in...' : 'Sign in'}
+                        {loading ? t('auth.signIn.signingIn') : t('auth.signInCta')}
                     </AppText>
                 </Pressable>
                 <Pressable
@@ -86,7 +90,7 @@ export function EmailSignInScreen({ navigation, route }: AuthScreenProps<'EmailS
                             await resetPassword(email);
                             navigation.navigate('ResetPasswordSent', { email });
                         } catch {
-                            Toast.show({ type: 'error', text1: 'Something went wrong', text2: 'Please try again later' });
+                            Toast.show({ type: 'error', text1: t('common.somethingWentWrong'), text2: t('common.tryAgainLater') });
                         } finally {
                             setResetting(false);
                         }
@@ -94,7 +98,7 @@ export function EmailSignInScreen({ navigation, route }: AuthScreenProps<'EmailS
                     style={styles.switchLink}
                 >
                     <AppText variant="body" style={{ color: palette.accent }}>
-                        {resetting ? 'Sending...' : 'Forgot password?'}
+                        {resetting ? t('auth.emailSignIn.sending') : t('auth.emailSignIn.forgot')}
                     </AppText>
                 </Pressable>
                 <Pressable
@@ -104,10 +108,10 @@ export function EmailSignInScreen({ navigation, route }: AuthScreenProps<'EmailS
                     style={styles.switchLink}
                 >
                     <AppText variant="body" style={{ color: palette.textSecondary }}>
-                        {"Don't have an account? "}
+                        {t('auth.emailSignIn.noAccount')}
                     </AppText>
                     <AppText variant="body" style={{ color: palette.accent }}>
-                        Create one
+                        {t('auth.emailSignIn.createOne')}
                     </AppText>
                 </Pressable>
             </View>

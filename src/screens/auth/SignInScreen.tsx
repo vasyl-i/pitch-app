@@ -1,14 +1,15 @@
 import { useState } from 'react';
-import { Alert, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { BlurView } from 'expo-blur';
-import { Canvas, LinearGradient, Text as SkText, useFont, vec } from '@shopify/react-native-skia';
-import { AppText, Screen } from '@/shared/ui';
-import { palette, spacing, useTheme } from '@/shared/theme';
-import { useAuthStore } from '@/features/auth';
+import { Canvas, LinearGradient, Text as SkText, vec } from '@shopify/react-native-skia';
+import { AppText, Screen, useCanvasFont } from '@/shared/ui';
+import { palette, spacing, typography, useTheme } from '@/shared/theme';
+import { reportSignInError, trackSignInAttempt, trackSignInSuccess, useAuthStore } from '@/features/auth';
+import { useTranslation } from '@/shared/i18n';
 import { WinkCat } from '../../../assets/svg';
 import type { AuthStackParamList } from '@/app/navigation/types';
 
@@ -23,11 +24,11 @@ if (Platform.OS === 'ios') {
     });
 }
 
-const SUBTITLE_LINES = ['Save your progress, continue', 'where you finished.'];
 const FONT_SIZE = 16;
 const LINE_HEIGHT = 24; // matches body variant (fontSize * 1.5)
 
 export function SignInScreen() {
+    const { t } = useTranslation();
     const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
     const { spacing, palette, radii, blur } = useTheme();
     const signInWithGoogle = useAuthStore((s) => s.signInWithGoogle);
@@ -35,16 +36,21 @@ export function SignInScreen() {
     const continueAsGuest = useAuthStore((s) => s.continueAsGuest);
     const [loading, setLoading] = useState(false);
     const [canvasWidth, setCanvasWidth] = useState(0);
-    const font = useFont(require('../../../assets/fonts/Satoshi-Regular.ttf'), FONT_SIZE);
+    // drawn line-by-line on a Skia canvas for the gradient, so the copy carries explicit line breaks
+    const subtitleLines = t('auth.signIn.subtitle').split('\n');
+    // Satoshi has no Cyrillic, and Skia (unlike <Text>) needs useCanvasFont to fall back to Manrope
+    const { fontFor } = useCanvasFont(require('../../../assets/fonts/Satoshi-Regular.ttf'), FONT_SIZE);
+    const font = fontFor(subtitleLines.join(''));
 
     const handleSignIn = async (provider: 'google' | 'apple') => {
         setLoading(true);
+        trackSignInAttempt(provider);
         try {
             await (provider === 'google' ? signInWithGoogle() : signInWithApple());
+            trackSignInSuccess(provider);
         } catch (e: unknown) {
-            if ((e as { code?: string }).code === 'ERR_REQUEST_CANCELED') return;
-            const message = e instanceof Error ? e.message : 'Something went wrong';
-            Alert.alert('Sign in failed', message);
+            const message = reportSignInError(provider, e);
+            if (message) Alert.alert(t('auth.signIn.failed'), message);
         } finally {
             setLoading(false);
         }
@@ -56,13 +62,13 @@ export function SignInScreen() {
                 <View style={styles.hero}>
                     <WinkCat/>
                     <AppText variant="title" style={{ fontSize: 30, textAlign: 'center' }}>
-                        Let's get started!
+                        {t('auth.signIn.title')}
                     </AppText>
                     <View
                         style={{ width: '100%', marginTop: spacing.sm, height: FONT_SIZE + LINE_HEIGHT + 6 }}
                         onLayout={(e) => setCanvasWidth(e.nativeEvent.layout.width)}
                     >
-                        {font && canvasWidth > 0 && SUBTITLE_LINES.map((line, i) => {
+                        {font && canvasWidth > 0 && subtitleLines.map((line, i) => {
                             const lineWidth = font.measureText(line).width;
                             const x = (canvasWidth - lineWidth) / 2;
                             return (
@@ -93,7 +99,7 @@ export function SignInScreen() {
                         >
                             <Ionicons name="logo-apple" size={14} color="#000000"/>
                             <AppText variant="label" color="#000000">
-                                {loading ? 'Signing in...' : 'Continue with Apple'}
+                                {loading ? t('auth.signIn.signingIn') : t('auth.signIn.apple')}
                             </AppText>
                         </Pressable>
                     )}
@@ -111,7 +117,7 @@ export function SignInScreen() {
                         <View style={[StyleSheet.absoluteFill, { backgroundColor: palette.surface }]}/>
                         <Ionicons name="logo-google" size={14} color={palette.textPrimary}/>
                         <AppText variant="label" color={palette.textPrimary}>
-                            {loading ? 'Signing in...' : 'Continue with Google'}
+                            {loading ? t('auth.signIn.signingIn') : t('auth.signIn.google')}
                         </AppText>
                     </Pressable>
                     <Pressable
@@ -127,21 +133,21 @@ export function SignInScreen() {
                         <BlurView intensity={blur.card} tint="dark" style={StyleSheet.absoluteFill}/>
                         <View style={[StyleSheet.absoluteFill, { backgroundColor: palette.surface }]}/>
                         <Ionicons name="mail" size={14} color={palette.textPrimary}/>
-                        <AppText variant="label" color={palette.textPrimary}>{loading ? 'Signing in...' : 'Continue with email'}</AppText>
+                        <AppText variant="label" color={palette.textPrimary}>{loading ? t('auth.signIn.signingIn') : t('auth.signIn.email')}</AppText>
                     </Pressable>
                     <View style={styles.noSignInTextContainer}>
-                        <Text style={styles.noSignInText}>{'Want to try first? '}</Text>
+                        <AppText variant="label" color={palette.textPrimary} gradient={false} style={styles.noSignInText}>{t('auth.signIn.tryFirst')}</AppText>
                         <Pressable onPress={() => {
                             Alert.alert(
-                              'Continue without account?',
-                              'Your practice progress won\'t be saved and you won\'t be able to access Premium features. You can always sign in later from Settings.',
+                              t('auth.guest.title'),
+                              t('auth.guest.message'),
                               [
-                                { text: 'Go back', style: 'cancel' },
-                                { text: 'Continue', onPress: continueAsGuest },
+                                { text: t('common.goBack'), style: 'cancel' },
+                                { text: t('common.continue'), onPress: continueAsGuest },
                               ],
                             );
                         }} style={styles.clickableTextContainer}>
-                            <Text style={styles.noSignInTextClickable}>{'Proceed without account'}</Text>
+                            <AppText variant="label" color={palette.buttonPrimaryBg} style={styles.noSignInText}>{t('auth.signIn.withoutAccount')}</AppText>
                         </Pressable>
                     </View>
                 </View>
@@ -164,24 +170,23 @@ const styles = StyleSheet.create({
                 gap: 10,
             },
             noSignInTextContainer: {
-                flexDirection: 'row',
-                flexWrap: 'wrap',
+                flexDirection: 'column',
+                // flexWrap: 'wrap',
                 paddingTop: spacing.lg,
                 alignSelf: 'center',
                 alignItems: 'center',
                 textAlign: 'center',
+
             },
             noSignInText: {
-                color: palette.textPrimary,
+                fontSize: typography.size.sm,
+                lineHeight: typography.size.sm * 1.4,
             },
             clickableTextContainer:
                 {
                     alignItems: 'center',
                     alignSelf: 'center',
                 },
-            noSignInTextClickable: {
-                color: palette.buttonPrimaryBg,
-            }
         }
     )
 ;

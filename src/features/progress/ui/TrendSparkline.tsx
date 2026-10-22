@@ -2,15 +2,17 @@ import { StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AppText } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
+import { useTranslation } from '@/shared/i18n';
 
 /** Recent phrase scores as simple bars — improvement at a glance. */
 export function TrendSparkline({ scores }: { scores: number[] }) {
+  const { t } = useTranslation();
   const { palette, radii, gradient } = useTheme();
 
   if (scores.length < 2) {
     return (
       <AppText variant="caption" style={{ paddingVertical: 12 }}>
-        Complete a couple of phrases to see your trend.
+        {t('progress.charts.sparklineEmpty')}
       </AppText>
     );
   }

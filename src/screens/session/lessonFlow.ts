@@ -21,6 +21,7 @@ import type { GuidedStep, LessonStep, WeeklyExerciseEntry } from '@/features/lea
 import { currentStreak, localDayKey, noteHeatmap, useProgressStore } from '@/features/progress';
 import { resolveEntitlements, useSubscriptionStore } from '@/features/subscription';
 import { useProfileStore } from '@/entities/profile';
+import { t } from '@/shared/i18n';
 
 export function todayKey(now = new Date()): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -126,7 +127,7 @@ function lessonFromWeeklyPlan(dayKey: string, entries: WeeklyExerciseEntry[]) {
     slot: `step-${i}`,
     activity,
     difficultyId: entry.difficultyId,
-    reason: 'From your weekly plan',
+    reason: t('learning.reasons.weeklyPlan'),
     estMinutes: activity.minutes,
   }));
   return {
@@ -226,5 +227,5 @@ export function activeStepLabel(): string | null {
   const index = steps.findIndex((s) => s.slot === activeSlot);
   if (index < 0) return null;
   // return `Step ${index + 1} of ${steps.length} · ${SLOT_LABELS[activeSlot] ?? 'Practice'}`;
-  return `Step ${index + 1} of ${steps.length}`;
+  return t('session.stepLabel', { step: index + 1, total: steps.length });
 }

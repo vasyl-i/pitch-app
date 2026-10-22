@@ -7,6 +7,7 @@ import { RangeBar } from '@/features/vocal-range';
 import { midiToName } from '@/shared/lib/music';
 import { AppText, BackButton, Button, Card, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
+import { formatDate, useTranslation } from '@/shared/i18n';
 import type { RootScreenProps } from '@/app/navigation/types';
 
 type EditingEdge = 'low' | 'high' | null;
@@ -17,6 +18,7 @@ type EditingEdge = 'low' | 'high' | null;
  * detected values, or temporarily shrink the range for an off day.
  */
 export function VocalRangeSettingsScreen({ navigation }: RootScreenProps<'VocalRangeSettings'>) {
+  const { t } = useTranslation();
   const { palette, spacing } = useTheme();
   const profile = useProfileStore((s) => s.profile);
   const setComfortRange = useProfileStore((s) => s.setComfortRange);
@@ -29,14 +31,14 @@ export function VocalRangeSettingsScreen({ navigation }: RootScreenProps<'VocalR
       <Screen noBottomPadding>
         <View style={styles.header}>
           <BackButton onPress={() => navigation.pop()} />
-          <AppText variant="label">Vocal range</AppText>
+          <AppText variant="label">{t('vocalRange.settings.title')}</AppText>
         </View>
         <View style={styles.emptyCenter}>
           <AppText variant="body" style={{ textAlign: 'center' }}>
-            You haven’t measured your vocal range yet.
+            {t('vocalRange.settings.empty')}
           </AppText>
           <View style={{ marginTop: spacing.lg, width: '100%' }}>
-            <Button title="Measure my range" onPress={() => navigation.navigate('RedetectLow')} />
+            <Button title={t('vocalRange.settings.measure')} onPress={() => navigation.navigate('RedetectLow')} />
           </View>
         </View>
       </Screen>
@@ -58,11 +60,11 @@ export function VocalRangeSettingsScreen({ navigation }: RootScreenProps<'VocalR
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: spacing.xl }}>
         <View style={styles.header}>
           <BackButton onPress={() => navigation.goBack()} />
-          <AppText variant="label">Vocal range</AppText>
+          <AppText variant="label">{t('vocalRange.settings.title')}</AppText>
         </View>
 
         <Card style={[styles.card, { marginTop: spacing.lg }]}>
-          <AppText variant="caption">Comfortable range</AppText>
+          <AppText variant="caption">{t('vocalRange.settings.comfortable')}</AppText>
           <AppText variant="title" style={{ fontSize: 24, marginTop: 4 }}>
             {midiToName(profile.comfortRange.lowMidi)} – {midiToName(profile.comfortRange.highMidi)}
           </AppText>
@@ -70,12 +72,18 @@ export function VocalRangeSettingsScreen({ navigation }: RootScreenProps<'VocalR
             <RangeBar lowMidi={profile.maximumRange.lowMidi} highMidi={profile.maximumRange.highMidi} currentMidi={null} />
           </View>
           <AppText variant="caption" style={{ marginTop: spacing.sm }}>
-            ≈{voiceType(profile.comfortRange)} · {Math.round(profile.confidence * 100)}% confidence · measured{' '}
-            {new Date(profile.detectedAt).toLocaleDateString()}
+            {t('vocalRange.settings.meta', {
+              voice: voiceType(profile.comfortRange),
+              confidence: Math.round(profile.confidence * 100),
+              date: formatDate(new Date(profile.detectedAt), { dateStyle: 'medium' }),
+            })}
           </AppText>
           {isReduced && (
             <AppText variant="caption" color={palette.warning} style={{ marginTop: spacing.sm }}>
-              Temporarily reduced to {midiToName(profile.trainingRange.lowMidi)} – {midiToName(profile.trainingRange.highMidi)} for today
+              {t('vocalRange.settings.reduced', {
+                low: midiToName(profile.trainingRange.lowMidi),
+                high: midiToName(profile.trainingRange.highMidi),
+              })}
             </AppText>
           )}
         </Card>
@@ -98,23 +106,22 @@ export function VocalRangeSettingsScreen({ navigation }: RootScreenProps<'VocalR
         {/*</View>*/}
 
         <View style={{ gap: spacing.md, marginTop: spacing.xl }}>
-          <Button title="Run detection again" onPress={() => navigation.navigate('RedetectLow')} />
+          <Button title={t('vocalRange.settings.redetect')} onPress={() => navigation.navigate('RedetectLow')} />
           {/*<Button title="Reset to detected values" variant="ghost" onPress={resetToDetected} />*/}
         </View>
 
         <AppText variant="caption" style={{ marginTop: spacing.xl }}>
-          Feeling off today?
+          {t('vocalRange.settings.offTitle')}
         </AppText>
         <AppText variant="body" style={{ marginTop: 4 }}>
-          Temporarily narrow your training range if your voice is tired or you’re under the weather. Exercises will avoid your extremes until
-          you clear it.
+          {t('vocalRange.settings.offBody')}
         </AppText>
         <View style={[styles.editRow, { marginTop: spacing.md }]}>
-          <EditToggle label="Tired" active={profile.temporaryAdjustment?.reason === 'tired'} onPress={() => setTemporaryAdjustment({ insetSemitones: 2, reason: 'tired', setAt: Date.now() })} />
-          <EditToggle label="Sick" active={profile.temporaryAdjustment?.reason === 'sick'} onPress={() => setTemporaryAdjustment({ insetSemitones: 4, reason: 'sick', setAt: Date.now() })} />
+          <EditToggle label={t('vocalRange.settings.tired')} active={profile.temporaryAdjustment?.reason === 'tired'} onPress={() => setTemporaryAdjustment({ insetSemitones: 2, reason: 'tired', setAt: Date.now() })} />
+          <EditToggle label={t('vocalRange.settings.sick')} active={profile.temporaryAdjustment?.reason === 'sick'} onPress={() => setTemporaryAdjustment({ insetSemitones: 4, reason: 'sick', setAt: Date.now() })} />
         </View>
         {profile.temporaryAdjustment && (
-          <Button title="Back to normal" variant="ghost" onPress={() => setTemporaryAdjustment(null)} style={{ marginTop: spacing.md }} />
+          <Button title={t('vocalRange.settings.backToNormal')} variant="ghost" onPress={() => setTemporaryAdjustment(null)} style={{ marginTop: spacing.md }} />
         )}
       </ScrollView>
     </Screen>

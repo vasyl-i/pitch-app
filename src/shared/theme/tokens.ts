@@ -13,6 +13,9 @@
  * app's system rather than a one-screen departure.
  */
 
+import type { Language } from '@/shared/i18n';
+import { preferredLanguage } from '@/shared/i18n/device';
+
 export const palette = {
   background: '#08070C',
   backgroundElevated: '#0D0D14',
@@ -93,18 +96,60 @@ export const radii = {
   pill: 220,
 } as const;
 
-export const typography = {
-  /**
-   * Satoshi, bundled as static TTFs (see `App.tsx`'s `useFonts`) — `family`
-   * keys are the font's own PostScript names, required by RN to select the
-   * right weight since these aren't a single variable font.
-   */
-  family: {
+/**
+ * Bundled as static TTFs (see `App.tsx`'s `useFonts` and the `expo-font`
+ * plugin in `app.json`) — values are the fonts' own PostScript names, required
+ * by RN to select the right weight since these aren't variable fonts.
+ *
+ * Satoshi has no Cyrillic, so the Ukrainian UI runs on Manrope instead. Same
+ * roles, same sizes; Manrope tops out at ExtraBold, which stands in for Black.
+ * Satoshi covers Portuguese (ã õ ç and friends), so Portuguese stays on it —
+ * except ª / º, which the pt catalog avoids (enforced by the i18n test).
+ */
+export const fontFamilies = {
+  satoshi: {
     regular: 'Satoshi-Regular',
     medium: 'Satoshi-Medium',
     bold: 'Satoshi-Bold',
     black: 'Satoshi-Black',
   },
+  manrope: {
+    regular: 'Manrope-Regular',
+    medium: 'Manrope-Medium',
+    bold: 'Manrope-Bold',
+    black: 'Manrope-ExtraBold',
+  },
+} as const;
+
+export type FontFamilySet = (typeof fontFamilies)[keyof typeof fontFamilies];
+
+export function fontFamiliesFor(language: Language): FontFamilySet {
+  return language === 'uk' ? fontFamilies.manrope : fontFamilies.satoshi;
+}
+
+const FONT_ROLE: Record<string, keyof FontFamilySet> = Object.fromEntries(
+  Object.values(fontFamilies).flatMap((set) =>
+    (Object.keys(set) as (keyof FontFamilySet)[]).map((role) => [set[role], role] as const),
+  ),
+);
+
+/**
+ * The same role (regular/medium/…) in `set` for a family name from either
+ * set — so styles captured before a language switch still render in the
+ * right face. Anything else (system fonts, undefined) passes through.
+ */
+export function localizeFontFamily(family: string | undefined, set: FontFamilySet): string | undefined {
+  const role = family ? FONT_ROLE[family] : undefined;
+  return role ? set[role] : family;
+}
+
+export const typography = {
+  /**
+   * Picked from the app language when this module first loads — before any
+   * module-level `StyleSheet.create` reads it. A later switch in Account →
+   * Language is applied live by `ThemeProvider` and `AppText`.
+   */
+  family: fontFamiliesFor(preferredLanguage()),
   size: {
     xs: 12,
     sm: 14,

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { AppText, BackButton, Button, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
+import { useTranslation } from '@/shared/i18n';
 import { useProfileStore } from '@/entities/profile';
 import { ResultsCard } from '@/features/vocal-range';
 import type { RootScreenProps } from '@/app/navigation/types';
@@ -9,6 +10,7 @@ import type { RootScreenProps } from '@/app/navigation/types';
 /** Same results presentation as onboarding, but returns to Settings instead of into the app. */
 export function RedetectResultsScreen({ navigation, route }: RootScreenProps<'RedetectResults'>) {
   const { low, high } = route.params;
+  const { t } = useTranslation();
   const { spacing } = useTheme();
   const setDetectedRange = useProfileStore((s) => s.setDetectedRange);
   const [saving, setSaving] = useState(false);
@@ -27,15 +29,15 @@ export function RedetectResultsScreen({ navigation, route }: RootScreenProps<'Re
         <BackButton onPress={() => navigation.goBack()} />
 
         <AppText variant="title" style={{ fontSize: 26, textAlign: 'center', marginTop: spacing.lg }}>
-          Updated range
+          {t('vocalRange.redetect.title')}
         </AppText>
         <View style={{ marginTop: spacing.xl }}>
           <ResultsCard low={low.midi} high={high.midi} success />
         </View>
         <View style={{ flex: 1 }} />
         <View style={{ gap: spacing.md }}>
-          <Button title="Start over" variant="transparent" onPress={() => navigation.navigate('RedetectLow')} disabled={saving} />
-          <Button title="Save" onPress={save} disabled={saving} />
+          <Button title={t('onboarding.results.startOver')} variant="transparent" onPress={() => navigation.navigate('RedetectLow')} disabled={saving} />
+          <Button title={t('common.save')} onPress={save} disabled={saving} />
         </View>
       </ScrollView>
     </Screen>

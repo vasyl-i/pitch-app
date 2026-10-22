@@ -2,9 +2,10 @@ import { Pressable, View } from 'react-native';
 import Animated, { FadeInUp, LinearTransition } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import type { GuidedStep, LessonSlot } from '@/features/learning';
-import { SLOT_LABELS, useLessonSessionStore } from '@/features/learning';
+import { SLOT_LABELS, guidedStepTitle, useLessonSessionStore } from '@/features/learning';
 import { AppText } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
+import { t, useTranslation } from '@/shared/i18n';
 import { todayColor } from '../todayPalette';
 import { PillButton } from './PillButton';
 
@@ -60,6 +61,7 @@ export function PlanCard({
   onStepPress: (step: GuidedStep) => void;
   onViewAll: () => void;
 }) {
+  const { t } = useTranslation();
   const { typography, spacing } = useTheme();
   const activeSlot = useLessonSessionStore((s) => s.activeSlot);
 
@@ -89,11 +91,11 @@ export function PlanCard({
     <View>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <AppText color={todayColor.ink} style={{ fontFamily: typography.family.medium, fontSize: 16 }}>
-          Today's plan
+          {t('home.plan.title')}
         </AppText>
         <Pressable onPress={onViewAll} hitSlop={8}>
           <AppText color={todayColor.orange} style={{ fontFamily: typography.family.medium, fontSize: 14 }}>
-            More practice
+            {t('home.plan.morePractice')}
           </AppText>
         </Pressable>
       </View>
@@ -111,7 +113,7 @@ export function PlanCard({
         ))}
         {!planReady && (
           <AppText color={todayColor.inkSecondary} variant="caption" style={{ paddingVertical: spacing.md }}>
-            Putting today’s session together…
+            {t('home.plan.preparing')}
           </AppText>
         )}
       </View>
@@ -121,12 +123,12 @@ export function PlanCard({
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <Ionicons name="checkmark-circle" size={20} color={todayColor.orange} />
             <AppText color={todayColor.inkSecondary} style={{ flex: 1, fontSize: 13.5, lineHeight: 19 }}>
-              Practice complete — great work. Come back tomorrow, or explore freely below.
+              {t('home.plan.completeExplore')}
             </AppText>
           </View>
         ) : (
           <PillButton
-            title={doneCount > 0 ? 'Continue today’s practice' : 'Start today’s practice'}
+            title={doneCount > 0 ? t('home.plan.continue') : t('home.plan.start')}
             disabled={!planReady || steps.length === 0}
             onPress={onPrimaryAction}
           />
@@ -136,10 +138,10 @@ export function PlanCard({
   );
 }
 
-const STATUS_LABEL: Partial<Record<StepStatus, string>> = {
-  completed: 'Completed',
-  'in-progress': 'In progress',
-  ready: 'Ready',
+const STATUS_LABEL: Partial<Record<StepStatus, () => string>> = {
+  completed: () => t('home.status.completed'),
+  'in-progress': () => t('home.status.inProgress'),
+  ready: () => t('home.status.ready'),
 };
 
 function StepCard({
@@ -165,7 +167,7 @@ function StepCard({
   // backdrop (muted, lower-emphasis), current/ready/in-progress get the hue
   // at full strength.
   const background = done ? fadeToBg(hue, 0.55) : status === 'upcoming' ? lighten(hue, 0.38) : hue;
-  const label = STATUS_LABEL[status];
+  const label = STATUS_LABEL[status]?.();
 
   const pillBg = done ? 'rgba(247, 245, 251, 0.16)' : inkOnPastel(0.12);
   const pillText = done ? todayColor.ink : inkOnPastel(0.92);
@@ -203,7 +205,7 @@ function StepCard({
             style={{ flex: 1, marginRight: spacing.sm, fontFamily: typography.family.bold, fontSize: 24, lineHeight: 29, letterSpacing: -0.3 }}
             color={titleColor}
           >
-            {step.title}
+            {guidedStepTitle(step)}
           </AppText>
 
           {label && (
@@ -225,12 +227,12 @@ function StepCard({
         <AppText
           style={{ marginTop: 0, fontFamily: typography.family.regular, fontSize: 16, color: secondaryColor }}
         >
-          {SLOT_LABELS[step.slot] ?? 'Practice'}
+          {SLOT_LABELS[step.slot] ?? t('home.practice')}
         </AppText>
 
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.md }}>
           <AppText style={{ fontFamily: typography.family.regular, fontSize: 16, color: metaColor }}>
-            {step.estMinutes} min
+            {t('common.minutesShort', { count: step.estMinutes })}
           </AppText>
           {!done && <Ionicons name="chevron-forward" size={16} color={chevronColor} />}
         </View>

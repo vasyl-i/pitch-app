@@ -2,9 +2,11 @@
 import { StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/shared/theme';
+import { useTranslation } from '@/shared/i18n';
 import { AppText } from '@/shared/ui';
 
-export function PremiumBadge({ label = 'Premium', locked = false }: { label?: string; locked?: boolean }) {
+export function PremiumBadge({ label, locked = false }: { label?: string; locked?: boolean }) {
+  const { t } = useTranslation();
   const { palette } = useTheme();
   return (
     <View
@@ -17,7 +19,7 @@ export function PremiumBadge({ label = 'Premium', locked = false }: { label?: st
     >
       <Ionicons name={locked ? 'lock-closed' : 'sparkles'} size={9} color={palette.accentSecondary} />
       <AppText variant="caption" color={palette.accentSecondary} style={styles.text}>
-        {label}
+        {label ?? t('subscription.premium')}
       </AppText>
     </View>
   );

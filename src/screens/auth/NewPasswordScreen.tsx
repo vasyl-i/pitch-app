@@ -7,9 +7,11 @@ import { AmpMaskView } from '@amplitude/plugin-session-replay-react-native';
 import { AppText, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
 import { supabase } from '@/shared/lib/supabase';
+import { useTranslation } from '@/shared/i18n';
 import type { RootScreenProps } from '@/app/navigation/types';
 
 export function NewPasswordScreen({ navigation, route }: RootScreenProps<'NewPassword'>) {
+    const { t } = useTranslation();
     const { spacing, palette, radii, blur, typography } = useTheme();
     const requireOldPassword = route.params?.requireOldPassword ?? false;
     const [oldPassword, setOldPassword] = useState('');
@@ -25,17 +27,17 @@ export function NewPasswordScreen({ navigation, route }: RootScreenProps<'NewPas
             if (requireOldPassword) {
                 // Re-authenticate with old password to verify identity
                 const email = supabase.auth.getUser ? (await supabase.auth.getUser()).data.user?.email : undefined;
-                if (!email) throw new Error('Could not retrieve account email');
+                if (!email) throw new Error(t('auth.newPassword.noEmail'));
                 const { error: signInError } = await supabase.auth.signInWithPassword({ email, password: oldPassword });
-                if (signInError) throw new Error('Current password is incorrect');
+                if (signInError) throw new Error(t('auth.newPassword.wrongCurrent'));
             }
             const { error } = await supabase.auth.updateUser({ password });
             if (error) throw error;
-            Toast.show({ type: 'success', text1: 'Password updated', text2: 'Your password has been changed' });
+            Toast.show({ type: 'success', text1: t('auth.newPassword.updated'), text2: t('auth.newPassword.updatedBody') });
             navigation.goBack();
         } catch (e: unknown) {
-            const message = e instanceof Error ? e.message : 'Something went wrong';
-            Toast.show({ type: 'error', text1: 'Could not update password', text2: message });
+            const message = e instanceof Error ? e.message : t('common.somethingWentWrong');
+            Toast.show({ type: 'error', text1: t('auth.newPassword.failed'), text2: message });
         } finally {
             setLoading(false);
         }
@@ -50,10 +52,10 @@ export function NewPasswordScreen({ navigation, route }: RootScreenProps<'NewPas
                         <Ionicons name="lock-closed" size={48} color={palette.accent} />
                     </View>
                     <AppText variant="title" style={{ fontSize: 26, textAlign: 'center' }}>
-                        {requireOldPassword ? 'Change password' : 'Set new password'}
+                        {requireOldPassword ? t('auth.newPassword.changeTitle') : t('auth.newPassword.setTitle')}
                     </AppText>
                     <AppText variant="body" style={{ textAlign: 'center', color: palette.textSecondary }}>
-                        {requireOldPassword ? 'Verify your current password, then choose a new one.' : 'Choose a new password for your account.'}
+                        {requireOldPassword ? t('auth.newPassword.changeBody') : t('auth.newPassword.setBody')}
                     </AppText>
                 </View>
 
@@ -64,7 +66,7 @@ export function NewPasswordScreen({ navigation, route }: RootScreenProps<'NewPas
                             <View style={[StyleSheet.absoluteFill, { backgroundColor: palette.surface }]} />
                             <TextInput
                                 style={[styles.input, { color: palette.textPrimary, fontFamily: typography.family.regular }]}
-                                placeholder="Current password"
+                                placeholder={t('auth.newPassword.current')}
                                 placeholderTextColor={palette.textSecondary}
                                 secureTextEntry
                                 autoFocus
@@ -79,7 +81,7 @@ export function NewPasswordScreen({ navigation, route }: RootScreenProps<'NewPas
                         <View style={[StyleSheet.absoluteFill, { backgroundColor: palette.surface }]} />
                         <TextInput
                             style={[styles.input, { color: palette.textPrimary, fontFamily: typography.family.regular }]}
-                            placeholder="New password"
+                            placeholder={t('auth.newPassword.new')}
                             placeholderTextColor={palette.textSecondary}
                             secureTextEntry
                             autoFocus={!requireOldPassword}
@@ -93,7 +95,7 @@ export function NewPasswordScreen({ navigation, route }: RootScreenProps<'NewPas
                         <View style={[StyleSheet.absoluteFill, { backgroundColor: palette.surface }]} />
                         <TextInput
                             style={[styles.input, { color: palette.textPrimary, fontFamily: typography.family.regular }]}
-                            placeholder="Confirm password"
+                            placeholder={t('auth.newPassword.confirm')}
                             placeholderTextColor={palette.textSecondary}
                             secureTextEntry
                             value={confirm}
@@ -104,12 +106,12 @@ export function NewPasswordScreen({ navigation, route }: RootScreenProps<'NewPas
                     </View>
                     {password.length > 0 && password.length < 6 && (
                         <AppText variant="caption" style={{ color: palette.textSecondary, paddingHorizontal: 20 }}>
-                            Password must be at least 6 characters
+                            {t('auth.newPassword.tooShort')}
                         </AppText>
                     )}
                     {confirm.length > 0 && password !== confirm && (
                         <AppText variant="caption" style={{ color: palette.danger, paddingHorizontal: 20 }}>
-                            Passwords do not match
+                            {t('auth.newPassword.mismatch')}
                         </AppText>
                     )}
                 </View>
@@ -128,7 +130,7 @@ export function NewPasswordScreen({ navigation, route }: RootScreenProps<'NewPas
                     ]}
                 >
                     <AppText variant="label" color={palette.buttonPrimaryText}>
-                        {loading ? 'Updating...' : 'Update password'}
+                        {loading ? t('auth.newPassword.updating') : t('auth.newPassword.cta')}
                     </AppText>
                 </Pressable>
             </View>

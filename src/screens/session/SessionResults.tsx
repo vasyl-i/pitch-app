@@ -14,6 +14,7 @@ import { PremiumGate } from '@/features/subscription';
 import { typography, useTheme } from '@/shared/theme';
 import { AppText, Button, Card } from '@/shared/ui';
 import { MelodyOverlay } from './MelodyOverlay';
+import { useTranslation } from '@/shared/i18n';
 import { BlurTargetView, BlurView } from 'expo-blur';
 
 interface SessionControls {
@@ -56,6 +57,7 @@ function statusColor(status: OutcomeStatus, palette: {
 }
 
 function NoteRows({ notes }: { notes: NoteOutcome[] }) {
+    const { t } = useTranslation();
     const { palette, spacing } = useTheme();
     return (
         <View style={{ gap: spacing.xs }}>
@@ -65,7 +67,7 @@ function NoteRows({ notes }: { notes: NoteOutcome[] }) {
                         {STATUS_GLYPH[n.status]} {n.label}
                     </AppText>
                     <AppText variant="caption">
-                        {n.status === 'missing' ? 'not heard' : n.status === 'extra' ? 'extra' : n.cents === null ? '' : `${n.cents > 0 ? '+' : ''}${n.cents}¢`}
+                        {n.status === 'missing' ? t('session.results.notHeard') : n.status === 'extra' ? t('session.results.extra') : n.cents === null ? '' : `${n.cents > 0 ? '+' : ''}${n.cents}¢`}
                     </AppText>
                 </View>
             ))}
@@ -75,22 +77,23 @@ function NoteRows({ notes }: { notes: NoteOutcome[] }) {
 
 /** the locked stand-in for the target-vs-sung pitch overlay */
 function LockedOverlay({ onPress }: { onPress: () => void }) {
+    const { t } = useTranslation();
     const { palette, spacing } = useTheme();
     return (
         <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Performance overlay — Premium feature"
-            accessibilityHint="Opens the Premium plans"
+            accessibilityLabel={t('session.results.overlayA11y')}
+            accessibilityHint={t('session.results.overlayHint')}
             onPress={onPress}
         >
             {({ pressed }) => (
                 <Card variant="highlighted"
                       style={[{ padding: spacing.md, alignItems: 'center', gap: 4 }, pressed && { opacity: 0.85 }]}>
                     <AppText variant="caption" color={palette.accent}>
-                        See your pitch traced over the target
+                        {t('session.results.overlayTitle')}
                     </AppText>
                     <AppText variant="caption" style={{ fontSize: 12, textAlign: 'center' }}>
-                        Premium overlays your attempt on the melody so you can spot exactly where the pitch drifts.
+                        {t('session.results.overlayBody')}
                     </AppText>
                 </Card>
             )}
@@ -98,16 +101,11 @@ function LockedOverlay({ onPress }: { onPress: () => void }) {
     );
 }
 
-const ROUND_RESULT_LABELS: Record<string, string> = {
-    'Love it!': 'Love it!',
-    'Almost': 'Almost',
-    'Try once more': 'Try once more',
-    'Couldn\'t hear you': 'Couldn\'t hear you',
-};
 
 const isSmallScreen = Dimensions.get('screen').height < 700;
 
 export function SessionResults({ session, actions }: { session: SessionControls; actions: ResultsActions }) {
+    const { t } = useTranslation();
     const { palette, spacing } = useTheme();
     const [expanded, setExpanded] = useState<number | null>(null);
     const blurTargetRef = useRef<View>(null);
@@ -132,27 +130,27 @@ export function SessionResults({ session, actions }: { session: SessionControls;
                             style={isSmallScreen ? styles.scoreMascotSmall : styles.scoreMascot}
                             resizeMode="contain"
                         />
-                        {summary.overall >= 70 &&
-                            <Image
-                                source={require('../../../assets/results-board-overlay.png')}
-                                style={styles.scoreColorOverlay}
-                                resizeMode="contain"
-                                tintColor={'rgb(200 218 89 / 0.1)'}
-                            />
-                        }
+                        {/*{summary.overall >= 70 &&*/}
+                        {/*    <Image*/}
+                        {/*        source={require('../../../assets/results-board-overlay.png')}*/}
+                        {/*        style={isSmallScreen ? styles.scoreColorOverlaySmall : styles.scoreColorOverlay}*/}
+                        {/*        resizeMode="contain"*/}
+                        {/*        tintColor={'rgb(200 218 89 / 0.1)'}*/}
+                        {/*    />*/}
+                        {/*}*/}
                         <View style={styles.scoreOverlay}>
                             <AppText variant="display" color={scoreColor} style={[styles.scoreNumber]}>
                                 {summary.overall}%
                             </AppText>
                             {summary.avgCents !== null && (
-                                <AppText variant="caption" color={palette.textSecondaryElevated}>
-                                    {summary.avgCents}¢ average off
+                                <AppText variant="caption" color={palette.textSecondaryElevated} style={{ fontSize: isSmallScreen ? 10 : 12 }}>
+                                    {t('session.results.avgOff', { cents: summary.avgCents })}
                                 </AppText>
                             )}
                         </View>
                     </View>
                     <AppText variant="caption" color={palette.white} style={{ marginTop: 12 }}>
-                        {summary.correctRounds} of {summary.totalRounds} rounds nailed
+                        {t('session.results.nailed', { correct: summary.correctRounds, count: summary.totalRounds })}
                     </AppText>
                 </View>
 
@@ -174,12 +172,12 @@ export function SessionResults({ session, actions }: { session: SessionControls;
                     </AppText>
                     {results.map((r, i) => {
                         const isOpen = expanded === i;
-                        const displayLabel = ROUND_RESULT_LABELS[r.label] ?? r.label;
+                        const displayLabel = r.label;
                         return (
                             <Pressable key={i} accessibilityRole="button"
                                        onPress={() => setExpanded(isOpen ? null : i)}>
                                 <View style={[styles.roundRow, i < results.length - 1 && styles.roundBorder]}>
-                                    <AppText variant="caption">Round {i + 1}</AppText>
+                                    <AppText variant="caption">{t('session.results.round', { number: i + 1 })}</AppText>
                                     <AppText variant="caption" color={r.ok ? palette.accent : palette.white}>
                                         {r.score !== 0 ? `${r.score}%` : displayLabel}
                                     </AppText>
@@ -187,10 +185,10 @@ export function SessionResults({ session, actions }: { session: SessionControls;
                                 {isOpen && (
                                     <View style={{ paddingBottom: spacing.md, gap: spacing.md }}>
                                         <View style={{ gap: 2 }}>
-                                            <AppText variant="caption">target: {r.expected}</AppText>
-                                            <AppText variant="caption">you: {r.actual}</AppText>
+                                            <AppText variant="caption">{t('session.results.target', { value: r.expected })}</AppText>
+                                            <AppText variant="caption">{t('session.results.you', { value: r.actual })}</AppText>
                                             {r.avgCents !== null &&
-                                                <AppText variant="caption">deviation: {r.avgCents}¢</AppText>}
+                                                <AppText variant="caption">{t('session.results.deviation', { cents: r.avgCents })}</AppText>}
                                         </View>
                                         {r.notes && r.notes.length > 0 && <NoteRows notes={r.notes}/>}
                                         {r.overlay && (
@@ -202,7 +200,7 @@ export function SessionResults({ session, actions }: { session: SessionControls;
                                                 <MelodyOverlay target={r.overlay.target} sung={r.overlay.sung}/>
                                             </PremiumGate>
                                         )}
-                                        <Button title="Hear the answer" variant="ghost"
+                                        <Button title={t('session.results.hearAnswer')} variant="ghost"
                                                 onPress={() => session.replayAnswer(i)}/>
                                     </View>
                                 )}
@@ -255,6 +253,15 @@ const styles = StyleSheet.create({
         marginLeft: -6,
         opacity: 1,
     },
+    scoreColorOverlaySmall: {
+        position: 'absolute',
+        top: 0,
+        alignSelf: 'center',
+        opacity: 1,
+        width: 220,
+        height: 226,
+        marginHorizontal: 110,
+    },
     scoreOverlay: {
         position: 'absolute',
         top: 0,
@@ -266,7 +273,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     scoreNumber: {
-        fontSize: 48,
+        fontSize: 40,
         fontFamily: typography.family.medium,
     },
     roundRow: {

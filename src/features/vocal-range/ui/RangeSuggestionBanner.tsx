@@ -8,8 +8,10 @@ import { dismissRangeSuggestion, evaluateRangeSuggestion, useProfileStore, useRa
 import { midiToName } from '@/shared/lib/music';
 import { AppText, Button, Card } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
+import { useTranslation } from '@/shared/i18n';
 
 export function RangeSuggestionBanner() {
+  const { t } = useTranslation();
   const { spacing } = useTheme();
   const profile = useProfileStore((s) => s.profile);
   const setComfortRange = useProfileStore((s) => s.setComfortRange);
@@ -30,17 +32,16 @@ export function RangeSuggestionBanner() {
 
   return (
     <Card variant="highlighted" style={{ ...styles.card, marginTop: spacing.md }}>
-      <AppText variant="label">We noticed something</AppText>
+      <AppText variant="label">{t('vocalRange.suggestion.title')}</AppText>
       <AppText variant="body" style={{ marginTop: 4 }}>
-        You’ve comfortably reached {midiToName(suggestion.suggestedMidi)} in {suggestion.observedSessions} recent sessions. Want to expand
-        your vocal range?
+        {t('vocalRange.suggestion.body', { note: midiToName(suggestion.suggestedMidi), count: suggestion.observedSessions })}
       </AppText>
       <View style={{ flexDirection: 'row', gap: spacing.md, marginTop: spacing.md }}>
         <View style={{ flex: 1 }}>
-          <Button title="Expand range" onPress={expand} />
+          <Button title={t('vocalRange.suggestion.expand')} onPress={expand} />
         </View>
         <View style={{ flex: 1 }}>
-          <Button title="Not now" variant="ghost" onPress={() => dismissRangeSuggestion(suggestion.direction, suggestion.suggestedMidi)} />
+          <Button title={t('common.notNow')} variant="ghost" onPress={() => dismissRangeSuggestion(suggestion.direction, suggestion.suggestedMidi)} />
         </View>
       </View>
     </Card>

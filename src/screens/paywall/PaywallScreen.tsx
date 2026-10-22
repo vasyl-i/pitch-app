@@ -16,6 +16,7 @@ import {
   fetchSubscriptionState,
 } from '@/features/subscription';
 import type { RootScreenProps } from '@/app/navigation/types';
+import { t } from '@/shared/i18n';
 
 // iPhone SE (2nd/3rd gen) is 667pt tall; every modern iPhone is 812pt or more
 const isSmallScreen = Dimensions.get('screen').height < 700;
@@ -64,8 +65,8 @@ export function PaywallScreen({ navigation, route }: RootScreenProps<'Paywall'>)
     setTimeout(() => {
       Toast.show({
         type: 'success',
-        text1: 'Welcome to Premium!',
-        text2: 'All features are now unlocked',
+        text1: t('subscription.welcome'),
+        text2: t('subscription.welcomeBody'),
       });
     }, 500);
   };
@@ -81,8 +82,8 @@ export function PaywallScreen({ navigation, route }: RootScreenProps<'Paywall'>)
     setTimeout(() => {
       Toast.show({
         type: 'success',
-        text1: 'Purchase restored',
-        text2: 'Your Premium access is back',
+        text1: t('subscription.restored'),
+        text2: t('subscription.restoredBody'),
       });
     }, 500);
   };

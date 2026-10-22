@@ -4,6 +4,7 @@
  * the same profile produces the same message.
  */
 import type { Insight, SessionAnnotation, SkillId, SkillState, Trend } from '../model/types';
+import { t } from '@/shared/i18n';
 import { SKILL_LABELS } from '../model/types';
 import type { TendencyFact } from './lessonGenerator';
 
@@ -23,7 +24,7 @@ export function buildCoachMessage(
 ): string {
   const trained = (Object.keys(skills) as SkillId[]).filter((s) => skills[s].exercisesCompleted > 0);
   if (trained.length === 0) {
-    return 'Welcome! Start with today’s lesson — a few minutes of focused practice beats an hour of guessing.';
+    return t('learning.coach.welcome');
   }
 
   const parts: string[] = [];
@@ -31,11 +32,11 @@ export function buildCoachMessage(
   const improving = skillsByTrend(skills, 'improving')[0];
   const strongest = [...trained].sort((a, b) => skills[b].mastery - skills[a].mastery)[0];
   if (improving) {
-    parts.push(`You're becoming noticeably more consistent in ${SKILL_LABELS[improving].toLowerCase()}.`);
+    parts.push(t('learning.coach.improving', { skill: SKILL_LABELS[improving] }));
   } else if (strongest && skills[strongest].mastery >= 55) {
-    parts.push(`${SKILL_LABELS[strongest]} is turning into a real strength (${skills[strongest].mastery}/100).`);
+    parts.push(t('learning.coach.strength', { skill: SKILL_LABELS[strongest], mastery: skills[strongest].mastery }));
   } else {
-    parts.push('Your practice is building a solid base — every session feeds your skill profile.');
+    parts.push(t('learning.coach.solidBase'));
   }
 
   const tendency = tendencies.filter((t) => t.count >= 5 && Math.abs(t.avgCents) >= 20)[0];
@@ -44,13 +45,13 @@ export function buildCoachMessage(
   if (tendency) {
     parts.push(
       tendency.avgCents > 0
-        ? `On ${tendency.name} you tend to land a touch sharp — ease into it from just below the note.`
-        : `On ${tendency.name} you tend to land a touch flat — think of lifting up into the note.`
+        ? t('learning.coach.sharp', { note: tendency.name })
+        : t('learning.coach.flat', { note: tendency.name })
     );
   } else if (declining) {
-    parts.push(`${SKILL_LABELS[declining]} slipped a little lately — a short refresher today will bring it right back.`);
+    parts.push(t('learning.coach.declining', { skill: SKILL_LABELS[declining] }));
   } else if (weakest && skills[weakest].mastery < 50) {
-    parts.push(`${SKILL_LABELS[weakest]} is your biggest opportunity right now — today's lesson gives it extra attention.`);
+    parts.push(t('learning.coach.opportunity', { skill: SKILL_LABELS[weakest] }));
   }
 
   return parts.join(' ');
@@ -77,18 +78,18 @@ export function buildSessionInsights(
   if (best && best[1].delta >= 0.5) {
     insights.push({
       kind: 'improvement',
-      text: `${SKILL_LABELS[best[0]]} improved this session — you sang above your long-term average.`,
+      text: t('learning.insights.improved', { skill: SKILL_LABELS[best[0]] }),
     });
   }
   const steady = entries.find(([, v]) => Math.abs(v.delta) < 0.5);
   if (steady) {
-    insights.push({ kind: 'steady', text: `${SKILL_LABELS[steady[0]]} held steady at its usual level.` });
+    insights.push({ kind: 'steady', text: t('learning.insights.steady', { skill: SKILL_LABELS[steady[0]] }) });
   }
   const worst = entries[entries.length - 1];
   if (worst && worst !== best && worst[1].delta <= -1) {
     insights.push({
       kind: 'decline',
-      text: `${SKILL_LABELS[worst[0]]} came in below your average — worth a gentle rep tomorrow, not a grind today.`,
+      text: t('learning.insights.below', { skill: SKILL_LABELS[worst[0]] }),
     });
   }
 
@@ -102,7 +103,7 @@ export function buildSessionInsights(
     if (first - last >= 8) {
       insights.push({
         kind: 'observation',
-        text: 'Accuracy dipped later in today’s practice — shorter sessions with breaks may serve you better.',
+        text: t('learning.insights.fatigue'),
       });
     }
   }
@@ -110,7 +111,7 @@ export function buildSessionInsights(
   if (latest.mistakes.includes('intonation') && !insights.some((i) => i.kind === 'decline')) {
     insights.push({
       kind: 'observation',
-      text: 'Intonation wandered a bit — slow, sustained notes are the fastest fix.',
+      text: t('learning.insights.intonation'),
     });
   }
 

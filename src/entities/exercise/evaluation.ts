@@ -10,6 +10,7 @@
  * Octave-agnostic throughout — singers use their own register.
  */
 import { centsToNearestOctave, median, PERFECT_CENTS, SLIGHT_CENTS } from '@/shared/lib/music';
+import { translatedRecord } from '@/shared/i18n';
 import type { TargetNote } from './types';
 
 export type Verdict = 'perfect' | 'sharp' | 'flat' | 'wrong' | 'missed';
@@ -40,13 +41,13 @@ export const VERDICT_GLYPH: Record<Verdict, string> = {
   missed: '·',
 };
 
-export const VERDICT_LABEL: Record<Verdict, string> = {
-  perfect: 'Perfect',
-  sharp: 'Slightly sharp',
-  flat: 'Slightly flat',
-  wrong: 'Wrong note',
-  missed: 'Missed',
-};
+export const VERDICT_LABEL: Record<Verdict, string> = translatedRecord<Verdict>({
+  perfect: 'exercise.verdict.perfect',
+  sharp: 'exercise.verdict.sharp',
+  flat: 'exercise.verdict.flat',
+  wrong: 'exercise.verdict.wrong',
+  missed: 'exercise.verdict.missed',
+});
 
 export interface NoteResult {
   noteIndex: number;

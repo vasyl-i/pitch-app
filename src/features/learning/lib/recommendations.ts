@@ -20,6 +20,7 @@ import type {
   SkillId,
   SkillState,
 } from '../model/types';
+import { t } from '@/shared/i18n';
 import { SKILL_LABELS } from '../model/types';
 import { pickChallengeDifficultyId, pickDifficultyId } from './adaptiveDifficulty';
 import { FREE_CATALOG } from './catalog';
@@ -86,21 +87,21 @@ export function buildRecommendations(input: RecommendationInput, limit = 3): Rec
       'due-review',
       due.skill,
       due.overdueDays > 0
-        ? `${SKILL_LABELS[due.skill]} is ${due.overdueDays} day${due.overdueDays === 1 ? '' : 's'} overdue for review — a quick session keeps it from fading.`
-        : `${SKILL_LABELS[due.skill]} is due for its spaced review today (last practiced ${due.daysSincePracticed} days ago).`
+        ? t('learning.recommendations.overdue', { skill: SKILL_LABELS[due.skill], count: due.overdueDays })
+        : t('learning.recommendations.dueToday', { skill: SKILL_LABELS[due.skill], days: due.daysSincePracticed })
     );
   }
 
   // 2. consistent sharp/flat tendency on a pitch class
   const tendency = input.tendencies
-    .filter((t) => t.count >= 5 && Math.abs(t.avgCents) >= 20)
+    .filter((f) => f.count >= 5 && Math.abs(f.avgCents) >= 20)
     .sort((a, b) => Math.abs(b.avgCents) - Math.abs(a.avgCents))[0];
   if (tendency) {
-    const direction = tendency.avgCents > 0 ? 'sharp' : 'flat';
+    const params = { note: tendency.name, cents: Math.abs(Math.round(tendency.avgCents)) };
     add(
       'tendency',
       'pitch-accuracy',
-      `You consistently sing ${tendency.name} slightly ${direction} (about ${Math.abs(Math.round(tendency.avgCents))} cents). Targeted pitch work will tighten it.`
+      tendency.avgCents > 0 ? t('learning.recommendations.sharp', params) : t('learning.recommendations.flat', params)
     );
   }
 
@@ -112,7 +113,14 @@ export function buildRecommendations(input: RecommendationInput, limit = 3): Rec
       add(
         'goal-gap',
         weakest,
-        `${SKILL_LABELS[weakest]} (${skills[weakest].mastery}/100) is the biggest gap on your "${prefs.primaryGoal === 'complete-beginner' ? 'fundamentals' : SKILL_LABELS[goalPath[0]].toLowerCase()}" path.`,
+        t('learning.recommendations.goalGap', {
+          skill: SKILL_LABELS[weakest],
+          mastery: skills[weakest].mastery,
+          path:
+            prefs.primaryGoal === 'complete-beginner'
+              ? t('learning.recommendations.fundamentals')
+              : SKILL_LABELS[goalPath[0]].toLowerCase(),
+        }),
         { preferFamiliar: false }
       );
     }
@@ -126,7 +134,7 @@ export function buildRecommendations(input: RecommendationInput, limit = 3): Rec
     add(
       'declining',
       declining,
-      `${SKILL_LABELS[declining]} has dipped in recent sessions — one focused session usually brings it back.`
+      t('learning.recommendations.declining', { skill: SKILL_LABELS[declining] })
     );
   }
 
@@ -134,7 +142,7 @@ export function buildRecommendations(input: RecommendationInput, limit = 3): Rec
   if (prefs) {
     const untried = GOAL_SKILLS[prefs.primaryGoal].find((s) => skills[s].exercisesCompleted === 0);
     if (untried) {
-      add('unexplored', untried, `You haven't tried ${SKILL_LABELS[untried]} yet — it's part of your goal path.`, {
+      add('unexplored', untried, t('learning.recommendations.untried', { skill: SKILL_LABELS[untried] }), {
         preferFamiliar: false,
       });
     }
@@ -148,7 +156,7 @@ export function buildRecommendations(input: RecommendationInput, limit = 3): Rec
     add(
       'level-up',
       strong,
-      `${SKILL_LABELS[strong]} is strong (${skills[strong].mastery}/100) — you're ready to try it a level harder.`,
+      t('learning.recommendations.levelUp', { skill: SKILL_LABELS[strong], mastery: skills[strong].mastery }),
       { challenge: true }
     );
   }

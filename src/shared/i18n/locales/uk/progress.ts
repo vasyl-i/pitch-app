@@ -1,0 +1,57 @@
+import type { LocaleShape } from '../../types';
+import type { progress as en } from '../en/progress';
+
+export const progress: LocaleShape<typeof en> = {
+  empty: 'Тут поки порожньо. Завершіть сьогоднішню практику на Головній — і прогрес почне накопичуватися.',
+  perfectRuns: 'Ідеальні спроби',
+  daysPracticed: 'Днів практики',
+  afterLast: 'Після останнього заняття',
+  weeklyAccuracy: 'Точність за тиждень',
+  vsLastWeek: '{{delta}} порівняно з минулим тижнем',
+  avgSummary: 'середній бал · середнє відхилення {{cents}}¢',
+  accuracyTrend: 'Динаміка точності',
+  masteryOverTime: 'Розвиток навичок з часом',
+  weeklyReview: 'Підсумки тижня',
+  weeklyReviewSubtitle: 'Що змінилося цього тижня і що далі',
+  review: {
+    days: 'Дні',
+    sessions: 'Заняття',
+    time: 'Час',
+    streak: 'Днів поспіль',
+    plainLanguage: 'Цей тиждень простими словами',
+    masteryChanges: 'Зміни навичок',
+    nextWeek: 'Наступний тиждень',
+  },
+  perfect: {
+    title: 'Ідеальні вправи',
+    subtitle: 'Вправи, які ви виконали на 3 зірки',
+    empty: 'Тут поки порожньо. Наберіть 90 або більше в будь-якій вправі, щоб отримати 3 зірки, — і вона зʼявиться в цьому списку.',
+    meta: 'Найкраще {{best}} · {{runs}} · {{date}}',
+    runs_one: '{{count}} ідеальна спроба',
+    runs_few: '{{count}} ідеальні спроби',
+    runs_many: '{{count}} ідеальних спроб',
+    runs_other: '{{count}} ідеальної спроби',
+  },
+  calendar: {
+    previous: 'Попередній місяць',
+    next: 'Наступний місяць',
+  },
+  charts: {
+    heatmapEmpty: 'Виконайте кілька вправ — і тут зʼявляться ваші схильності до завищення чи заниження.',
+    heatmapLegend: '↑ вище · ↓ нижче · останні 30 днів',
+    accuracyEmpty: 'Практикуйтеся кілька тижнів, щоб побачити динаміку точності.',
+    weeksAgo_one: '{{count}} тиждень тому',
+    weeksAgo_few: '{{count}} тижні тому',
+    weeksAgo_many: '{{count}} тижнів тому',
+    weeksAgo_other: '{{count}} тижня тому',
+    thisWeek: 'цей тиждень',
+    sparklineEmpty: 'Виконайте кілька фраз, щоб побачити динаміку.',
+    skillsEmpty: 'Практикуйтеся кілька тижнів, щоб побачити тут розвиток навичок.',
+  },
+  duration: {
+    underMinute: '<1 хв',
+    minutes: '{{m}} хв',
+    hours: '{{h}} год',
+    hoursMinutes: '{{h}} год {{m}} хв',
+  },
+};

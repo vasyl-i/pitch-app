@@ -26,6 +26,7 @@ import {
   setDailyTasksDoneDay,
   registerPushToken,
   scheduleTrialEndingReminder,
+  rescheduleReminders,
   cancelTrialEndingReminder,
 } from '@/shared/lib/notifications';
 import {
@@ -36,6 +37,7 @@ import {
   isPremium,
   onSubscriptionChange,
   useSubscriptionStore,
+  setRevenueCatLocale,
 } from '@/features/subscription';
 import { initAnalytics, identifyUser, resetAnalyticsUser, setUserProperties, track } from '@/shared/lib/analytics';
 import { ThemeProvider, theme } from '@/shared/theme';
@@ -43,9 +45,14 @@ import { mmkv } from '@/shared/lib/storage';
 import { toastConfig } from '@/shared/ui';
 import { supabase } from '@/shared/lib/supabase';
 import { preloadSamples, useSoundStore } from '@/shared/audio';
+import { applyPreferredLanguage, startDeviceLanguageSync } from '@/shared/i18n/device';
+import { intlLocale, useTranslation } from '@/shared/i18n';
 import { RootNavigator, PasswordResetRedirect } from './navigation/RootNavigator';
 import { AuthNavigator } from './navigation/AuthNavigator';
 
+// the language picked in Account → Language; until then Ukrainian when the phone is Ukrainian, English otherwise — before anything renders
+applyPreferredLanguage();
+startDeviceLanguageSync();
 SplashScreen.preventAutoHideAsync();
 setupNotificationHandler();
 initRevenueCat(
@@ -77,11 +84,16 @@ function handleAuthDeepLink(url: string) {
   }
 }
 
-const satoshiFonts = {
+// Satoshi for English, Manrope for Ukrainian (Cyrillic) — see `typography.family`
+const appFonts = {
   'Satoshi-Regular': require('../../assets/fonts/Satoshi-Regular.ttf'),
   'Satoshi-Medium': require('../../assets/fonts/Satoshi-Medium.ttf'),
   'Satoshi-Bold': require('../../assets/fonts/Satoshi-Bold.ttf'),
   'Satoshi-Black': require('../../assets/fonts/Satoshi-Black.ttf'),
+  'Manrope-Regular': require('../../assets/fonts/Manrope-Regular.ttf'),
+  'Manrope-Medium': require('../../assets/fonts/Manrope-Medium.ttf'),
+  'Manrope-Bold': require('../../assets/fonts/Manrope-Bold.ttf'),
+  'Manrope-ExtraBold': require('../../assets/fonts/Manrope-ExtraBold.ttf'),
 };
 
 const navigationTheme = {
@@ -146,6 +158,24 @@ function SyncManager() {
 }
 
 /** Keeps the scheduled local notifications in sync with the reminder preference and today's progress. */
+/** Surfaces that don't read i18next themselves follow a language switch from here. */
+function LanguageSync() {
+  const { i18n } = useTranslation();
+  const isFirstRun = useRef(true);
+
+  useEffect(() => {
+    void setRevenueCatLocale(intlLocale());
+    // on launch the reminders were just planned in this language already
+    if (isFirstRun.current) {
+      isFirstRun.current = false;
+      return;
+    }
+    void rescheduleReminders();
+  }, [i18n.language]);
+
+  return null;
+}
+
 function ReminderSync() {
   const reminderHour = usePreferencesStore((s) => s.preferences?.reminderHour ?? null);
   const reminderMinute = usePreferencesStore((s) => s.preferences?.reminderMinute ?? 0);
@@ -264,7 +294,7 @@ function getActiveRouteName(state: any): string | undefined {
 }
 
 export default function App() {
-  const [fontsLoaded] = useFonts(satoshiFonts);
+  const [fontsLoaded] = useFonts(appFonts);
   const authLoading = useAuthStore((s) => s.loading);
   const [appleReady, setAppleReady] = useState(Platform.OS !== 'ios');
   const navigationRef = useRef<NavigationContainerRef<any>>(null);
@@ -330,6 +360,7 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutReady}>
       <SafeAreaProvider>
         <ThemeProvider>
+          <LanguageSync />
           <NavigationContainer ref={navigationRef} theme={navigationTheme} onStateChange={onNavigationStateChange}>
             <AuthGate fallback={<AuthNavigator />}>
               <SyncManager />

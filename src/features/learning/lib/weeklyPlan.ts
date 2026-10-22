@@ -5,12 +5,21 @@
  * The UI and stores compose them; nothing here touches React or Zustand.
  */
 import { capacitySeconds } from './budget';
+import { formatDate } from '@/shared/i18n';
 import { activityById, catalogForTier } from './catalog';
 import type { Activity, DailyMinutes, WeekdayIndex, WeeklyExerciseEntry, WeeklyPlan } from '../model/types';
 
 export const MIN_DAILY_MINUTES = 5;
 
-export const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
+/** Short weekday names, Monday first, in the current app language (index getters, read lazily). */
+export const WEEKDAY_LABELS: readonly string[] = (() => {
+  const labels: string[] = [];
+  for (let i = 0; i < 7; i++) {
+    // 2024-01-01 was a Monday
+    Object.defineProperty(labels, i, { enumerable: true, get: () => formatDate(new Date(2024, 0, 1 + i), { weekday: 'short' }) });
+  }
+  return labels;
+})();
 
 /** Resolve an entry to its catalog Activity, returning null if the id is stale. */
 function resolveOne(entry: WeeklyExerciseEntry): Activity | null {

@@ -15,6 +15,14 @@ import type { RoundScore } from '@/features/ear-training';
 import { CATALOG } from '../lib/catalog';
 import type { ActivityKind, DailyLesson, LessonSlot } from './types';
 
+/**
+ * Display title of a step in the current language. The persisted `title` is
+ * a snapshot from when the plan was built, so prefer the live catalog entry.
+ */
+export function guidedStepTitle(step: Pick<GuidedStep, 'kind' | 'activityId' | 'title'>): string {
+  return CATALOG.find((a) => a.kind === step.kind && a.id === step.activityId)?.title ?? step.title;
+}
+
 /** saved mid-exercise round progress for resumption */
 export interface PartialProgress {
   completedRounds: number;

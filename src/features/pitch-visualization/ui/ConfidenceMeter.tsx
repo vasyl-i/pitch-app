@@ -2,6 +2,7 @@ import { StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AppText } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
+import { useTranslation } from '@/shared/i18n';
 
 /**
  * A 0..1 confidence readout as a thin bar plus a percentage. Used wherever a
@@ -9,7 +10,8 @@ import { useTheme } from '@/shared/theme';
  * vocal-range detection and mic calibration both read the same clarity
  * signal the pitch engine produces, so they share one visual language for it.
  */
-export function ConfidenceMeter({ confidence, label = 'Confidence' }: { confidence: number; label?: string }) {
+export function ConfidenceMeter({ confidence, label }: { confidence: number; label?: string }) {
+  const { t } = useTranslation();
   const { palette, radii, gradient } = useTheme();
   const pct = Math.round(Math.max(0, Math.min(1, confidence)) * 100);
   const color = pct >= 70 ? palette.accent : pct >= 40 ? palette.warning : palette.danger;
@@ -18,7 +20,7 @@ export function ConfidenceMeter({ confidence, label = 'Confidence' }: { confiden
   return (
     <View>
       <View style={styles.row}>
-        <AppText variant="caption">{label}</AppText>
+        <AppText variant="caption">{label ?? t('pitch.confidence')}</AppText>
         <AppText variant="caption" color={color}>
           {pct}%
         </AppText>

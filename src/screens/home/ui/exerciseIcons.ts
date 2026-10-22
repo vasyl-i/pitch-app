@@ -5,6 +5,7 @@
 import type { ImageSourcePropType } from 'react-native';
 import type { Ionicons } from '@expo/vector-icons';
 import type { Activity } from '@/features/learning';
+import { translatedRecord } from '@/shared/i18n';
 import { todayColor } from '../todayPalette';
 
 interface ExerciseIcon {
@@ -70,14 +71,14 @@ export const EXERCISE_CAT_ICONS: Partial<Record<string, CatIcon>> = {
 export const DEFAULT_CAT_ICON: CatIcon = { source: require('../../../../assets/SingTheInterval.png') };
 
 /** Short descriptions shown below the exercise title in the daily plan */
-export const EXERCISE_DESCRIPTIONS: Record<string, string> = {
-  'note-echo': 'Hear a note and sing it back',
-  'pitch-memory': 'Hear a note and sing it back in 1 minute',
-  'sing-interval': 'Hear an interval and sing it back',
-  'melody-echo': 'Hear a scale and sing it back',
-  'chord-tones': 'Hear a tones of the chord',
-  'major-minor': 'Listen and tell major from minor',
-  'odd-one-out': 'Find the note that doesn\u2019t belong',
-  'finish-melody': 'Hear a melody and sing the last note',
-  'echo-interval': 'Hear an interval and echo it back',
-};
+export const EXERCISE_DESCRIPTIONS: Partial<Record<string, string>> = translatedRecord({
+  'note-echo': 'home.exerciseDescription.noteEcho',
+  'pitch-memory': 'home.exerciseDescription.pitchMemory',
+  'sing-interval': 'home.exerciseDescription.singInterval',
+  'melody-echo': 'home.exerciseDescription.melodyEcho',
+  'chord-tones': 'home.exerciseDescription.chordTones',
+  'major-minor': 'home.exerciseDescription.majorMinor',
+  'odd-one-out': 'home.exerciseDescription.oddOneOut',
+  'finish-melody': 'home.exerciseDescription.finishMelody',
+  'echo-interval': 'home.exerciseDescription.echoInterval',
+});

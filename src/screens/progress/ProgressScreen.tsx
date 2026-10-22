@@ -23,10 +23,12 @@ import {
 import { ALL_SKILLS, buildSessionInsights, useLearningStore } from '@/features/learning';
 import { AppText, Card, Screen } from '@/shared/ui';
 import { typography, useTheme } from '@/shared/theme';
+import { useTranslation } from '@/shared/i18n';
 import { useFloatingTabBarClearance } from '@/app/navigation/FloatingTabBar';
 import type { ProgressScreenProps } from '@/app/navigation/types';
 
 export function ProgressScreen({ navigation }: ProgressScreenProps<'ProgressOverview'>) {
+    const { t } = useTranslation();
     const { palette, spacing } = useTheme();
     const tabBarClearance = useFloatingTabBarClearance(spacing.xl);
     const sessions = useProgressStore((s) => s.sessions);
@@ -53,32 +55,32 @@ export function ProgressScreen({ navigation }: ProgressScreenProps<'ProgressOver
                 <View style={{ paddingHorizontal: spacing.lg }}>
                     <AppText color={palette.textPrimary}
                              style={[styles.heading, { fontFamily: typography.family.bold }]}>
-                        Progress
+                        {t('nav.progress')}
                     </AppText>
 
                     {sessions.length === 0 ? (
                         <Card style={[styles.card, { marginTop: spacing.lg }]}>
                             <AppText variant="body">
-                                Nothing here yet. Finish today’s practice on Home and your progress starts building.
+                                {t('progress.empty')}
                             </AppText>
                         </Card>
                     ) : (
                         <>
                             <View style={styles.tiles}>
                                 <Tile
-                                    label="Perfect runs"
+                                    label={t('progress.perfectRuns')}
                                     value={String(perfectCount)}
                                     icon="trophy"
                                     onPress={() => navigation.navigate('PerfectExercises')}
                                 />
-                                <Tile label="Days practiced" value={practiceDays > 0 ? `${practiceDays}d` : '—'}
+                                <Tile label={t('progress.daysPracticed')} value={practiceDays > 0 ? t('common.daysShort', { count: practiceDays }) : '—'}
                                       icon="star"/>
-                                <Tile label="Practice time" value={practiceTime} icon="time"/>
+                                <Tile label={t('home.stats.practiceTime')} value={practiceTime} icon="time"/>
                             </View>
 
                             {insights.length > 0 && (
                                 <Card style={[styles.card, { marginTop: spacing.md }]}>
-                                    <AppText variant="caption">After your last session</AppText>
+                                    <AppText variant="caption">{t('progress.afterLast')}</AppText>
                                     {insights.map((insight) => (
                                         <View key={insight.text} style={styles.insightRow}>
                                             <Ionicons
@@ -96,11 +98,11 @@ export function ProgressScreen({ navigation }: ProgressScreenProps<'ProgressOver
 
                             <Card style={[styles.card, { marginTop: spacing.md }]}>
                                 <View style={styles.rowBetween}>
-                                    <AppText variant="caption">Weekly accuracy</AppText>
+                                    <AppText variant="caption">{t('progress.weeklyAccuracy')}</AppText>
                                     {week.scoreDelta !== null && week.scoreDelta !== 0 && (
                                         <AppText variant="caption"
                                                  color={week.scoreDelta > 0 ? palette.accent : palette.warning}>
-                                            {week.scoreDelta > 0 ? '▲' : '▼'} {Math.abs(week.scoreDelta)} vs last week
+                                            {week.scoreDelta > 0 ? '▲' : '▼'} {t('progress.vsLastWeek', { delta: Math.abs(week.scoreDelta) })}
                                         </AppText>
                                     )}
                                 </View>
@@ -108,12 +110,12 @@ export function ProgressScreen({ navigation }: ProgressScreenProps<'ProgressOver
                                     <AppText variant="label" style={{ fontSize: 40 }}>
                                         {week.avgScore}
                                     </AppText>
-                                    <AppText variant="caption">avg score · {week.avgCents}¢ avg deviation</AppText>
+                                    <AppText variant="caption">{t('progress.avgSummary', { cents: week.avgCents })}</AppText>
                                 </View>
                             </Card>
 
                             <Card style={[styles.card, { marginTop: spacing.md }]}>
-                                <AppText variant="caption">Accuracy trend</AppText>
+                                <AppText variant="caption">{t('progress.accuracyTrend')}</AppText>
                                 <View style={{ marginTop: spacing.md }}>
                                     <WeeklyAccuracyChart points={trend}/>
                                 </View>
@@ -121,7 +123,7 @@ export function ProgressScreen({ navigation }: ProgressScreenProps<'ProgressOver
 
                             {weekSnapshots.length >= 2 && (
                                 <Card style={[styles.card, { marginTop: spacing.md }]}>
-                                    <AppText variant="caption">Skill mastery over time</AppText>
+                                    <AppText variant="caption">{t('progress.masteryOverTime')}</AppText>
                                     <View style={{ marginTop: spacing.md }}>
                                         <SkillTrendChart snapshots={weekSnapshots} skills={[...ALL_SKILLS]}/>
                                     </View>
@@ -144,10 +146,10 @@ export function ProgressScreen({ navigation }: ProgressScreenProps<'ProgressOver
                                 <Ionicons name="calendar" size={18} color={palette.accent}/>
                                 <View style={{ flex: 1 }}>
                                     <AppText variant="label" style={{ fontSize: 15 }}>
-                                        Weekly review
+                                        {t('progress.weeklyReview')}
                                     </AppText>
                                     <AppText variant="caption" style={{ fontSize: 12 }}>
-                                        What moved this week, and what’s next
+                                        {t('progress.weeklyReviewSubtitle')}
                                     </AppText>
                                 </View>
                                 <Ionicons name="chevron-forward" size={18} color={palette.textFaint}/>

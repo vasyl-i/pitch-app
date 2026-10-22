@@ -10,17 +10,15 @@ import { generateDefaultWeeklyPlan, usePreferencesStore, type DailyMinutes } fro
 import { usePremiumStatus } from '@/features/subscription';
 import { AppText, BackButton, Button, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
+import { useTranslation } from '@/shared/i18n';
 import type { OnboardingScreenProps } from '@/app/navigation/types';
 
 const CLOCK_IMAGE = require('../../../assets/hourglass.png');
 
-const OPTIONS: { value: DailyMinutes; label: string }[] = [
-  { value: 5, label: '5 min' },
-  { value: 10, label: '10 min' },
-  { value: 15, label: '15 min' },
-];
+const OPTIONS: DailyMinutes[] = [5, 10, 15];
 
 export function PracticeRhythmScreen({ navigation }: OnboardingScreenProps<'PracticeRhythm'>) {
+  const { t } = useTranslation();
   const { palette, spacing, typography } = useTheme();
   const insets = useSafeAreaInsets();
   const setPreferences = usePreferencesStore((s) => s.setPreferences);
@@ -47,23 +45,23 @@ export function PracticeRhythmScreen({ navigation }: OnboardingScreenProps<'Prac
             variant="title"
             style={{ fontSize: 40, textAlign: 'center', fontFamily: typography.family.bold, marginTop: 20, lineHeight: 40 }}
           >
-            Set your practice{'\n'}rhythm
+            {t('onboarding.rhythm.title')}
           </AppText>
           <AppText
             variant="body"
             gradient
             style={{ textAlign: 'center', marginTop: spacing.lg, fontSize: 20 }}
           >
-            Even 5 minutes can bring you closer{'\n'}to better pitch.
+            {t('onboarding.rhythm.subtitle')}
           </AppText>
 
           <View style={[styles.pills, { marginTop: 58 }]}>
-            {OPTIONS.map((opt) => {
-              const active = selected === opt.value;
+            {OPTIONS.map((minutes) => {
+              const active = selected === minutes;
               return (
                 <Pressable
-                  key={opt.value}
-                  onPress={() => setSelected(opt.value)}
+                  key={minutes}
+                  onPress={() => setSelected(minutes)}
                   style={[
                     styles.pill,
                     {
@@ -80,7 +78,7 @@ export function PracticeRhythmScreen({ navigation }: OnboardingScreenProps<'Prac
                       color: active ? '#000000' : palette.textPrimary,
                     }}
                   >
-                    {opt.label}
+                    {t('common.minutesShort', { count: minutes })}
                   </AppText>
                 </Pressable>
               );
@@ -89,7 +87,7 @@ export function PracticeRhythmScreen({ navigation }: OnboardingScreenProps<'Prac
         </View>
 
         <Button
-          title="Continue"
+          title={t('common.continue')}
           onPress={handleContinue}
           style={{ backgroundColor: '#ffffff' }}
         />

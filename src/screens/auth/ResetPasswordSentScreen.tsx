@@ -2,9 +2,11 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
+import { useTranslation } from '@/shared/i18n';
 import type { AuthScreenProps } from '@/app/navigation/types';
 
 export function ResetPasswordSentScreen({ navigation, route }: AuthScreenProps<'ResetPasswordSent'>) {
+    const { t } = useTranslation();
     const { palette, radii } = useTheme();
     const { email } = route.params;
 
@@ -16,17 +18,17 @@ export function ResetPasswordSentScreen({ navigation, route }: AuthScreenProps<'
                         <Ionicons name="mail-open" size={48} color={palette.accent} />
                     </View>
                     <AppText variant="title" style={{ fontSize: 26, textAlign: 'center' }}>
-                        Check your email
+                        {t('auth.checkEmail.title')}
                     </AppText>
                     <AppText
                         variant="body"
                         style={{ textAlign: 'center', color: palette.textSecondary, lineHeight: 22 }}
                     >
-                        We sent a password reset link to{'\n'}
+                        {t('auth.resetSent.sentTo')}{'\n'}
                         <AppText variant="body" style={{ color: palette.textPrimary }}>
                             {email}
                         </AppText>
-                        {'\n'}Tap the link to set a new password.
+                        {'\n'}{t('auth.resetSent.tapLink')}
                     </AppText>
                 </View>
                 <Pressable
@@ -42,7 +44,7 @@ export function ResetPasswordSentScreen({ navigation, route }: AuthScreenProps<'
                     ]}
                 >
                     <AppText variant="label" color={palette.textPrimary}>
-                        Back to sign in
+                        {t('auth.backToSignIn')}
                     </AppText>
                 </Pressable>
             </View>

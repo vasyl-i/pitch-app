@@ -10,6 +10,7 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/shared/theme';
+import { useTranslation } from '@/shared/i18n';
 import { AppText, Card } from '@/shared/ui';
 import { PremiumBadge } from './PremiumBadge';
 
@@ -33,16 +34,17 @@ export function LockedFeatureCard({
   description,
   preview,
   bullets,
-  cta = 'See Premium',
+  cta,
   onPress,
 }: LockedFeatureCardProps) {
+  const { t } = useTranslation();
   const { palette, spacing } = useTheme();
 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${title} — Premium feature`}
-      accessibilityHint="Opens the Premium plans"
+      accessibilityLabel={t('subscription.featureA11y', { title })}
+      accessibilityHint={t('session.results.overlayHint')}
       onPress={onPress}
       style={({ pressed }) => [pressed && { opacity: 0.85 }]}
     >
@@ -87,7 +89,7 @@ export function LockedFeatureCard({
 
         <View style={[styles.ctaRow, { marginTop: spacing.md }]}>
           <AppText variant="label" color={palette.accent} style={{ fontSize: 14 }}>
-            {cta}
+            {cta ?? t('subscription.seePremium')}
           </AppText>
           <Ionicons name="arrow-forward" size={14} color={palette.accent} />
         </View>

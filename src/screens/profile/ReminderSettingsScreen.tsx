@@ -13,11 +13,13 @@ import { usePreferencesStore } from '@/features/learning';
 import { requestNotificationPermissions, schedulePracticeReminder, cancelPracticeReminder } from '@/shared/lib/notifications';
 import { AppText, BackButton, Button, Screen, TimeDropdown } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
+import { formatTime, intlLocale, useTranslation } from '@/shared/i18n';
 import type { RootScreenProps } from '@/app/navigation/types';
 
 const BELL_IMAGE = require('../../../assets/notification-bell.png');
 
 export function ReminderSettingsScreen({ navigation }: RootScreenProps<'ReminderSettings'>) {
+  const { t } = useTranslation();
   const { palette, spacing, typography } = useTheme();
   const insets = useSafeAreaInsets();
   const storedHour = usePreferencesStore((s) => s.preferences?.reminderHour ?? null);
@@ -54,11 +56,6 @@ export function ReminderSettingsScreen({ navigation }: RootScreenProps<'Reminder
     enabled !== storedEnabled ||
     (enabled && (date.getHours() !== storedHour || date.getMinutes() !== storedMinute));
 
-  const formatTime = (h: number, m: number) => {
-    const period = h < 12 ? 'AM' : 'PM';
-    const hour12 = h % 12 || 12;
-    return `${hour12}:${m.toString().padStart(2, '0')} ${period}`;
-  };
 
   const save = async () => {
     if (enabled) {
@@ -71,15 +68,15 @@ export function ReminderSettingsScreen({ navigation }: RootScreenProps<'Reminder
       }
       Toast.show({
         type: 'success',
-        text1: 'Reminder saved',
-        text2: `Daily reminder set for ${formatTime(hour, minute)}`,
+        text1: t('profile.reminderSettings.saved'),
+        text2: t('profile.reminderSettings.savedBody', { time: formatTime(date) }),
       });
     } else {
       setPreferences({ reminderHour: null });
       await cancelPracticeReminder();
       Toast.show({
         type: 'info',
-        text1: 'Reminder disabled',
+        text1: t('profile.reminderSettings.disabledToast'),
       });
     }
     navigation.goBack();
@@ -99,14 +96,14 @@ export function ReminderSettingsScreen({ navigation }: RootScreenProps<'Reminder
             variant="title"
             style={{ fontSize: 40, textAlign: 'center', fontFamily: typography.family.bold, marginTop: spacing.lg }}
           >
-            Daily reminder
+            {t('onboarding.reminder.title')}
           </AppText>
           <AppText
             variant="body"
             color={palette.textPrimary}
             style={{ textAlign: 'center', marginTop: spacing.sm, fontSize: 20 }}
           >
-            Get notifications to speed up your{'\n'}progress.
+            {t('onboarding.reminder.subtitle')}
           </AppText>
         </View>
 
@@ -123,10 +120,10 @@ export function ReminderSettingsScreen({ navigation }: RootScreenProps<'Reminder
               </View>
               <View style={{ flex: 1 }}>
                 <AppText variant="label" style={{ fontSize: 16 }}>
-                  Daily reminder
+                  {t('onboarding.reminder.title')}
                 </AppText>
                 <AppText variant="caption" style={{ marginTop: 2 }}>
-                  {enabled ? 'Enabled' : 'Disabled'}
+                  {enabled ? t('profile.reminderSettings.enabled') : t('profile.reminderSettings.disabled')}
                 </AppText>
               </View>
               <View style={[styles.toggle, { backgroundColor: enabled ? palette.accent : '#2A2A2C' }]}>
@@ -142,7 +139,7 @@ export function ReminderSettingsScreen({ navigation }: RootScreenProps<'Reminder
             <View style={styles.labelRow}>
               <Ionicons name="time-outline" size={18} color={palette.textPrimary} />
               <AppText variant="body" style={{ fontFamily: typography.family.medium, color: palette.textPrimary, fontSize: 18 }}>
-                Set reminder time
+                {t('onboarding.reminder.setTime')}
               </AppText>
             </View>
             {Platform.OS === 'ios' ? (
@@ -154,6 +151,7 @@ export function ReminderSettingsScreen({ navigation }: RootScreenProps<'Reminder
                 onChange={handleTimeChange}
                 minuteInterval={5}
                 themeVariant="dark"
+                locale={intlLocale()}
               />
             ) : (
               <TimeDropdown value={date} onChange={setDate} minuteInterval={5} />
@@ -165,7 +163,7 @@ export function ReminderSettingsScreen({ navigation }: RootScreenProps<'Reminder
 
         {/* Save button */}
         <Button
-          title="Save"
+          title={t('common.save')}
           onPress={save}
           disabled={!hasChanges}
           style={{ backgroundColor: '#ffffff', marginTop: spacing.xl }}

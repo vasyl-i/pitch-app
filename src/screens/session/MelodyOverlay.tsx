@@ -6,6 +6,7 @@
 import { View } from 'react-native';
 import type { OverlayNote } from '@/features/ear-training';
 import { useTheme } from '@/shared/theme';
+import { useTranslation } from '@/shared/i18n';
 import { AppText, Card } from '@/shared/ui';
 
 const HEIGHT = 96;
@@ -17,6 +18,7 @@ interface MelodyOverlayProps {
 }
 
 export function MelodyOverlay({ target, sung }: MelodyOverlayProps) {
+  const { t } = useTranslation();
   const { palette, spacing } = useTheme();
   const all = [...target, ...sung];
   if (target.length === 0) return null;
@@ -67,9 +69,9 @@ export function MelodyOverlay({ target, sung }: MelodyOverlayProps) {
       </Card>
       <View style={{ flexDirection: 'row', gap: spacing.lg, marginTop: spacing.xs }}>
         <AppText variant="caption" color={palette.accent}>
-          ▬ target
+          ▬ {t('session.overlay.target')}
         </AppText>
-        <AppText variant="caption">▭ you</AppText>
+        <AppText variant="caption">▭ {t('session.overlay.you')}</AppText>
       </View>
     </View>
   );

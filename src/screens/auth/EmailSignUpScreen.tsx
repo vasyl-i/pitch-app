@@ -5,9 +5,11 @@ import { AmpMaskView } from '@amplitude/plugin-session-replay-react-native';
 import { AppText, BackButton, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
 import { useAuthStore } from '@/features/auth';
+import { useTranslation } from '@/shared/i18n';
 import type { AuthScreenProps } from '@/app/navigation/types';
 
 export function EmailSignUpScreen({ navigation, route }: AuthScreenProps<'EmailSignUp'>) {
+    const { t } = useTranslation();
     const { spacing, palette, radii, blur, typography } = useTheme();
     const signUpWithEmail = useAuthStore((s) => s.signUpWithEmail);
     const [name, setName] = useState('');
@@ -26,8 +28,8 @@ export function EmailSignUpScreen({ navigation, route }: AuthScreenProps<'EmailS
                 navigation.replace('CheckEmail', { email, password });
             }
         } catch (e: unknown) {
-            const message = e instanceof Error ? e.message : 'Something went wrong';
-            Alert.alert('Sign up failed', message);
+            const message = e instanceof Error ? e.message : t('common.somethingWentWrong');
+            Alert.alert(t('auth.signUp.failed'), message);
         } finally {
             setLoading(false);
         }
@@ -44,7 +46,7 @@ export function EmailSignUpScreen({ navigation, route }: AuthScreenProps<'EmailS
             <View style={styles.content}>
                 <View style={styles.header}>
                     <AppText variant="title" style={{ fontSize: 26, textAlign: 'center' }}>
-                        Create your account
+                        {t('auth.signUp.title')}
                     </AppText>
                     <AppText variant="body" style={{ textAlign: 'center', color: palette.textSecondary }}>
                         {email}
@@ -56,7 +58,7 @@ export function EmailSignUpScreen({ navigation, route }: AuthScreenProps<'EmailS
                         <View style={[StyleSheet.absoluteFill, { backgroundColor: palette.surface }]} />
                         <TextInput
                             style={inputStyle}
-                            placeholder="Your name"
+                            placeholder={t('auth.signUp.namePlaceholder')}
                             placeholderTextColor={palette.textSecondary}
                             autoCapitalize="words"
                             autoComplete="name"
@@ -73,7 +75,7 @@ export function EmailSignUpScreen({ navigation, route }: AuthScreenProps<'EmailS
                         <TextInput
                             ref={passwordRef}
                             style={inputStyle}
-                            placeholder="Password (6+ characters)"
+                            placeholder={t('auth.signUp.passwordPlaceholder')}
                             placeholderTextColor={palette.textSecondary}
                             secureTextEntry
                             value={password}
@@ -97,7 +99,7 @@ export function EmailSignUpScreen({ navigation, route }: AuthScreenProps<'EmailS
                     ]}
                 >
                     <AppText variant="label" color={palette.buttonPrimaryText}>
-                        {loading ? 'Creating account...' : 'Create account'}
+                        {loading ? t('auth.signUp.creating') : t('auth.signUp.cta')}
                     </AppText>
                 </Pressable>
                 <Pressable
@@ -107,10 +109,10 @@ export function EmailSignUpScreen({ navigation, route }: AuthScreenProps<'EmailS
                     style={styles.switchLink}
                 >
                     <AppText variant="body" style={{ color: palette.textSecondary }}>
-                        Already have an account?{' '}
+                        {t('auth.signUp.haveAccount')}
                     </AppText>
                     <AppText variant="body" style={{ color: palette.accent }}>
-                        Sign in
+                        {t('auth.signInCta')}
                     </AppText>
                 </Pressable>
             </View>

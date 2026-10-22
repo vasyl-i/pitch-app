@@ -21,7 +21,8 @@
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "LSApplicationCategoryType": "public.app-category.music",
-        "CFBundleDisplayName": "PitchGym"
+        "CFBundleDisplayName": "PitchGym",
+        "CFBundleAllowMixedLocalizations": true
       }
     },
     "android": {
@@ -73,13 +74,23 @@
             "./assets/fonts/Satoshi-Regular.ttf",
             "./assets/fonts/Satoshi-Medium.ttf",
             "./assets/fonts/Satoshi-Bold.ttf",
-            "./assets/fonts/Satoshi-Black.ttf"
+            "./assets/fonts/Satoshi-Black.ttf",
+            "./assets/fonts/Manrope-Regular.ttf",
+            "./assets/fonts/Manrope-Medium.ttf",
+            "./assets/fonts/Manrope-Bold.ttf",
+            "./assets/fonts/Manrope-ExtraBold.ttf"
           ]
         }
       ],
       "./plugins/with-liquid-glass-icon-fix",
       "./plugins/with-splash-cover",
-      "expo-notifications",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#7C92F9"
+        }
+      ],
       "@react-native-community/datetimepicker",
       "@react-native-firebase/app",
       "@react-native-firebase/crashlytics",
@@ -93,6 +104,16 @@
             "extraProguardRules": "-keep class com.swmansion.audioapi.** { *; }\n-keep class com.shopify.reactnative.skia.** { *; }"
           }
         }
+      ],
+      [
+        "expo-localization",
+        {
+          "supportedLocales": [
+            "en",
+            "uk",
+            "pt-PT"
+          ]
+        }
       ]
     ],
     "extra": {
@@ -100,6 +121,11 @@
         "projectId": "8f6ed2ac-0df9-4205-bb4b-91610b1ece8e"
       }
     },
-    "owner": "i_vasyl"
+    "owner": "i_vasyl",
+    "locales": {
+      "en": "./assets/locales/en.json",
+      "uk": "./assets/locales/uk.json",
+      "pt-PT": "./assets/locales/pt.json"
+    }
   }
 }

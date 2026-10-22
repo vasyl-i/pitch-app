@@ -14,6 +14,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
+import { t, translatedRecord } from '@/shared/i18n';
 import {
   acquireMic,
   CLARITY_MIN_RELIABLE,
@@ -77,14 +78,14 @@ export interface GuidedDetectionState {
   retry: () => void;
 }
 
-const START_MESSAGE: Record<RangeDirection, string> = {
-  low: 'Start on a comfortable note and slowly slide lower.',
-  high: 'Slowly slide upward until it stops feeling comfortable.',
-};
-const KEEP_GOING_MESSAGE: Record<RangeDirection, string> = {
-  low: 'Go a little lower, or continue when you’re done.',
-  high: 'Go a little higher, or continue when you’re done.',
-};
+const START_MESSAGE = translatedRecord<RangeDirection>({
+  low: 'vocalRange.detect.startLow',
+  high: 'vocalRange.detect.startHigh',
+});
+const KEEP_GOING_MESSAGE = translatedRecord<RangeDirection>({
+  low: 'vocalRange.detect.keepGoingLow',
+  high: 'vocalRange.detect.keepGoingHigh',
+});
 
 export function useGuidedRangeDetection(direction: RangeDirection): GuidedDetectionState {
   const [status, setStatus] = useState<GuidedStatus>('idle');
@@ -200,7 +201,7 @@ export function useGuidedRangeDetection(direction: RangeDirection): GuidedDetect
             if (improves) {
               setBestConfidence(clarityEmaRef.current);
               acceptCountRef.current += 1;
-              setAcceptedMessage(acceptCountRef.current === 1 ? 'Nice.' : 'Great.');
+              setAcceptedMessage(acceptCountRef.current === 1 ? t('vocalRange.detect.nice') : t('vocalRange.detect.great'));
               clearAcceptedTimer();
               acceptedTimerRef.current = setTimeout(() => setAcceptedMessage(null), ACCEPT_MESSAGE_MS);
             }
@@ -231,10 +232,10 @@ export function useGuidedRangeDetection(direction: RangeDirection): GuidedDetect
         setStatus('error');
         setErrorMessage(
           err instanceof MicPermissionError
-            ? 'Microphone access is required. Enable it in Settings and try again.'
+            ? t('vocalRange.mic.required')
             : err instanceof Error
               ? err.message
-              : 'Could not start listening'
+              : t('vocalRange.detect.couldNotStart')
         );
       });
   }, [direction]);
@@ -259,12 +260,12 @@ export function useGuidedRangeDetection(direction: RangeDirection): GuidedDetect
   useEffect(() => () => stop(), [stop]);
 
   const message = (() => {
-    if (status === 'error') return errorMessage ?? 'Something went wrong.';
-    if (status === 'interrupted') return 'Paused for a moment — resuming…';
+    if (status === 'error') return errorMessage ?? t('common.somethingWentWrong');
+    if (status === 'interrupted') return t('vocalRange.detect.interrupted');
     if (acceptedMessage) return acceptedMessage;
     if (currentMidi === null) return bestMidi === null ? START_MESSAGE[direction] : KEEP_GOING_MESSAGE[direction];
-    if (liveConfidence < CLARITY_MIN) return 'Hold the note — let it settle.';
-    if (holdProgress < 1) return 'Hold the note…';
+    if (liveConfidence < CLARITY_MIN) return t('vocalRange.detect.holdSettle');
+    if (holdProgress < 1) return t('vocalRange.detect.hold');
     return KEEP_GOING_MESSAGE[direction];
   })();
 

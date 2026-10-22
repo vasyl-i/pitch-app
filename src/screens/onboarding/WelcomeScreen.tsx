@@ -2,6 +2,7 @@ import { Image, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText, Button, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
+import { useTranslation } from '@/shared/i18n';
 import type { OnboardingScreenProps } from '@/app/navigation/types';
 
 
@@ -9,6 +10,7 @@ const WELCOME_IMAGE = require('../../../assets/onboarding/welcome.png');
 
 /** Splash screen: cat illustration, tagline, and a single CTA. */
 export function WelcomeScreen({ navigation }: OnboardingScreenProps<'Welcome'>) {
+    const { t } = useTranslation();
     const { spacing, typography } = useTheme();
     const insets = useSafeAreaInsets();
 
@@ -30,14 +32,14 @@ export function WelcomeScreen({ navigation }: OnboardingScreenProps<'Welcome'>) 
                             color="#000000"
                             style={{ fontSize: 40, textAlign: 'center', fontFamily: typography.family.bold }}
                         >
-                            Improve your pitch
+                            {t('onboarding.welcome.title')}
                         </AppText>
                         <AppText
                             variant="body"
                             color="rgba(0, 0, 0, 0.6)"
                             style={{ textAlign: 'center', marginTop: spacing.sm, lineHeight: 22 }}
                         >
-                            Train your ear. Hit notes accurately.{'\n'}See real progress.
+                            {t('onboarding.welcome.subtitle')}
                         </AppText>
                     </View>
                     <View style={{
@@ -46,7 +48,7 @@ export function WelcomeScreen({ navigation }: OnboardingScreenProps<'Welcome'>) 
                         paddingHorizontal: 24,
                     }}>
                         <Button
-                            title="Get started"
+                            title={t('onboarding.welcome.cta')}
                             onPress={() => navigation.navigate('Goals')}
                             style={{ marginTop: spacing.xl, backgroundColor: '#ffffff' }}
                         />

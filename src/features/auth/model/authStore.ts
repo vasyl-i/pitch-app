@@ -14,6 +14,7 @@ import { useSubscriptionStore } from '@/features/subscription';
 import { prepareSyncGate } from './syncService';
 import { unregisterPushToken } from '@/shared/lib/notifications';
 import { logOutRevenueCat } from '@/features/subscription';
+import { MissingTokenError } from '../lib/authErrors';
 
 GoogleSignin.configure({
   webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
@@ -129,7 +130,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       const response = await GoogleSignin.signIn();
 
       if (!response.data?.idToken) {
-        throw new Error('Google sign-in failed: no ID token returned');
+        throw new MissingTokenError('Google sign-in returned no ID token');
       }
 
       const { error } = await supabase.auth.signInWithIdToken({
@@ -158,7 +159,18 @@ export const useAuthStore = create<AuthState>((set) => ({
     );
 
     if (!response.data?.idToken) {
-      throw new Error('Google sign-in failed: no ID token returned');
+      throw new MissingTokenError('Google sign-in returned no ID token');
+    }
+
+    if (__DEV__) {
+      // TEMP diagnostic for "Nonces mismatch": compare the nonce Google embedded with the one we sent
+      try {
+        const payload = response.data.idToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+        const claims = JSON.parse(globalThis.atob(payload.padEnd(Math.ceil(payload.length / 4) * 4, '=')));
+        console.log('[google-nonce]', { sent: hashedNonce, inToken: claims.nonce ?? null, iat: claims.iat });
+      } catch (e) {
+        console.log('[google-nonce] could not decode id token', e);
+      }
     }
 
     // Pass raw nonce to Supabase — it will hash it and match against the token
@@ -188,7 +200,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
 
     if (!credential.identityToken) {
-      throw new Error('Apple sign-in failed: no identity token returned');
+      throw new MissingTokenError('Apple sign-in returned no identity token');
     }
 
     // Apple only provides the name on the very first sign-in — capture it now.

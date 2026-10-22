@@ -1,6 +1,7 @@
 import { View } from 'react-native';
 import { AppText } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
+import { useTranslation } from '@/shared/i18n';
 import { todayColor } from '../todayPalette';
 
 interface StatItem {
@@ -11,21 +12,22 @@ interface StatItem {
 
 /** The three-up stat row — no card, no icons, columns divided by thin lines. */
 export function DailyStats({ accuracy, streak, practiceLabel }: { accuracy: number | null; streak: number; practiceLabel: string }) {
+  const { t } = useTranslation();
   const { typography, spacing } = useTheme();
 
   const items: StatItem[] = [
     {
       value: accuracy === null ? '—' : `${accuracy}`,
       unit: accuracy === null ? undefined : '%',
-      label: 'Accuracy',
+      label: t('home.stats.accuracy'),
     },
     {
-      value: `${streak}d`,
-      label: 'In a row',
+      value: t('common.daysShort', { count: streak }),
+      label: t('home.stats.inARow'),
     },
     {
       value: practiceLabel,
-      label: 'Practice time',
+      label: t('home.stats.practiceTime'),
     },
   ];
 

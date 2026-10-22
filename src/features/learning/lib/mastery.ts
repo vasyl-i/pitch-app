@@ -13,6 +13,7 @@
  * - Evidence (and therefore confidence) decays with a 30-day half-life, so a
  *   long break honestly lowers certainty without erasing the estimate.
  */
+import { translatedRecord } from '@/shared/i18n';
 import type { MasteryBand, SkillState, Trend } from '../model/types';
 
 /** neutral prior a skill starts from before any evidence */
@@ -111,10 +112,10 @@ export function masteryBand(state: SkillState): MasteryBand {
   return 'mastered';
 }
 
-export const BAND_LABELS: Record<MasteryBand, string> = {
-  'not-started': 'Not started',
-  learning: 'Learning',
-  practicing: 'Practicing',
-  confident: 'Confident',
-  mastered: 'Mastered',
-};
+export const BAND_LABELS: Record<MasteryBand, string> = translatedRecord<MasteryBand>({
+  'not-started': 'learning.bands.notStarted',
+  learning: 'learning.bands.learning',
+  practicing: 'learning.bands.practicing',
+  confident: 'learning.bands.confident',
+  mastered: 'learning.bands.mastered',
+});

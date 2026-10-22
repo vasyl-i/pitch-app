@@ -11,25 +11,26 @@ import type {
   SkillState,
   WeeklyReport,
 } from '../model/types';
+import { t, translatedRecord } from '@/shared/i18n';
 import { SKILL_LABELS } from '../model/types';
 import { GOAL_SKILLS } from './skillMap';
 import { hashSeed, mulberry32, pickSeeded } from './seeded';
 
-export const FOCUS_TITLES: Record<SkillId, string> = {
-  'pitch-accuracy': 'Pitch Accuracy Week',
-  'pitch-stability': 'Pitch Stability Week',
-  'rhythm-accuracy': 'Rhythm Week',
-  'rhythm-memory': 'Rhythm Memory Week',
-  'interval-recognition': 'Interval Week',
-  'interval-singing': 'Interval Singing Week',
-  'chord-recognition': 'Chord Hearing Week',
-  'chord-singing': 'Chord Singing Week',
-  'melody-reproduction': 'Melody Week',
-  'pitch-memory': 'Pitch Memory Week',
-  'musical-memory': 'Musical Memory Week',
-  'sight-singing': 'Sight Singing Week',
-  'voice-control': 'Voice Control Week',
-};
+export const FOCUS_TITLES: Record<SkillId, string> = translatedRecord<SkillId>({
+  'pitch-accuracy': 'learning.focusTitles.pitchAccuracy',
+  'pitch-stability': 'learning.focusTitles.pitchStability',
+  'rhythm-accuracy': 'learning.focusTitles.rhythmAccuracy',
+  'rhythm-memory': 'learning.focusTitles.rhythmMemory',
+  'interval-recognition': 'learning.focusTitles.intervalRecognition',
+  'interval-singing': 'learning.focusTitles.intervalSinging',
+  'chord-recognition': 'learning.focusTitles.chordRecognition',
+  'chord-singing': 'learning.focusTitles.chordSinging',
+  'melody-reproduction': 'learning.focusTitles.melodyReproduction',
+  'pitch-memory': 'learning.focusTitles.pitchMemory',
+  'musical-memory': 'learning.focusTitles.musicalMemory',
+  'sight-singing': 'learning.focusTitles.sightSinging',
+  'voice-control': 'learning.focusTitles.voiceControl',
+});
 
 /** local-time week key; weeks start on Monday */
 export function weekKeyOf(now: number): string {
@@ -98,29 +99,36 @@ export function buildWeeklyReview(input: WeeklyReviewInput): WeeklyReport {
 
   const summary: string[] = [];
   if (input.sessions === 0) {
-    summary.push('No practice recorded this week — even one 5-minute session keeps skills from fading.');
+    summary.push(t('learning.weekly.noPractice'));
   } else {
     summary.push(
-      `You practiced on ${input.daysPracticed} day${input.daysPracticed === 1 ? '' : 's'} this week (${input.sessions} session${input.sessions === 1 ? '' : 's'}).`
+      t('learning.weekly.practiced', {
+        days: t('learning.weekly.days', { count: input.daysPracticed }),
+        sessions: t('learning.weekly.sessions', { count: input.sessions }),
+      })
     );
     if (strongestImprovement) {
       summary.push(
-        `${SKILL_LABELS[strongestImprovement.skill]} made the biggest jump: ${strongestImprovement.from} → ${strongestImprovement.to}.`
+        t('learning.weekly.biggestJump', {
+          skill: SKILL_LABELS[strongestImprovement.skill],
+          from: strongestImprovement.from,
+          to: strongestImprovement.to,
+        })
       );
     }
     if (input.focus) {
       const focusDelta = masteryChanges.find((d) => d.skill === input.focus);
       summary.push(
         focusDelta && focusDelta.to > focusDelta.from
-          ? `Your focus (${SKILL_LABELS[input.focus]}) moved ${focusDelta.from} → ${focusDelta.to} — the focused work paid off.`
-          : `Your focus was ${SKILL_LABELS[input.focus]} — keep giving it a little time each session.`
+          ? t('learning.weekly.focusMoved', { skill: SKILL_LABELS[input.focus], from: focusDelta.from, to: focusDelta.to })
+          : t('learning.weekly.focusWas', { skill: SKILL_LABELS[input.focus] })
       );
     }
     if (weakestSkill) {
-      summary.push(`${SKILL_LABELS[weakestSkill]} is currently your weakest area (${skills[weakestSkill].mastery}/100).`);
+      summary.push(t('learning.weekly.weakest', { skill: SKILL_LABELS[weakestSkill], mastery: skills[weakestSkill].mastery }));
     }
   }
-  summary.push(`Suggested focus for next week: ${FOCUS_TITLES[recommendedFocus]}.`);
+  summary.push(t('learning.weekly.nextFocus', { focus: FOCUS_TITLES[recommendedFocus] }));
 
   return {
     weekKey: input.weekKey,

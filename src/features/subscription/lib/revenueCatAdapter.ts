@@ -13,6 +13,7 @@ import Purchases, {
 } from 'react-native-purchases';
 import type { BillingAdapter, PurchaseOutcome } from './billing';
 import type { PlanId, SubscriptionState, SubscriptionStatus } from '../model/types';
+import { t } from '@/shared/i18n';
 
 const ENTITLEMENT_ID = 'premium';
 
@@ -82,7 +83,7 @@ export class RevenueCatAdapter implements BillingAdapter {
       const offerings = await Purchases.getOfferings();
       const currentOffering = offerings.current;
       if (!currentOffering) {
-        return { kind: 'failed', message: 'No offerings available. Please try again later.' };
+        return { kind: 'failed', message: t('subscription.errors.noOfferings') };
       }
 
       // Find the package matching the requested plan
@@ -91,20 +92,20 @@ export class RevenueCatAdapter implements BillingAdapter {
       );
 
       if (!pkg) {
-        return { kind: 'failed', message: `Plan "${planId}" is not available.` };
+        return { kind: 'failed', message: t('subscription.errors.planUnavailable', { planId }) };
       }
 
       const { customerInfo } = await Purchases.purchasePackage(pkg);
       const state = customerInfoToState(customerInfo);
 
       if (state.status === 'free') {
-        return { kind: 'failed', message: 'Purchase could not be verified. Please try again.' };
+        return { kind: 'failed', message: t('subscription.errors.notVerified') };
       }
 
       return { kind: 'purchased', state };
     } catch (e: unknown) {
       if (isUserCancelled(e)) return { kind: 'cancelled' };
-      const message = e instanceof Error ? e.message : 'Purchase failed. Please try again.';
+      const message = e instanceof Error ? e.message : t('subscription.errors.purchaseFailed');
       return { kind: 'failed', message };
     }
   }
@@ -115,16 +116,16 @@ export class RevenueCatAdapter implements BillingAdapter {
       const state = customerInfoToState(info);
 
       if (state.status === 'free' && state.firstSubscribedAt === null) {
-        return { kind: 'failed', message: 'No previous purchase found for this account.' };
+        return { kind: 'failed', message: t('subscription.errors.noPrevious') };
       }
 
       if (state.status === 'free') {
-        return { kind: 'failed', message: 'Your subscription has expired.' };
+        return { kind: 'failed', message: t('subscription.errors.expired') };
       }
 
       return { kind: 'restored', state };
     } catch (e) {
-      const message = e instanceof Error ? e.message : 'Could not restore purchases.';
+      const message = e instanceof Error ? e.message : t('subscription.errors.restoreFailed');
       return { kind: 'failed', message };
     }
   }
@@ -143,6 +144,8 @@ function isUserCancelled(e: unknown): boolean {
  * ------------------------------------------------------------------ */
 
 let initialized = false;
+/** a locale set before `configure` finished — applied right after it */
+let pendingLocale: string | null = null;
 
 /**
  * Initialize RevenueCat. Call once at app startup.
@@ -153,6 +156,17 @@ export async function initRevenueCat(apiKey: string): Promise<void> {
   Purchases.setLogLevel(LOG_LEVEL.DEBUG);
   await Purchases.configure({ apiKey });
   initialized = true;
+  if (pendingLocale) await Purchases.overridePreferredLocale(pendingLocale);
+}
+
+/**
+ * Show RevenueCat's paywall / Customer Center in the app language rather than
+ * the phone's (the copy itself is localized in the RevenueCat dashboard).
+ */
+export async function setRevenueCatLocale(locale: string): Promise<void> {
+  pendingLocale = locale;
+  if (!initialized) return;
+  await Purchases.overridePreferredLocale(locale);
 }
 
 /**

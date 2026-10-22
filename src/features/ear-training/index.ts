@@ -2,6 +2,6 @@
 export { useEarTrainingSession } from './model/useEarTrainingSession';
 export { useEarTrainingStore } from './model/earTrainingStore';
 export type { LiveFeedback } from './model/earTrainingStore';
-export { EXERCISES, exerciseById } from './model/definitions';
+export { EXERCISES, exerciseById, difficultyLabel } from './model/definitions';
 export type { EarPhase, ExerciseDefinition, ExerciseId } from './model/types';
-export type { NoteOutcome, OutcomeStatus, OverlayNote, RoundScore, SessionSummary } from './lib/evaluators';
+export type { NoteOutcome, OutcomeStatus, OverlayNote, RoundScore, RoundVerdict, SessionSummary } from './lib/evaluators';

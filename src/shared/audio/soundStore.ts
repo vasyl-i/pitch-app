@@ -7,18 +7,19 @@
 import { mmkvStorage } from '@/shared/lib/storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
+import { translatedRecord } from '@/shared/i18n';
 
 export type SoundType = 'piano' | 'harp' | 'organ' | 'musicbox' | 'electrobox' | 'saw' | 'simple';
 
-export const SOUND_TYPE_LABELS: Record<SoundType, string> = {
-  piano: 'Piano',
-  harp: 'Harp',
-  organ: 'Organ',
-  musicbox: 'Music box',
-  electrobox: 'Electro box',
-  saw: 'Saw',
-  simple: 'Simple',
-};
+export const SOUND_TYPE_LABELS: Record<SoundType, string> = translatedRecord<SoundType>({
+  piano: 'profile.soundSettings.types.piano',
+  harp: 'profile.soundSettings.types.harp',
+  organ: 'profile.soundSettings.types.organ',
+  musicbox: 'profile.soundSettings.types.musicbox',
+  electrobox: 'profile.soundSettings.types.electrobox',
+  saw: 'profile.soundSettings.types.saw',
+  simple: 'profile.soundSettings.types.simple',
+});
 
 interface SoundState {
   /** 0–1 master volume multiplier applied to every scheduled tone */

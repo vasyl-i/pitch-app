@@ -1,17 +1,19 @@
 import { Image, Pressable, StyleSheet, View } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { palette, useTheme } from '@/shared/theme';
+import { useTranslation } from '@/shared/i18n';
 
 /**
  * The design's circular back button (44px, glass) for screens inside stacks
  * where the native header is hidden.
  */
 export function BackButton({ onPress }: { onPress: () => void }) {
+    const { t } = useTranslation();
     const { palette, radii, blur } = useTheme();
     return (
         <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Back"
+            accessibilityLabel={t('common.back')}
             onPress={onPress}
             style={({ pressed }) => [styles.button, { borderRadius: radii.pill }, pressed && { opacity: 0.7 }]}
         >

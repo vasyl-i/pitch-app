@@ -19,6 +19,7 @@ import { audioContext, audioNow, createToneGroup, watchOutputRoute } from '@/sha
 import { createMelodyPlayer } from '../lib/melodyPlayer';
 import { createRunController, type RunStage } from './runController';
 import { useStaffStore } from './staffStore';
+import { t } from '@/shared/i18n';
 
 export interface StaffSessionControls {
   restart: () => void;
@@ -185,9 +186,9 @@ export function useStaffSession(exercise: Exercise, rate = 1): StaffSessionContr
       } catch (err: unknown) {
         if (disposed) return;
         if (err instanceof MicPermissionError) {
-          useStaffStore.getState().setError('Microphone access is required. Enable it in Settings and try again.');
+          useStaffStore.getState().setError(t('vocalRange.mic.required'));
         } else {
-          useStaffStore.getState().setError(err instanceof Error ? err.message : 'Could not start');
+          useStaffStore.getState().setError(err instanceof Error ? err.message : t('staff.couldNotStart'));
         }
       }
     };

@@ -3,6 +3,7 @@ import { Platform, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AppText, Button } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
+import { translatedRecord, useTranslation } from '@/shared/i18n';
 import {
     ConfidenceMeter,
     ScrollingPitchCanvas,
@@ -17,14 +18,14 @@ export interface DetectionResult {
     confidence: number;
 }
 
-const TITLE: Record<RangeDirection, string> = {
-    low: 'Find your lowest note',
-    high: 'Find your highest note',
-};
-const INSTRUCTION: Record<RangeDirection, string> = {
-    low: 'Start from a comfortable note and slowly slide lower until you reach your lowest comfortable note.',
-    high: 'Slowly slide upward until you reach the highest comfortable note, without straining.',
-};
+const TITLE = translatedRecord<RangeDirection>({
+    low: 'vocalRange.detect.titleLow',
+    high: 'vocalRange.detect.titleHigh',
+});
+const INSTRUCTION = translatedRecord<RangeDirection>({
+    low: 'vocalRange.detect.instructionLow',
+    high: 'vocalRange.detect.instructionHigh',
+});
 
 /**
  * The body of one detection phase (low or high) — live note, staff, hold
@@ -42,6 +43,7 @@ export function DetectionFlow({
     onCaptured: (result: DetectionResult) => void;
     onBack: () => void;
 }) {
+    const { t } = useTranslation();
     const { palette, spacing, radii, gradient, typography } = useTheme();
     const {
         status,
@@ -107,14 +109,14 @@ export function DetectionFlow({
                         {errorMessage}
                     </AppText>
                     <View style={{ marginTop: spacing.lg, width: '100%' }}>
-                        <Button variant="transparent" title="Try again" onPress={start}/>
+                        <Button variant="transparent" title={t('common.tryAgain')} onPress={start}/>
                     </View>
                 </View>
             ) : (
                 <>
 
                     <View style={styles.capturedBlock}>
-                        <AppText variant="caption" color={palette.textFaint}>{bestMidi !== null ? "Captured" : " "}</AppText>
+                        <AppText variant="caption" color={palette.textFaint}>{bestMidi !== null ? t('vocalRange.detect.captured') : ' '}</AppText>
                         <AppText
                             variant="title"
                             color={'#EEFF88'}
@@ -148,7 +150,7 @@ export function DetectionFlow({
                     {lowConfidence && (
                         <AppText variant="caption" color={palette.warning}
                                  style={{ marginTop: spacing.sm, textAlign: 'center' }}>
-                            That reading isn't very confident — consider trying again.
+                            {t('vocalRange.detect.lowConfidence')}
                         </AppText>
                     )}
 
@@ -158,7 +160,7 @@ export function DetectionFlow({
                         {bestMidi !== null ? (
                             <>
                                 <Button
-                                    title="Try again"
+                                    title={t('common.tryAgain')}
                                     variant="transparent"
                                     onPress={() => {
                                         retry();
@@ -166,13 +168,13 @@ export function DetectionFlow({
                                     }}
                                 />
                                 <Button
-                                    title="Continue"
+                                    title={t('common.continue')}
                                     onPress={() => onCaptured({ midi: bestMidi, confidence: bestConfidence })}
                                     style={{ backgroundColor: '#ffffff' }}
                                 />
                             </>
                         ) : (
-                            <Button title="Back" variant="ghost" onPress={onBack}/>
+                            <Button title={t('common.back')} variant="ghost" onPress={onBack}/>
                         )}
                     </View>
                 </>

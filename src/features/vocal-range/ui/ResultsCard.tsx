@@ -3,11 +3,13 @@ import { AppText, Card } from '@/shared/ui';
 import { typography, useTheme } from '@/shared/theme';
 import { midiToName } from '@/shared/lib/music';
 import { deriveComfortRange, voiceType } from '@/entities/profile';
+import { formatNumber, useTranslation } from '@/shared/i18n';
 
 const isSmallScreen = Dimensions.get('screen').height < 700;
 
 /** Celebratory-but-professional summary of a completed low/high detection. */
 export function ResultsCard({ low, high, success }: { low: number; high: number; success?: boolean }) {
+    const { t } = useTranslation();
     const { palette, spacing } = useTheme();
     const comfort = deriveComfortRange({ lowMidi: low, highMidi: high });
     const span = high - low;
@@ -31,13 +33,13 @@ export function ResultsCard({ low, high, success }: { low: number; high: number;
             }
             <View style={styles.scoreOverlay}>
                 <AppText color={palette.textSecondaryElevated} style={{ fontSize: 12, lineHeight: 14 }}>
-                    {"Your comfortable range"}
+                    {t('vocalRange.results.comfortable')}
                 </AppText>
                 <AppText color={"#EEFF88"} style={{ fontSize: 40, lineHeight: 42, fontFamily: typography.family.bold }}>
                     {`${midiToName(low)} — ${midiToName(high)}`}
                 </AppText>
                 <AppText color={palette.textSecondaryElevated} style={{ fontSize: 12, lineHeight: 14 }}>
-                    {`${span} semitones · ${(span / 12).toFixed(1)} octaves · ≈${voiceType({ lowMidi: low, highMidi: high })}`}
+                    {`${t('vocalRange.semitones', { count: span })} · ${t('vocalRange.octaves', { value: formatNumber(span / 12, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) })} · ≈${voiceType({ lowMidi: low, highMidi: high })}`}
                 </AppText>
             </View>
         </View>

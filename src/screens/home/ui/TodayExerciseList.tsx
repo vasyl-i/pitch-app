@@ -10,6 +10,7 @@ import { useLessonSessionStore } from '@/features/learning';
 import type { TodayExerciseStat } from '@/features/progress';
 import { AppText } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
+import { useTranslation } from '@/shared/i18n';
 import { todayColor } from '../todayPalette';
 import { ExerciseRow } from './ExerciseRow';
 import { PillButton } from './PillButton';
@@ -35,6 +36,7 @@ export function TodayExerciseList({
   onStepPress: (step: GuidedStep) => void;
   todayStats: Map<string, TodayExerciseStat>;
 }) {
+  const { t } = useTranslation();
   const { typography, spacing } = useTheme();
   const activeSlot = useLessonSessionStore((s) => s.activeSlot);
   const partialProgress = useLessonSessionStore((s) => s.partialProgress);
@@ -47,7 +49,7 @@ export function TodayExerciseList({
       {/* Header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <AppText color={todayColor.ink} style={{ fontFamily: typography.family.medium, fontSize: 16 }}>
-          Today's plan
+          {t('home.plan.title')}
         </AppText>
         <AppText color={todayColor.inkSecondary} style={{ fontFamily: typography.family.medium, fontSize: 14 }}>
           {doneCount}/{steps.length}
@@ -82,7 +84,7 @@ export function TodayExerciseList({
             variant="caption"
             style={{ paddingVertical: spacing.lg, textAlign: 'center' }}
           >
-            Putting today's session together…
+            {t('home.plan.preparing')}
           </AppText>
         ) : (
           steps.map((step, i) => {
@@ -119,12 +121,12 @@ export function TodayExerciseList({
               color={todayColor.inkSecondary}
               style={{ flex: 1, fontSize: 13.5, lineHeight: 19 }}
             >
-              Practice complete — great work today.
+              {t('home.plan.complete')}
             </AppText>
           </View>
         ) : (
           <PillButton
-            title={doneCount > 0 ? 'Continue today\u2019s practice' : 'Start today\u2019s practice'}
+            title={doneCount > 0 ? t('home.plan.continue') : t('home.plan.start')}
             disabled={!planReady || steps.length === 0}
             onPress={onPrimaryAction}
           />

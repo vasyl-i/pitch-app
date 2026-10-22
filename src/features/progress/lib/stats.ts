@@ -2,6 +2,7 @@
  * Derived progress statistics — pure functions over the session history.
  */
 import { SHARP_PITCH_NAMES } from '@/shared/lib/music';
+import { t } from '@/shared/i18n';
 import type { NoteTally, SessionRecord } from '../model/progressStore';
 
 export const PITCH_NAMES = SHARP_PITCH_NAMES;
@@ -119,11 +120,11 @@ export function totalPracticeSeconds(sessions: SessionRecord[]): number {
 
 export function formatPracticeTime(totalSec: number): string {
   const minutes = Math.round(totalSec / 60);
-  if (minutes < 1) return totalSec > 0 ? '<1m' : '0m';
-  if (minutes < 60) return `${minutes}m`;
+  if (minutes < 1) return totalSec > 0 ? t('progress.duration.underMinute') : t('progress.duration.minutes', { m: 0 });
+  if (minutes < 60) return t('progress.duration.minutes', { m: minutes });
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
-  return m ? `${h}h ${m}m` : `${h}h`;
+  return m ? t('progress.duration.hoursMinutes', { h, m }) : t('progress.duration.hours', { h });
 }
 
 export interface WeeklyAccuracyPoint {

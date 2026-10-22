@@ -2,17 +2,19 @@ import { StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AppText } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
+import { useTranslation } from '@/shared/i18n';
 import type { WeeklyAccuracyPoint } from '../lib/stats';
 
 /** Average accuracy per week as bars — is the singer trending up across weeks? */
 export function WeeklyAccuracyChart({ points }: { points: WeeklyAccuracyPoint[] }) {
+  const { t } = useTranslation();
   const { palette, radii, gradient } = useTheme();
   const weeksWithData = points.filter((p) => p.avgScore !== null).length;
 
   if (weeksWithData < 2) {
     return (
       <AppText variant="caption" style={{ paddingVertical: 12 }}>
-        Practice across a couple of weeks to see your accuracy trend.
+        {t('progress.charts.accuracyEmpty')}
       </AppText>
     );
   }
@@ -52,10 +54,10 @@ export function WeeklyAccuracyChart({ points }: { points: WeeklyAccuracyPoint[] 
       </View>
       <View style={styles.labels}>
         <AppText variant="caption" style={{ fontSize: 12 }}>
-          {points.length} weeks ago
+          {t('progress.charts.weeksAgo', { count: points.length })}
         </AppText>
         <AppText variant="caption" style={{ fontSize: 12 }}>
-          this week
+          {t('progress.charts.thisWeek')}
         </AppText>
       </View>
     </View>

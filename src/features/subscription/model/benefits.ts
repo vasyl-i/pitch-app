@@ -10,12 +10,12 @@
  * marketing list and the entitlement matrix from drifting apart: a benefit we
  * advertise is one the app actually unlocks.
  */
+import { localizeContent, t } from '../../../shared/i18n';
 import type { PremiumFeature } from './types';
 
-export const PAYWALL_HEADLINE = 'Train smarter, not just longer.';
+export const paywallHeadline = (): string => t('subscription.paywall.headline');
 
-export const PAYWALL_SUBTITLE =
-  'Your personal AI vocal coach analyzes every session and creates exercises tailored specifically to your voice.';
+export const paywallSubtitle = (): string => t('subscription.paywall.subtitle');
 
 export interface PremiumBenefit {
   feature: PremiumFeature;
@@ -24,7 +24,7 @@ export interface PremiumBenefit {
   detail: string;
 }
 
-export const PREMIUM_BENEFITS: readonly PremiumBenefit[] = [
+export const PREMIUM_BENEFITS: readonly PremiumBenefit[] = localizeContent('premiumBenefit', [
   {
     feature: 'ai-session-feedback',
     title: 'Personalized feedback',
@@ -60,4 +60,4 @@ export const PREMIUM_BENEFITS: readonly PremiumBenefit[] = [
     title: 'Unlimited instrumentals',
     detail: 'Upload as many backing tracks as you like — free covers your first 3.',
   },
-];
+], (b) => b.feature, ['title', 'detail']);

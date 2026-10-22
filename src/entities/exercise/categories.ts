@@ -14,6 +14,7 @@
  * (`features/learning/lib/catalog`), which sits above entities and may not be
  * imported from here.
  */
+import { localizeContent } from '../../shared/i18n';
 
 export type ExerciseCategory =
   // ---- free -----------------------------------------------------------
@@ -49,7 +50,7 @@ export interface ExerciseCategoryMeta {
 
 export type ExerciseRepeat = 'once' | 'ladder';
 
-export const EXERCISE_CATEGORIES: readonly ExerciseCategoryMeta[] = [
+export const EXERCISE_CATEGORIES: readonly ExerciseCategoryMeta[] = localizeContent('exerciseCategory', [
   {
     id: 'warmup',
     label: 'Scales, arpeggios & warm-ups',
@@ -114,7 +115,7 @@ export const EXERCISE_CATEGORIES: readonly ExerciseCategoryMeta[] = [
     order: 80,
     repeats: 'ladder',
   },
-];
+], (c) => c.id, ['label', 'tagline']);
 
 const BY_ID = new Map(EXERCISE_CATEGORIES.map((c) => [c.id, c]));
 

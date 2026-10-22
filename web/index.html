@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>PitchGym: Sing in tune – ear training & vocal pitch monitor</title>
-  <meta name="description" content="PitchGym is a singing app and pocket vocal coach. A real-time vocal pitch monitor, ear training and music theory exercises help you sing in tune. Free on iPhone." />
+  <meta name="description" content="PitchGym is a singing app and pocket vocal coach. A real-time vocal pitch monitor, ear training and music theory exercises help you sing in tune. Free on iPhone and Android." />
   <meta name="keywords" content="ear training, vocal pitch monitor, singing pitch, sing in tune, music theory, vocal coach, singing app, pitch trainer, relative pitch, perfect pitch, interval training, vocal warm up, voice training, vocal range test" />
   <meta name="author" content="Anya Bedrytska, Vasyl Iliuchenko" />
   <meta name="robots" content="index, follow, max-image-preview:large" />
@@ -56,13 +56,13 @@
         "@id": "https://pitchgym.anyabedrytska.com/#app",
         "name": "PitchGym – Sing in tune",
         "description": "Singing app with a real-time vocal pitch monitor, ear training and music theory exercises. A vocal coach in your pocket for beginner and intermediate singers.",
-        "operatingSystem": "iOS",
+        "operatingSystem": "iOS, Android",
         "applicationCategory": "EducationalApplication",
         "applicationSubCategory": "Music",
         "image": "https://pitchgym.anyabedrytska.com/icon-512.png",
         "url": "https://pitchgym.anyabedrytska.com/",
         "installUrl": "https://apps.apple.com/app/id6799694369",
-        "sameAs": ["https://apps.apple.com/app/id6799694369"],
+        "sameAs": ["https://apps.apple.com/app/id6799694369", "https://play.google.com/store/apps/details?id=app.anya.eargym"],
         "author": [
           { "@type": "Person", "name": "Anya Bedrytska", "url": "https://anyabedrytska.com/" },
           { "@type": "Person", "name": "Vasyl Iliuchenko", "url": "https://www.linkedin.com/in/vasyl-iliuchenko" }
@@ -91,7 +91,7 @@
           {
             "@type": "Question",
             "name": "How do I cancel my subscription?",
-            "acceptedAnswer": { "@type": "Answer", "text": "On iPhone, open Settings, tap your name, then Subscriptions, choose PitchGym and tap Cancel subscription. You keep premium until the end of the paid period." }
+            "acceptedAnswer": { "@type": "Answer", "text": "On iPhone, open Settings, tap your name, then Subscriptions, choose PitchGym and tap Cancel subscription. On Android, open Google Play, tap your profile icon, then Payments & subscriptions, Subscriptions, choose PitchGym and tap Cancel subscription. You keep premium until the end of the paid period." }
           },
           {
             "@type": "Question",
@@ -224,6 +224,7 @@
       max-width: 520px;
       margin-bottom: var(--space-xxl);
     }
+    .store-badges { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-md); }
     .store-badge { display: inline-block; line-height: 0; transition: transform 0.2s; }
     .store-badge:hover { transform: translateY(-2px); }
     .store-badge img { height: 56px; width: auto; }
@@ -401,14 +402,19 @@
   <main>
     <header class="hero">
       <img class="app-icon" src="assets/img/app-icon.webp" width="140" height="140" alt="PitchGym app icon: a smiling purple cat with a music note" fetchpriority="high" />
-      <p class="eyebrow">Singing app for iPhone</p>
+      <p class="eyebrow">Singing app for iPhone and Android</p>
       <h1>Sing in tune with PitchGym</h1>
       <p class="lede">
         Your vocal coach in your pocket. A real-time vocal pitch monitor, ear training and bite-sized music theory help you hit every note and see real progress.
       </p>
-      <a class="store-badge" href="https://apps.apple.com/app/id6799694369" aria-label="Download PitchGym on the App Store">
-        <img src="assets/img/app-store-badge.svg" width="189" height="56" alt="Download on the App Store" />
-      </a>
+      <div class="store-badges">
+        <a class="store-badge" href="https://apps.apple.com/app/id6799694369" aria-label="Download PitchGym on the App Store">
+          <img src="assets/img/app-store-badge.svg" width="168" height="56" alt="Download on the App Store" />
+        </a>
+        <a class="store-badge" href="https://play.google.com/store/apps/details?id=app.anya.eargym" aria-label="Get PitchGym on Google Play">
+          <img src="assets/img/google-play-badge.svg" width="168" height="56" alt="Get it on Google Play" />
+        </a>
+      </div>
       <p class="store-note">Free to download · 7-day free trial of premium</p>
     </header>
 
@@ -474,7 +480,7 @@
       <div class="privacy">
         <div>
           <h2 id="privacy-title">Your voice stays on your device</h2>
-          <p>Pitch detection runs on your iPhone in real time. Raw microphone audio is never uploaded, stored on our servers or shared. Read the <a href="privacy-policy.html">privacy policy</a>.</p>
+          <p>Pitch detection runs on your phone in real time. Raw microphone audio is never uploaded, stored on our servers or shared. Read the <a href="privacy-policy.html">privacy policy</a>.</p>
         </div>
       </div>
     </section>
@@ -496,7 +502,7 @@
         </details>
         <details>
           <summary>How do I cancel my subscription?</summary>
-          <p>On iPhone, open Settings, tap your name, then Subscriptions, choose PitchGym and tap Cancel subscription. You keep premium until the end of the paid period.</p>
+          <p>On iPhone, open Settings, tap your name, then Subscriptions, choose PitchGym and tap Cancel subscription. On Android, open Google Play, tap your profile icon, then Payments &amp; subscriptions, Subscriptions, choose PitchGym and tap Cancel subscription. You keep premium until the end of the paid period.</p>
         </details>
         <details>
           <summary>How do I delete my account?</summary>

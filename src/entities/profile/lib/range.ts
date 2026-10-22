@@ -3,6 +3,7 @@
  * comfortable sub-range generated content should target. Pure functions.
  */
 import type { PitchRange } from '@/shared/lib/music';
+import { t } from '@/shared/i18n';
 
 /**
  * Voice-type estimate from measured range. Uses both low and high extremes
@@ -26,17 +27,17 @@ export function voiceType(range: PitchRange): string {
   const { lowMidi: low, highMidi: high } = range;
 
   // Male-leaning
-  if (low <= 40) return 'Bass';
-  if (low <= 45 && high <= 64) return 'Bass-baritone';
-  if (low <= 45) return 'Baritone';
-  if (low <= 52) return 'Tenor';
+  if (low <= 40) return t('vocalRange.voiceType.bass');
+  if (low <= 45 && high <= 64) return t('vocalRange.voiceType.bassBaritone');
+  if (low <= 45) return t('vocalRange.voiceType.baritone');
+  if (low <= 52) return t('vocalRange.voiceType.tenor');
 
   // Female-leaning
-  if (low <= 55 && high <= 76) return 'Contralto';
-  if (low <= 55) return 'Alto';
-  if (low <= 59) return 'Mezzo-soprano';
-  if (high >= 84) return 'Coloratura soprano';
-  return 'Soprano';
+  if (low <= 55 && high <= 76) return t('vocalRange.voiceType.contralto');
+  if (low <= 55) return t('vocalRange.voiceType.alto');
+  if (low <= 59) return t('vocalRange.voiceType.mezzo');
+  if (high >= 84) return t('vocalRange.voiceType.coloratura');
+  return t('vocalRange.voiceType.soprano');
 }
 
 export function rangeSemitones(range: PitchRange): number {

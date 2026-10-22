@@ -12,6 +12,7 @@
  * existing evaluator produced and decides how to talk about them.
  */
 import type { PhraseSummary } from './evaluation';
+import { t } from '@/shared/i18n';
 
 export type AttemptTrend = 'improved' | 'held' | 'slipped';
 
@@ -45,9 +46,9 @@ export function compareAttempts(accompanied: PhraseSummary, solo: PhraseSummary)
     trend,
     message:
       trend === 'improved'
-        ? 'Excellent! You sang even better without the guide.'
+        ? t('exercise.comparison.improved')
         : trend === 'held'
-          ? 'Great job! You’re almost ready to sing it independently.'
-          : 'Nice work! Practice with the accompaniment a few more times.',
+          ? t('exercise.comparison.held')
+          : t('exercise.comparison.dropped'),
   };
 }

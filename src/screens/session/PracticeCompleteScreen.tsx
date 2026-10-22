@@ -10,6 +10,7 @@ import { currentStreak, formatPracticeTime, localDayKey, useProgressStore } from
 import { usePaywall, usePremiumStatus } from '@/features/subscription';
 import { AppText, Button, Card, Screen } from '@/shared/ui';
 import { spacing, typography, useTheme } from '@/shared/theme';
+import { useTranslation } from '@/shared/i18n';
 import type { RootScreenProps } from '@/app/navigation/types';
 import { resetToTab } from '@/app/navigation/resetToTab';
 import { BlurTargetView, BlurView } from 'expo-blur';
@@ -62,6 +63,7 @@ function ExercisesIcon() {
 }
 
 export function PracticeCompleteScreen({ navigation }: RootScreenProps<'PracticeComplete'>) {
+    const { t } = useTranslation();
     const { palette, spacing, radii } = useTheme();
     const sessions = useProgressStore((s) => s.sessions);
     const steps = useLessonSessionStore((s) => s.steps);
@@ -85,7 +87,7 @@ export function PracticeCompleteScreen({ navigation }: RootScreenProps<'Practice
             <ScrollView contentContainerStyle={[styles.center, { paddingBottom: insets.bottom + 5 * spacing.xxl }]}>
                 <Image source={require('../../../assets/practice-complete.png')}/>
                 <AppText variant="title" style={{ fontSize: 40, textAlign: 'center' }}>
-                    You did it!
+                    {t('session.complete.title')}
                 </AppText>
                 <AppText variant="body" gradient style={{
                     fontSize: 20,
@@ -94,13 +96,13 @@ export function PracticeCompleteScreen({ navigation }: RootScreenProps<'Practice
                     paddingHorizontal: isSmallScreen ? 0 : 24,
                     fontFamily: typography.family.regular
                 }}>
-                    {steps.length} steps done. Showing up is the whole secret — see you tomorrow.
+                    {t('session.complete.subtitle', { count: steps.length })}
                 </AppText>
 
                 <View style={[styles.tiles, { marginTop: spacing.xl }]}>
-                    <Tile icon={<TimeIcon/>} value={today.time} label="time today"/>
-                    <Tile icon={<CalendarIcon/>} value={`${streak}d`} label="days in a row"/>
-                    <Tile icon={<ExercisesIcon/>} value={String(today.count)} label="exercises"/>
+                    <Tile icon={<TimeIcon/>} value={today.time} label={t('session.complete.timeToday')}/>
+                    <Tile icon={<CalendarIcon/>} value={t('common.daysShort', { count: streak })} label={t('session.complete.daysInARow', { count: streak })}/>
+                    <Tile icon={<ExercisesIcon/>} value={String(today.count)} label={t('session.complete.exercises', { count: today.count })}/>
                 </View>
 
                 {!isPremium && (
@@ -117,7 +119,7 @@ export function PracticeCompleteScreen({ navigation }: RootScreenProps<'Practice
                                     color: '#0D022F',
                                     fontFamily: typography.family.medium,
                                 }}>
-                                    Unlock all exercises
+                                    {t('session.complete.unlockTitle')}
                                 </AppText>
                                 <AppText variant="body" style={{
                                     fontSize: 14,
@@ -126,7 +128,7 @@ export function PracticeCompleteScreen({ navigation }: RootScreenProps<'Practice
                                     color: '#3D3E42',
                                     fontFamily: typography.family.regular,
                                 }}>
-                                    Get unlimited access to everything you need to improve your voice
+                                    {t('session.complete.unlockBody')}
                                 </AppText>
                                 <View style={styles.bannerButton}>
                                     <AppText variant="body" style={{
@@ -135,7 +137,7 @@ export function PracticeCompleteScreen({ navigation }: RootScreenProps<'Practice
                                         fontFamily: typography.family.medium,
                                         color: '#FFFFFF'
                                     }}>
-                                        Unlock Premium
+                                        {t('subscription.unlockPremium')}
                                     </AppText>
                                 </View>
                             </View>
@@ -157,11 +159,11 @@ export function PracticeCompleteScreen({ navigation }: RootScreenProps<'Practice
             }}>
 
                 <Button
-                    title="Done"
+                    title={t('common.done')}
                     onPress={() => resetToTab(navigation, 'HomeTab')}
                 />
                 <Button
-                    title="See my progress"
+                    title={t('session.complete.seeProgress')}
                     variant="transparent"
                     onPress={() => resetToTab(navigation, 'ProgressTab', { screen: 'ProgressOverview' })}
                 />

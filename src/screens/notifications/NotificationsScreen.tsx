@@ -7,9 +7,11 @@ import { View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText, BackButton, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
+import { useTranslation } from '@/shared/i18n';
 import type { RootScreenProps } from '@/app/navigation/types';
 
 export function NotificationsScreen({ navigation }: RootScreenProps<'Notifications'>) {
+  const { t } = useTranslation();
   const { palette, spacing } = useTheme();
 
   return (
@@ -18,10 +20,10 @@ export function NotificationsScreen({ navigation }: RootScreenProps<'Notificatio
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md }}>
         <Ionicons name="notifications-outline" size={48} color={palette.textFaint} />
         <AppText variant="title" style={{ fontSize: 22 }}>
-          You’re all caught up
+          {t('notifications.screen.title')}
         </AppText>
         <AppText variant="body" style={{ textAlign: 'center' }}>
-          Nothing new right now. Practice reminders and updates will show up here.
+          {t('notifications.screen.body')}
         </AppText>
       </View>
     </Screen>

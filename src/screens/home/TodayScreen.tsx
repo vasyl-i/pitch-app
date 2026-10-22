@@ -4,7 +4,6 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import {
     currentStreak,
     formatPracticeTime,
@@ -12,8 +11,9 @@ import {
     useProgressStore,
 } from '@/features/progress';
 import { useLessonSessionStore, usePreferencesStore } from '@/features/learning';
-import { useEntitlement, usePremiumStatus } from '@/features/subscription';
+import { useEntitlement } from '@/features/subscription';
 import { AppText, Screen } from '@/shared/ui';
+import { useTranslation } from '@/shared/i18n';
 import { palette, useTheme } from '@/shared/theme';
 import { useFloatingTabBarClearance } from '@/app/navigation/FloatingTabBar';
 import type { HomeScreenProps } from '@/app/navigation/types';
@@ -25,13 +25,13 @@ import { ProgressSection } from './ui/ProgressSection';
 import { TodayExerciseList } from './ui/TodayExerciseList';
 
 export function TodayScreen({ navigation }: HomeScreenProps<'Today'>) {
+    const { t } = useTranslation();
     const { spacing, typography } = useTheme();
     const tabBarClearance = useFloatingTabBarClearance(spacing.xl);
     const sessions = useProgressStore((s) => s.sessions);
     const totalPracticeSec = useProgressStore((s) => s.totalPracticeSec);
     const prefs = usePreferencesStore((s) => s.preferences);
     const adaptive = useEntitlement('adaptive-lessons');
-    const { trialDaysLeft } = usePremiumStatus();
     const steps = useLessonSessionStore((s) => s.steps);
     const completedSlots = useLessonSessionStore((s) => s.completedSlots);
 
@@ -83,53 +83,40 @@ export function TodayScreen({ navigation }: HomeScreenProps<'Today'>) {
                 return;
             }
             Alert.alert(
-                'Redo exercise?',
-                'This will clear your previous results for this exercise.',
+                t('home.redo.title'),
+                t('home.redo.message'),
                 [
-                    { text: 'Cancel', style: 'cancel' },
+                    { text: t('common.cancel'), style: 'cancel' },
                     {
-                        text: 'Don\'t show again',
+                        text: t('common.dontShowAgain'),
                         onPress: () => {
                             usePreferencesStore.getState().setPreferences({ skipRedoWarning: true });
                             redoStep(step, navigation);
                         },
                     },
-                    { text: 'Continue', onPress: () => redoStep(step, navigation) },
+                    { text: t('common.continue'), onPress: () => redoStep(step, navigation) },
                 ],
             );
         },
-        [completedSlots, skipRedoWarning, navigation],
+        [completedSlots, skipRedoWarning, navigation, t],
     );
 
     return (
         <Screen noHorizontalPadding noBottomPadding>
-            <View style={{ paddingHorizontal: spacing.lg, height: "100%" }}>
+            <View style={{ height: "100%" }}>
+                {/* horizontal padding lives on the content so the scroll view doesn't
+                    clip the trial reminder poking past the banner's right edge */}
                 <ScrollView showsVerticalScrollIndicator={false}
-                            contentContainerStyle={{ paddingBottom: tabBarClearance }}>
+                            contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: tabBarClearance }}>
                     <View style={styles.headingRow}>
                         <Pressable onPress={handleDevTap} style={{ flex: 1 }}>
                             <AppText
                                 color={palette.textPrimary}
                                 style={[styles.heading, { fontFamily: typography.family.bold }]}
                             >
-                                Let’s practice 🎧️️
+                                {t('home.heading')}
                             </AppText>
                         </Pressable>
-                        {trialDaysLeft !== null && trialDaysLeft <= 1 && (
-                            <Pressable
-                                onPress={() => navigation.navigate('ManageSubscription' as never)}
-                                style={styles.trialBanner}
-                            >
-                                <Ionicons name="alert-circle" size={13} color="#F0943A" />
-                                <AppText
-                                    variant="caption"
-                                    color="#F0943A"
-                                    style={{ fontSize: 12, fontFamily: typography.family.medium }}
-                                >
-                                    Trial ends tomorrow
-                                </AppText>
-                            </Pressable>
-                        )}
                     </View>
 
                     <PremiumBanner source="today" style={{ marginTop: 16 }} />
@@ -167,15 +154,6 @@ const styles = StyleSheet.create({
     heading: {
         fontSize: 24,
         lineHeight: 28,
-    },
-    trialBanner: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-        paddingHorizontal: 10,
-        paddingVertical: 5,
-        borderRadius: 999,
-        backgroundColor: 'rgba(240, 148, 58, 0.14)',
     },
     exerciseList: {
         marginTop: 24,

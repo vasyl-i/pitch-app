@@ -9,6 +9,7 @@
  * Pure: no React Native imports, so the savings math is unit-testable under
  * plain `node --test`.
  */
+import { localizeContent, t } from '../../../shared/i18n';
 import type { Plan, PlanId } from './types';
 
 export const WEEKLY_PLAN: Plan = {
@@ -44,6 +45,9 @@ export const YEARLY_PLAN: Plan = {
   recommended: true,
 };
 
+// plan names follow the app language (overlay: content.plan.<id>.name)
+localizeContent('plan', [WEEKLY_PLAN, MONTHLY_PLAN, YEARLY_PLAN], (p) => p.id, ['name']);
+
 export const PLANS: readonly Plan[] = [WEEKLY_PLAN, MONTHLY_PLAN, YEARLY_PLAN];
 
 const PLAN_MAP: Record<PlanId, Plan> = {
@@ -71,8 +75,9 @@ export function formatPrice(cents: number, currency: Plan['currency'] = 'USD'): 
 
 /** "$2.99/week" · "$4.99/month" · "$24.99/year" */
 export function formatPlanPrice(plan: Plan): string {
-  const period = plan.periodMonths === 12 ? 'year' : plan.periodMonths < 1 ? 'week' : 'month';
-  return `${formatPrice(plan.priceCents, plan.currency)}/${period}`;
+  const price = formatPrice(plan.priceCents, plan.currency);
+  if (plan.periodMonths === 12) return t('subscription.price.perYear', { price });
+  return plan.periodMonths < 1 ? t('subscription.price.perWeek', { price }) : t('subscription.price.perMonth', { price });
 }
 
 /** what the plan works out to per month — the only fair way to compare them */
@@ -82,7 +87,7 @@ export function monthlyEquivalentCents(plan: Plan): number {
 
 /** "$4.17/mo" — the yearly plan's real monthly cost */
 export function formatMonthlyEquivalent(plan: Plan): string {
-  return `${formatPrice(monthlyEquivalentCents(plan), plan.currency)}/mo`;
+  return t('subscription.price.perMonthShort', { price: formatPrice(monthlyEquivalentCents(plan), plan.currency) });
 }
 
 /**
@@ -99,7 +104,7 @@ export function savingsPercent(plan: Plan, reference: Plan = WEEKLY_PLAN): numbe
 /** "Save 58%", or null when the plan has no advantage worth a badge */
 export function savingsBadge(plan: Plan, reference: Plan = WEEKLY_PLAN): string | null {
   const pct = savingsPercent(plan, reference);
-  return pct > 0 ? `Save ${pct}%` : null;
+  return pct > 0 ? t('subscription.save', { pct }) : null;
 }
 
 /**
@@ -107,7 +112,7 @@ export function savingsBadge(plan: Plan, reference: Plan = WEEKLY_PLAN): string 
  * without a trial so callers can't accidentally render an empty promise.
  */
 export function trialHeadline(plan: Plan): string | null {
-  return plan.trialDays > 0 ? `Try Premium free for ${plan.trialDays} days` : null;
+  return plan.trialDays > 0 ? t('subscription.trialHeadline', { count: plan.trialDays }) : null;
 }
 
 /**
@@ -116,6 +121,6 @@ export function trialHeadline(plan: Plan): string | null {
  */
 export function planTerms(plan: Plan): string {
   return plan.trialDays > 0
-    ? `${plan.trialDays} days free, then ${formatPlanPrice(plan)}. Renews automatically until cancelled — cancel any time.`
-    : `${formatPlanPrice(plan)}. Renews automatically until cancelled — cancel any time.`;
+    ? t('subscription.termsTrial', { count: plan.trialDays, price: formatPlanPrice(plan) })
+    : t('subscription.terms', { price: formatPlanPrice(plan) });
 }

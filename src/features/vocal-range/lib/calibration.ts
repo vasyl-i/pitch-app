@@ -10,6 +10,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { acquireMic, MicPermissionError, type MicLease } from '@/features/pitch-detection';
 import { micActive, micRms } from '@/shared/lib/micRmsBus';
 import { hapticMicReady } from '@/shared/audio';
+import { t } from '@/shared/i18n';
 import { AudioManager } from 'react-native-audio-api';
 
 export type CalibrationStatus =
@@ -133,7 +134,7 @@ export function useMicCalibration(opts?: { skip?: boolean }): CalibrationState {
       .catch((err: unknown) => {
         if (gen !== runRef.current) return;
         setStatus(err instanceof MicPermissionError ? 'permission-denied' : 'error');
-        setErrorMessage(err instanceof Error ? err.message : 'Could not access the microphone');
+        setErrorMessage(err instanceof Error ? err.message : t('vocalRange.mic.accessFailed'));
       });
   }, []);
 

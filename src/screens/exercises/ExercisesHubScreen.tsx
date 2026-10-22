@@ -29,6 +29,7 @@ import {
 import { PremiumBadge, useEntitlement, usePremiumStatus, usePaywall } from '@/features/subscription';
 import { AppText, Screen } from '@/shared/ui';
 import { typography, useTheme } from '@/shared/theme';
+import { formatKeyName, t, useTranslation } from '@/shared/i18n';
 import { useFloatingTabBarClearance } from '@/app/navigation/FloatingTabBar';
 import type { ExercisesScreenProps } from '@/app/navigation/types';
 import { DEFAULT_CAT_ICON, EXERCISE_CAT_ICONS } from '../home/ui/exerciseIcons';
@@ -42,6 +43,7 @@ const ICON_COLORS = [
 ] as const;
 
 export function ExercisesHubScreen({ navigation }: ExercisesScreenProps<'ExercisesHub'>) {
+    const { t } = useTranslation();
     const { palette, spacing } = useTheme();
     const tabBarClearance = useFloatingTabBarClearance(spacing.xl);
     const [levels, setLevels] = useState<Record<string, string>>({});
@@ -74,7 +76,7 @@ export function ExercisesHubScreen({ navigation }: ExercisesScreenProps<'Exercis
         plan[day] = [...(plan[day] ?? []), dayPickerEntry];
         setPreferences({ weeklyPlan: plan });
         setDayPickerEntry(null);
-        setToast(`Added to ${WEEKDAY_LABELS[day]}`);
+        setToast(t('exercises.addedTo', { day: WEEKDAY_LABELS[day] }));
     };
 
     const byCategory = useMemo(() => {
@@ -95,15 +97,15 @@ export function ExercisesHubScreen({ navigation }: ExercisesScreenProps<'Exercis
                 <View style={{ paddingHorizontal: spacing.lg }}>
                     <AppText color={palette.textPrimary}
                              style={[styles.heading, { fontFamily: typography.family.bold }]}>
-                        Exercises
+                        {t('nav.exercises')}
                     </AppText>
                     <AppText variant="body" style={{ marginTop: spacing.xs }}>
-                        Practice any exercise freely, at your own pace.
+                        {t('exercises.subtitle')}
                     </AppText>
                 </View>
 
                 {/* Ear-training drills */}
-                <SectionHeader label="Listen & sing drills" tagline="" locked={false} />
+                <SectionHeader label={t('profile.picker.earDrills')} tagline="" locked={false} />
                 <View>
                     {EXERCISES.map((exercise) => {
                         const selected = levels[exercise.id] ?? exercise.defaultDifficulty ?? undefined;
@@ -167,7 +169,7 @@ export function ExercisesHubScreen({ navigation }: ExercisesScreenProps<'Exercis
                                             </View>
                                             <Pressable
                                                 accessibilityRole="button"
-                                                accessibilityLabel="Add to weekly plan"
+                                                accessibilityLabel={t('exercises.addToPlan')}
                                                 hitSlop={10}
                                                 onPress={(e) => {
                                                     e.stopPropagation();
@@ -274,6 +276,7 @@ function SectionHeader({ label, tagline, locked }: { label: string; tagline: str
 }
 
 function MelodyRow({ exercise, bgColor, best, premium, onPress, onAdd, onLockedSpeed }: { exercise: Exercise; bgColor: string; best: number | undefined; premium: boolean; onPress: () => void; onAdd: () => void; onLockedSpeed: () => void }) {
+    const { t } = useTranslation();
     const { palette } = useTheme();
     // the tempo it runs at, preview and singing alike — remembered per exercise
     const picked = useSpeedStore((s) => s.speeds[exercise.id] ?? 1);
@@ -301,7 +304,7 @@ function MelodyRow({ exercise, bgColor, best, premium, onPress, onAdd, onLockedS
                                 {exercise.title}
                             </AppText>
                             <AppText variant="caption" style={{ marginTop: 3 }}>
-                                {exercise.source} · {exercise.key}
+                                {exercise.source} · {formatKeyName(exercise.key)}
                             </AppText>
                             {best !== undefined && (
                                 <View style={styles.starRow}>
@@ -309,14 +312,14 @@ function MelodyRow({ exercise, bgColor, best, premium, onPress, onAdd, onLockedS
                                         <Ionicons key={i} name={i < earned ? 'star' : 'star-outline'} size={11} color={i < earned ? palette.accent : palette.textFaint} />
                                     ))}
                                     <AppText variant="caption" style={{ fontSize: 12, marginLeft: 4 }}>
-                                        best {best}
+                                        {t('exercises.best', { score: best })}
                                     </AppText>
                                 </View>
                             )}
                         </View>
                         <Pressable
                             accessibilityRole="button"
-                            accessibilityLabel="Add to weekly plan"
+                            accessibilityLabel={t('exercises.addToPlan')}
                             hitSlop={10}
                             onPress={(e) => { e.stopPropagation(); onAdd(); }}
                             style={styles.addBtn}
@@ -332,7 +335,7 @@ function MelodyRow({ exercise, bgColor, best, premium, onPress, onAdd, onLockedS
                                 <Pressable
                                     key={level}
                                     accessibilityRole="button"
-                                    accessibilityLabel={`Speed ${speedBpm(exercise.bpm, level)} beats per minute${locked ? ', Premium' : ''}`}
+                                    accessibilityLabel={`${t('exercises.speedA11y', { bpm: speedBpm(exercise.bpm, level) })}${locked ? ', Premium' : ''}`}
                                     accessibilityState={{ selected: isSelected }}
                                     onPress={() => (locked ? onLockedSpeed() : setSpeed(exercise.id, level))}
                                     style={[
@@ -343,7 +346,7 @@ function MelodyRow({ exercise, bgColor, best, premium, onPress, onAdd, onLockedS
                                 >
                                     {locked && <Ionicons name="lock-closed" size={10} color={palette.textFaint} />}
                                     <AppText variant="caption" color={isSelected ? palette.accent : locked ? palette.textFaint : palette.textSecondary}>
-                                        {speedBpm(exercise.bpm, level)} bpm
+                                        {t('exercises.bpm', { bpm: speedBpm(exercise.bpm, level) })}
                                     </AppText>
                                 </Pressable>
                             );
@@ -351,13 +354,13 @@ function MelodyRow({ exercise, bgColor, best, premium, onPress, onAdd, onLockedS
                     </View>
                     {exercise.pattern === 'scale' && (
                         <View style={[styles.chips, { marginTop: 6 }]}>
-                            {SCALE_DIRECTIONS.map(({ id, label, icon }) => {
+                            {scaleDirections().map(({ id, label, icon }) => {
                                 const isSelected = id === direction;
                                 return (
                                     <Pressable
                                         key={id}
                                         accessibilityRole="button"
-                                        accessibilityLabel={`Keys ${label.toLowerCase()}`}
+                                        accessibilityLabel={t('exercises.keysA11y', { direction: label.toLowerCase() })}
                                         accessibilityState={{ selected: isSelected }}
                                         onPress={() => setDirection(exercise.id, id)}
                                         style={[
@@ -381,9 +384,9 @@ function MelodyRow({ exercise, bgColor, best, premium, onPress, onAdd, onLockedS
     );
 }
 
-const SCALE_DIRECTIONS: readonly { id: ScaleDirection; label: string; icon: 'arrow-up' | 'arrow-down' }[] = [
-    { id: 'up', label: 'Low to high', icon: 'arrow-up' },
-    { id: 'down', label: 'High to low', icon: 'arrow-down' },
+const scaleDirections = (): readonly { id: ScaleDirection; label: string; icon: 'arrow-up' | 'arrow-down' }[] => [
+    { id: 'up', label: t('exercises.lowToHigh'), icon: 'arrow-up' },
+    { id: 'down', label: t('exercises.highToLow'), icon: 'arrow-down' },
 ];
 
 function LockedMelodyRow({ exercise, bgColor, onPress }: { exercise: Exercise; bgColor: string; onPress: () => void }) {
@@ -405,7 +408,7 @@ function LockedMelodyRow({ exercise, bgColor, onPress }: { exercise: Exercise; b
                                 {exercise.title}
                             </AppText>
                             <AppText variant="caption" style={{ marginTop: 3 }}>
-                                {exercise.source} · {exercise.key}
+                                {exercise.source} · {formatKeyName(exercise.key)}
                             </AppText>
                         </View>
                         <Ionicons name="lock-closed" size={16} color={palette.textFaint} />
@@ -429,15 +432,16 @@ function DayPickerModal({
     onSelect: (day: WeekdayIndex) => void;
     onClose: () => void;
 }) {
+    const { t } = useTranslation();
     const { palette, spacing, radii } = useTheme();
     return (
         <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
             <Pressable style={styles.modalOverlay} onPress={onClose}>
                 <Pressable style={[styles.modalSheet, { backgroundColor: palette.surfaceSolid, borderRadius: radii.lg }]} onPress={(e) => e.stopPropagation()}>
                     <AppText variant="label" color={palette.textPrimary} style={{ fontSize: 17, marginBottom: spacing.md }}>
-                        Add to day
+                        {t('exercises.addToDay')}
                     </AppText>
-                    {(WEEKDAY_LABELS as readonly string[]).map((label, i) => {
+                    {WEEKDAY_LABELS.map((label, i) => {
                         const day = i as WeekdayIndex;
                         const dayEntries = weeklyPlan[day] ?? [];
                         const totalCount = dayEntries.length;
@@ -457,12 +461,12 @@ function DayPickerModal({
                                     </AppText>
                                     {dupeCount > 0 && (
                                         <AppText variant="caption" style={{ marginTop: 2, fontSize: 12 }} color={palette.accent}>
-                                            {dupeCount} already set for {label}
+                                            {t('exercises.alreadySet', { count: dupeCount, day: label })}
                                         </AppText>
                                     )}
                                 </View>
                                 <AppText variant="caption">
-                                    {totalCount > 0 ? `${totalCount} exercise${totalCount !== 1 ? 's' : ''}` : 'Empty'}
+                                    {totalCount > 0 ? t('profile.weekly.exerciseCount', { count: totalCount }) : t('exercises.empty')}
                                 </AppText>
                             </Pressable>
                         );

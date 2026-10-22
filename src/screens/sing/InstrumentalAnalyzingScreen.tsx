@@ -4,11 +4,13 @@ import { ActivityIndicator, View } from 'react-native';
 import { detectKey, useInstrumentalStore } from '@/features/instrumental';
 import { AppText, BackButton, Button, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
+import { useTranslation } from '@/shared/i18n';
 import type { SingScreenProps } from '@/app/navigation/types';
 
 export function InstrumentalAnalyzingScreen({ navigation, route }: SingScreenProps<'InstrumentalAnalyzing'>) {
+  const { t } = useTranslation();
   const { palette, spacing } = useTheme();
-  const track = useInstrumentalStore((s) => s.tracks.find((t) => t.id === route.params.trackId));
+  const track = useInstrumentalStore((s) => s.tracks.find((tr) => tr.id === route.params.trackId));
   const setTrackKey = useInstrumentalStore((s) => s.setTrackKey);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,7 +28,7 @@ export function InstrumentalAnalyzingScreen({ navigation, route }: SingScreenPro
         navigation.replace('InstrumentalSing', { trackId: track.id });
       })
       .catch(() => {
-        if (!cancelled) setError('Could not detect the key of this track. The file may be corrupted or too short.');
+        if (!cancelled) setError(t('sing.analyzing.error'));
       });
     return () => {
       cancelled = true;
@@ -39,10 +41,10 @@ export function InstrumentalAnalyzingScreen({ navigation, route }: SingScreenPro
         <BackButton onPress={() => navigation.goBack()} />
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.lg }}>
           <AppText variant="title" style={{ fontSize: 22, textAlign: 'center' }}>
-            Something went wrong
+            {t('common.somethingWentWrong')}
           </AppText>
           <AppText variant="body" style={{ textAlign: 'center' }}>{error}</AppText>
-          <Button title="Go back" onPress={() => navigation.goBack()} />
+          <Button title={t('common.goBack')} onPress={() => navigation.goBack()} />
         </View>
       </Screen>
     );
@@ -53,10 +55,10 @@ export function InstrumentalAnalyzingScreen({ navigation, route }: SingScreenPro
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.lg }}>
         <ActivityIndicator size="large" color={palette.accent} />
         <AppText variant="title" style={{ fontSize: 22, textAlign: 'center' }}>
-          Listening to your track…
+          {t('sing.analyzing.title')}
         </AppText>
         <AppText variant="body" style={{ textAlign: 'center' }}>
-          Detecting the song key so we can grade your singing against it.
+          {t('sing.analyzing.body')}
         </AppText>
       </View>
     </Screen>

@@ -50,6 +50,7 @@ export type { BillingAdapter, PurchaseOutcome } from './lib/billing';
 export {
   RevenueCatAdapter,
   initRevenueCat,
+  setRevenueCatLocale,
   identifyRevenueCatUser,
   logOutRevenueCat,
   fetchSubscriptionState,
@@ -64,7 +65,7 @@ export { useEntitlement, useEntitlements, usePremiumStatus } from './model/useEn
 export type { PremiumStatus } from './model/useEntitlement';
 export { usePaywall } from './model/usePaywall';
 
-export { PREMIUM_BENEFITS, PAYWALL_HEADLINE, PAYWALL_SUBTITLE } from './model/benefits';
+export { PREMIUM_BENEFITS, paywallHeadline, paywallSubtitle } from './model/benefits';
 export type { PremiumBenefit } from './model/benefits';
 
 export { PremiumBadge } from './ui/PremiumBadge';

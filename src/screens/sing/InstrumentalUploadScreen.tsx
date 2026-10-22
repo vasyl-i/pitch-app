@@ -11,9 +11,11 @@ import { FREE_INSTRUMENTAL_LIMIT, useInstrumentalStore } from '@/features/instru
 import { useEntitlement, usePaywall } from '@/features/subscription';
 import { AppText, BackButton, Button, Card, IconBubble, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
+import { formatKeyName, useTranslation } from '@/shared/i18n';
 import type { SingScreenProps } from '@/app/navigation/types';
 
 export function InstrumentalUploadScreen({ navigation }: SingScreenProps<'InstrumentalUpload'>) {
+  const { t } = useTranslation();
   const { palette, spacing } = useTheme();
   const tracks = useInstrumentalStore((s) => s.tracks);
   const addTrack = useInstrumentalStore((s) => s.addTrack);
@@ -40,26 +42,25 @@ export function InstrumentalUploadScreen({ navigation }: SingScreenProps<'Instru
       <BackButton onPress={() => navigation.goBack()} />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: spacing.xxl }}>
         <AppText variant="title" style={{ fontSize: 40, marginTop: spacing.sm }}>
-          Sing with instrumental
+          {t('sing.upload.title')}
         </AppText>
         <AppText variant="body" style={{ marginTop: spacing.xs }}>
-          Upload a backing track you have the rights to use. The app detects its key and grades your
-          singing against it.
+          {t('sing.upload.body')}
         </AppText>
 
         <View style={{ marginTop: spacing.xl }}>
-          <Button title="Upload instrumental" onPress={pick} />
+          <Button title={t('sing.upload.cta')} onPress={pick} />
           {!unlimited && (
             <AppText variant="caption" style={{ textAlign: 'center', marginTop: spacing.sm }}>
-              {tracks.length} of {FREE_INSTRUMENTAL_LIMIT} free tracks used
-              {atFreeLimit ? ' — go Premium for unlimited uploads' : ''}
+              {t('sing.upload.freeUsed', { used: tracks.length, limit: FREE_INSTRUMENTAL_LIMIT })}
+              {atFreeLimit ? t('sing.upload.goPremium') : ''}
             </AppText>
           )}
         </View>
 
         {tracks.length > 0 && (
           <View style={{ marginTop: spacing.xl, gap: spacing.sm }}>
-            <AppText variant="caption">Your tracks</AppText>
+            <AppText variant="caption">{t('sing.upload.yourTracks')}</AppText>
             {tracks.map((track) => (
               <Pressable
                 key={track.id}
@@ -78,12 +79,12 @@ export function InstrumentalUploadScreen({ navigation }: SingScreenProps<'Instru
                         {track.filename}
                       </AppText>
                       <AppText variant="caption" style={{ marginTop: 2 }}>
-                        {track.key ? track.key.keyName : 'Not analyzed yet'}
+                        {track.key ? formatKeyName(track.key.keyName) : t('sing.upload.notAnalyzed')}
                       </AppText>
                     </View>
                     <Pressable
                       accessibilityRole="button"
-                      accessibilityLabel={`Remove ${track.filename}`}
+                      accessibilityLabel={t('sing.upload.remove', { name: track.filename })}
                       onPress={() => removeTrack(track.id)}
                       hitSlop={8}
                     >
