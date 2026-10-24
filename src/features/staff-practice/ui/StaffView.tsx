@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { Canvas, Circle, Group, Line, Path, RoundedRect, Skia, useClock, vec } from '@shopify/react-native-skia';
 import { useDerivedValue } from 'react-native-reanimated';
 import { AppText } from '@/shared/ui';
-import { useTheme } from '@/shared/theme';
+import { accentAlpha, palette, useTheme } from '@/shared/theme';
 import { formatLyric } from '@/shared/i18n';
 import type { Exercise } from '@/entities/exercise';
 import { isSharp, ledgerSteps, MIDDLE_C_STEP, noteName, STAFF_LINE_STEPS, yOfMidi, yOfMidiContinuous, yOfStep, type StaffLayout } from '@/shared/lib/staff';
@@ -11,7 +11,7 @@ import { colorForCents, NOTICEABLE_CENTS, PERFECT_CENTS, SLIGHT_CENTS } from '@/
 import { VERDICT_GLYPH } from '@/entities/exercise';
 import { useStaffStore } from '../model/staffStore';
 
-const CYAN = '#C8DA59';
+const CYAN = palette.accent;
 const YELLOW = '#e8c97a';
 const ORANGE = '#f0954a';
 const RED = '#ff6d5c';
@@ -126,7 +126,7 @@ export function StaffView({ exercise, rate }: { exercise: Exercise; rate: number
               // is driven by playback position, never by what was sung
               const barColor = done
                 ? done.verdict === 'perfect'
-                  ? 'rgba(200,218,89,0.28)'
+                  ? accentAlpha(0.28)
                   : done.verdict === 'wrong' || done.verdict === 'missed'
                     ? 'rgba(255,109,92,0.22)'
                     : 'rgba(232,201,122,0.26)'

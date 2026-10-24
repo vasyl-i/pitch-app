@@ -390,3 +390,28 @@ void voice_gate_confirm(
     state->last_voice_at = now_ms;
     state->has_last_voice = 1;
 }
+
+/* ------------------------------------------------------------------ */
+
+int pitch_process_gated(
+    PitchProcessorState *state,
+    VoiceGateState *gate,
+    const float *raw_samples,
+    int sample_count,
+    int sample_rate,
+    double now_ms,
+    int confirm,
+    PitchResult *out,
+    int *voiced
+) {
+    *voiced = 0;
+    if (!pitch_processor_process(state, raw_samples, sample_count, sample_rate, out)) return 0;
+    if (!gate) return 1;
+
+    /* same mapping as freqToMidi in shared/lib/music.ts */
+    float midi = out->has_frequency ? 69.0f + 12.0f * log2f(out->frequency / 440.0f) : -1.0f;
+    int accepted = voice_gate_accept(gate, out->rms, midi, out->has_frequency, now_ms);
+    *voiced = accepted && out->has_frequency;
+    if (*voiced && confirm) voice_gate_confirm(gate, midi, now_ms);
+    return 1;
+}

@@ -1,3 +1,4 @@
+export { AnimatedText } from './AnimatedText';
 export { AppText } from './AppText';
 export { toastConfig } from './AppToast';
 export { BackButton } from './BackButton';

@@ -56,6 +56,18 @@ export const profile: LocaleShape<typeof en> = {
   feedbackSubtitle: 'Будемо раді почути вас',
   micNotice: 'Використовує мікрофон. Аудіо ніколи не залишає пристрій.',
   version: 'Версія {{version}}',
+  compact: {
+    feedback: 'Поділіться думками',
+    feedbackSubtitle: 'Будемо раді почути вас',
+    exerciseSettingsSubtitle: 'Вправи в щоденному плані',
+    weeklyPlanSubtitle: 'Вправи на кожен день',
+    languageSubtitle: '{{language}} · мова телефона',
+    reminderOff: 'Вимкнено — налаштувати',
+    termsSubtitle: 'Правила користування',
+    changePasswordSubtitle: 'Оновіть пароль',
+    logOutGuest: 'Ви увійшли як гість',
+    deleteAccountSubtitle: 'Видалити акаунт і всі дані',
+  },
   languageSettings: {
     appLanguage: 'Мова застосунку',
   },

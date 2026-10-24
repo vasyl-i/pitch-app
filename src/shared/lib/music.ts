@@ -148,7 +148,8 @@ export const NOTICEABLE_CENTS = 60;
 export function colorForCents(cents: number | null): string {
   if (cents === null) return 'rgba(255,255,255,0.4)';
   const a = Math.abs(cents);
-  if (a <= PERFECT_CENTS) return '#C8DA59'; // in tune
+  // in tune: palette.accent, written out — the theme pulls in React Native, and this file runs in node tests
+  if (a <= PERFECT_CENTS) return '#EEFF88';
   if (a <= SLIGHT_CENTS) return '#e8c97a'; // slightly sharp/flat
   if (a <= NOTICEABLE_CENTS) return '#f0954a'; // noticeable deviation
   return '#ff6d5c'; // out of tune

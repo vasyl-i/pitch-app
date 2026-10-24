@@ -51,9 +51,9 @@ import {
 import { createThrottle } from '@/features/pitch-detection';
 import { NativeVoiceGate } from '../../../../modules/pitch-native/src';
 import { freqToMidi } from '@/shared/lib/music';
-import { centsToGlowTier, micActive, micGlowTier, micRms } from '@/shared/lib/micRmsBus';
 import { SKIP_ACCOMPANIED_STAGE } from '@/shared/lib/featureFlags';
 import type { MelodyPlayer } from '../lib/melodyPlayer';
+import { createDeliveryLag } from '../lib/deliveryLag';
 import type { StaffStatus, SungSample } from './staffStore';
 
 const UI_UPDATE_MS = 33;
@@ -74,6 +74,10 @@ export const SILENCE_TIMEOUT_MS = 20000;
 export interface RunFrame {
   frequency: number | null;
   rms: number;
+  /** capture time, seconds since the recording started (see `createDeliveryLag`) */
+  when?: number;
+  /** the voice gate's verdict, already run natively with detection (see `voiceGate`) */
+  voiced?: boolean;
 }
 
 /** The slice of the staff store the run drives. */
@@ -131,6 +135,13 @@ export interface RunController {
   /** the stage-3 phrase timeline has run out */
   phraseFinished(): void;
   onFrame(frame: RunFrame): void;
+  /**
+   * This run's voice gate, for the mic to run in the same native call as
+   * detection; `confirming()` is true in the graded stages, where a voiced
+   * frame also teaches the gate the sung pitch. Frames that arrive without a
+   * `voiced` verdict are gated here instead.
+   */
+  readonly voiceGate: { gate: NativeVoiceGate; confirming(): boolean };
   dispose(): void;
   readonly stage: RunStage;
 }
@@ -156,6 +167,14 @@ export function createRunController({
   const TRAIL_STORE_MS = 100;
   const shouldUpdateTrail = createThrottle(TRAIL_STORE_MS);
   const trail: SungSample[] = [];
+  const delivery = createDeliveryLag();
+  /** last graded frame's phrase time — back-dating must never reorder frames */
+  let lastFrameT = -Infinity;
+  /** phrase time a frame was sung at, kept in order for the evaluator's binary search */
+  const frameTime = (player: MelodyPlayer, lagSec: number) => {
+    lastFrameT = Math.max(player.currentTime() - lagSec * player.rate, lastFrameT);
+    return lastFrameT;
+  };
 
   let disposed = false;
   let stage: RunStage = 'idle';
@@ -223,6 +242,8 @@ export function createRunController({
     stage = next;
     store.clearStageFeedback();
     trail.length = 0;
+    delivery.reset();
+    lastFrameT = -Infinity;
     player.start();
     // Position must be written BEFORE status: when status flips to 'listen' or
     // 'accompanied' the canvas becomes visible (canvasRunning) and initialises
@@ -253,6 +274,8 @@ export function createRunController({
     stage = 'solo';
     store.clearStageFeedback();
     trail.length = 0;
+    delivery.reset();
+    lastFrameT = -Infinity;
 
     // Start the timeline immediately so the playhead scrolls and the singer
     // can see when the first note arrives — same UX as the accompanied stage.
@@ -295,8 +318,6 @@ export function createRunController({
     }
 
     if (voicedMidi === null) {
-      micRms.value = rms;
-      micGlowTier.value = 0;
       if (ui) store.setPitch({ liveMidi: null, liveCents: null, liveRms: rms, ...(trailDue && { trail: [...trail] }) });
       return;
     }
@@ -311,8 +332,6 @@ export function createRunController({
     evaluator.addFrame(t, voicedMidi);
     trail.push({ t, midi: voicedMidi, cents });
     while (trail.length && trail[0].t < t - TRAIL_SECONDS) trail.shift();
-    micRms.value = rms;
-    micGlowTier.value = centsToGlowTier(cents);
     if (ui) store.setPitch({ liveMidi: voicedMidi, liveCents: cents, liveRms: rms, ...(trailDue && { trail: [...trail] }) });
   };
 
@@ -343,6 +362,8 @@ export function createRunController({
     get stage() {
       return stage;
     },
+
+    voiceGate: { gate, confirming: () => stage === 'accompanied' || stage === 'solo' },
 
     startRun() {
       if (disposed) return;
@@ -413,12 +434,15 @@ export function createRunController({
 
     onFrame(frame) {
       const at = now();
+      // back-date the frame to when it was sung, not when JS got round to it
+      const lagSec = delivery.lagMs(frame.when, at) / 1000;
       const rawMidi = frame.frequency ? freqToMidi(frame.frequency) : null;
       // Every frame that gets here is already known to be free of our own
       // playback — either the mic broker dropped the rest, or the output route
       // is private and there is nothing to leak. So it is safe to let the gate
       // learn the room from all of them, including the quiet stage gaps.
-      const isVoice = gate.accept(frame.rms, rawMidi, at);
+      const gatedNatively = frame.voiced !== undefined;
+      const isVoice = gatedNatively ? frame.voiced! : gate.accept(frame.rms, rawMidi, at);
       const ui = shouldUpdateUi(at);
       const trailDue = shouldUpdateTrail(at);
 
@@ -427,21 +451,21 @@ export function createRunController({
       if (stage !== 'accompanied' && stage !== 'solo') return;
 
       const voicedMidi = rawMidi !== null && isVoice ? rawMidi : null;
-      if (voicedMidi !== null) gate.confirm(voicedMidi, at);
+      if (voicedMidi !== null && !gatedNatively) gate.confirm(voicedMidi, at);
 
       if (stage === 'accompanied') {
         // the guide is the clock here — the singer follows it rather than
         // starting it, so there is no onset gate
         if (!accompaniment.playing) return;
         if (voicedMidi !== null) heardVoiceInAccompanied = true;
-        gradeFrame(accompaniedEvaluator, accompaniment.currentTime(), voicedMidi, ui, trailDue, frame.rms);
+        gradeFrame(accompaniedEvaluator, frameTime(accompaniment, lagSec), voicedMidi, ui, trailDue, frame.rms);
         return;
       }
 
       if (!solo.playing) return;
       if (voicedMidi !== null) soloVoicedFrames++;
 
-      const t = solo.currentTime();
+      const t = frameTime(solo, lagSec);
       gradeFrame(soloEvaluator, t, voicedMidi, ui, trailDue, frame.rms);
     },
 

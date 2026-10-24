@@ -3,7 +3,7 @@
  * preferences, the practice library, and (moved here from their former
  * top-level tabs) Progress and Journey.
  */
-import { Alert, Image, type ImageSourcePropType, Linking, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Image, type ImageSourcePropType, Linking, Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Toast from 'react-native-toast-message';
 
 const ICONS = {
@@ -46,8 +46,11 @@ function openFeedbackEmail() {
   });
 }
 
-function reminderSubtitle(hour: number | null, minute: number): string {
-  if (hour == null) return t('profile.reminderOff');
+/** below this width (iPhone SE / mini) rows use the shorter `profile.compact` copy */
+const COMPACT_WIDTH = 390;
+
+function reminderSubtitle(hour: number | null, minute: number, compact: boolean): string {
+  if (hour == null) return compact ? t('profile.compact.reminderOff') : t('profile.reminderOff');
   const at = new Date();
   at.setHours(hour, minute, 0, 0);
   return t('profile.reminderDaily', { time: formatTime(at) });
@@ -55,6 +58,7 @@ function reminderSubtitle(hour: number | null, minute: number): string {
 
 export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>) {
   const { t } = useTranslation();
+  const compact = useWindowDimensions().width < COMPACT_WIDTH;
   const { palette, spacing, radii } = useTheme();
   const tabBarClearance = useFloatingTabBarClearance(spacing.xl);
   const profile = useProfileStore((s) => s.profile);
@@ -132,8 +136,8 @@ export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>)
           </AppText>
         </View>
 
-        {/* Premium banner */}
-        <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.md }}>
+        {/* Premium banner: same gap under the heading as on Home, so it holds still across tabs */}
+        <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.lg }}>
           <PremiumBanner source="profile" />
         </View>
 
@@ -161,7 +165,7 @@ export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>)
             title={t('profile.goal')}
             subtitle={
               prefs
-                ? `${GOAL_LABELS[prefs.primaryGoal]} · ${t('profile.minutesADay', { count: prefs.dailyMinutes })}`
+                ? `${GOAL_LABELS[prefs.primaryGoal]} · ${compact ? t('common.minutesShort', { count: prefs.dailyMinutes }) : t('profile.minutesADay', { count: prefs.dailyMinutes })}`
                 : t('profile.goalUnset')
             }
             onPress={() => navigation.navigate('LearningPreferences')}
@@ -169,19 +173,19 @@ export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>)
           <Row
             icon={ICONS.settings}
             title={t('profile.exerciseSettings')}
-            subtitle={t('profile.exerciseSettingsSubtitle')}
+            subtitle={compact ? t('profile.compact.exerciseSettingsSubtitle') : t('profile.exerciseSettingsSubtitle')}
             onPress={() => navigation.navigate('ExerciseSettings')}
           />
           <Row
             icon={ICONS.weeklyPlan}
             title={t('profile.weeklyPlan')}
-            subtitle={t('profile.weeklyPlanSubtitle')}
+            subtitle={compact ? t('profile.compact.weeklyPlanSubtitle') : t('profile.weeklyPlanSubtitle')}
             onPress={() => navigation.navigate('WeeklyPlan')}
           />
           <Row
             icon={ICONS.reminder}
             title={t('profile.reminder')}
-            subtitle={reminderSubtitle(prefs?.reminderHour ?? null, prefs?.reminderMinute ?? 0)}
+            subtitle={reminderSubtitle(prefs?.reminderHour ?? null, prefs?.reminderMinute ?? 0, compact)}
             onPress={() => navigation.navigate('ReminderSettings')}
           />
           {/* follows the phone until a language is picked here */}
@@ -191,7 +195,9 @@ export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>)
             subtitle={
               savedLanguage()
                 ? LANGUAGE_NAMES[currentLanguage()]
-                : t('profile.languageSubtitle', { language: LANGUAGE_NAMES[currentLanguage()] })
+                : compact
+                  ? t('profile.compact.languageSubtitle', { language: LANGUAGE_NAMES[currentLanguage()] })
+                  : t('profile.languageSubtitle', { language: LANGUAGE_NAMES[currentLanguage()] })
             }
             last
             onPress={() => navigation.navigate('LanguageSettings')}
@@ -210,7 +216,7 @@ export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>)
           <Row
             icon={ICONS.terms}
             title={t('profile.terms')}
-            subtitle={t('profile.termsSubtitle')}
+            subtitle={compact ? t('profile.compact.termsSubtitle') : t('profile.termsSubtitle')}
             last
             onPress={() => Linking.openURL('https://pitchgym.anyabedrytska.com/terms-of-service.html')}
           />
@@ -223,14 +229,14 @@ export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>)
             <Row
               icon={ICONS.settings}
               title={t('auth.newPassword.changeTitle')}
-              subtitle={t('profile.changePasswordSubtitle')}
+              subtitle={compact ? t('profile.compact.changePasswordSubtitle') : t('profile.changePasswordSubtitle')}
               onPress={() => navigation.navigate('NewPassword', { requireOldPassword: true })}
             />
           )}
           <Row
             icon={ICONS.logOut}
             title={t('profile.logOut')}
-            subtitle={guest ? t('profile.logOutGuest') : t('profile.logOutSubtitle')}
+            subtitle={guest ? (compact ? t('profile.compact.logOutGuest') : t('profile.logOutGuest')) : t('profile.logOutSubtitle')}
             onPress={handleLogout}
             last={!guest || !isEmailUser}
           />
@@ -238,7 +244,7 @@ export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>)
             <Row
               icon={ICONS.delete}
               title={t('profile.deleteAccount')}
-              subtitle={t('profile.deleteAccountSubtitle')}
+              subtitle={compact ? t('profile.compact.deleteAccountSubtitle') : t('profile.deleteAccountSubtitle')}
               destructive
               last
               onPress={handleDeleteAccount}
@@ -251,8 +257,8 @@ export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>)
         <View style={[styles.card, { marginHorizontal: spacing.lg, borderRadius: 10 }]}>
           <Row
             icon={ICONS.message}
-            title={t('profile.feedback')}
-            subtitle={t('profile.feedbackSubtitle')}
+            title={compact ? t('profile.compact.feedback') : t('profile.feedback')}
+            subtitle={compact ? t('profile.compact.feedbackSubtitle') : t('profile.feedbackSubtitle')}
             last
             onPress={openFeedbackEmail}
           />
@@ -301,7 +307,8 @@ function Row({
   /** an emoji (e.g. a flag) drawn in place of the icon image */
   | { emoji: string; icon?: never }
 )) {
-  const { palette } = useTheme();
+  const { palette, typography } = useTheme();
+  const compact = useWindowDimensions().width < COMPACT_WIDTH;
   return (
     <Pressable style={styles.pressableRow} accessibilityRole="button" onPress={onPress}>
       {({ pressed }) => (
@@ -314,10 +321,15 @@ function Row({
             )}
           </View>
           <View style={{ flex: 1 }}>
-            <AppText variant="label" style={{ fontSize: 14 }} color={destructive ? palette.danger : palette.textPrimary}>
+            <AppText
+              variant="label"
+              style={{ fontFamily: typography.family.medium, fontSize: 14, lineHeight: 18 }}
+              color={destructive ? palette.danger : palette.textPrimary}
+            >
               {title}
             </AppText>
-            <AppText variant="caption" color={"#CDC9C9"} style={{ marginTop: 2, fontSize: 12 }}>
+            {/* narrow phones get shorter copy (`profile.compact`); this only trims what still overflows there */}
+            <AppText variant="caption" color={"#CDC9C9"} numberOfLines={compact ? 1 : undefined} style={{ marginTop: 2, fontSize: 12, lineHeight: 18 }}>
               {subtitle}
             </AppText>
           </View>

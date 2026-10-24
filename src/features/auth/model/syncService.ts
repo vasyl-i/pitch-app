@@ -402,16 +402,18 @@ export function startSync() {
   // Watch daily plan changes (new day, regeneration, step completion, or partial progress)
   let lastDayKey = useLessonSessionStore.getState().dayKey;
   let lastCompletedCount = useLessonSessionStore.getState().completedSlots.length;
-  let lastPartialKeys = Object.keys(useLessonSessionStore.getState().partialProgress).length;
+  // by reference: the store replaces the object on every write, so a further
+  // round saved on the same slot counts as a change too
+  let lastPartial = useLessonSessionStore.getState().partialProgress;
   activeSubs.push(
     useLessonSessionStore.subscribe((state) => {
       const dayChanged = state.dayKey != null && state.dayKey !== lastDayKey;
       const slotsChanged = state.completedSlots.length !== lastCompletedCount;
-      const partialChanged = Object.keys(state.partialProgress).length !== lastPartialKeys;
+      const partialChanged = state.partialProgress !== lastPartial;
       if (dayChanged || slotsChanged || partialChanged) {
         lastDayKey = state.dayKey;
         lastCompletedCount = state.completedSlots.length;
-        lastPartialKeys = Object.keys(state.partialProgress).length;
+        lastPartial = state.partialProgress;
         debounced('daily-plan', pushDailyPlan);
       }
     }),

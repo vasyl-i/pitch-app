@@ -74,19 +74,20 @@ export function acquireMic({ onFrame, ...engineOptions }: AcquireMicOptions): Pr
       onFrame,
       active: true,
       released: false,
-      engine: createPitchEngine((frame) => {
-        // a pre-empted lease must go quiet at once, even mid-teardown
-        if (!record.active) return;
-        // Hard interlock, enforced here because this is the single point every
-        // listening feature goes through: a frame captured while the app was
-        // sounding reference audio may *be* that audio, so it says nothing
-        // about the singer. It is dropped outright rather than forwarded as a
-        // synthetic silent frame — a fake zero-RMS frame would drag the voice
-        // gate's noise-floor estimate down just as wrongly as the bleed would
-        // drag it up.
-        if (referenceContaminates()) return;
-        record.onFrame(frame);
-      }, engineOptions),
+      engine: createPitchEngine((frame) => record.onFrame(frame), {
+        ...engineOptions,
+        // Asked before each frame is analysed; a frame it turns away is never
+        // gated or delivered.
+        //  - a pre-empted lease must go quiet at once, even mid-teardown
+        //  - hard interlock, enforced here because this is the single point
+        //    every listening feature goes through: a frame captured while the
+        //    app was sounding reference audio may *be* that audio, so it says
+        //    nothing about the singer. It is dropped outright rather than
+        //    forwarded as a synthetic silent frame — a fake zero-RMS frame
+        //    would drag the voice gate's noise-floor estimate down just as
+        //    wrongly as the bleed would drag it up.
+        admitFrame: () => record.active && !referenceContaminates(),
+      }),
     };
 
     try {

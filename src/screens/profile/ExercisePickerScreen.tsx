@@ -266,7 +266,7 @@ function EarPickerRow({
               accessibilityRole="button"
               style={({ pressed }) => [
                 styles.chip,
-                { backgroundColor: 'rgba(200, 218, 89, 0.12)' },
+                { backgroundColor: palette.accentTint },
                 pressed && { opacity: 0.7 },
               ]}
             >

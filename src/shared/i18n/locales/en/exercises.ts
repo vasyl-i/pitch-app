@@ -6,6 +6,8 @@ export const exercises = {
   best: 'best {{score}}',
   speedA11y: 'Speed {{bpm}} beats per minute',
   bpm: '{{bpm}} bpm',
+  /** caption over the bare-number speed chips on the practice screen */
+  speedCaption: 'Speed, bpm',
   keysA11y: 'Keys {{direction}}',
   lowToHigh: 'Low to high',
   highToLow: 'High to low',

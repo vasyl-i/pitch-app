@@ -137,7 +137,7 @@ function EditToggle({ label, active, onPress }: { label: string; active: boolean
       style={({ pressed }) => [
         styles.toggle,
         { borderRadius: radii.pill, paddingHorizontal: spacing.lg, backgroundColor: palette.surface },
-        active && { backgroundColor: 'rgba(200, 218, 89, 0.16)' },
+        active && { backgroundColor: palette.accentTint },
         pressed && { opacity: 0.7 },
       ]}
     >

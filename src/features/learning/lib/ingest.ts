@@ -5,6 +5,7 @@
  *
  * Pure: the store calls this and persists the result; tests call it directly.
  */
+import { isSungSession } from '@/features/progress/lib/stats';
 import type { MistakeTag, ReviewState, SessionAnnotation, SkillId, SkillState } from '../model/types';
 import { applyObservation } from './mastery';
 import { contributionsFor, type MetricId } from './skillMap';
@@ -32,6 +33,9 @@ const metricValue = (facts: SessionFacts, metric: MetricId): number =>
   metric === 'stability' ? facts.stability : metric === 'rhythm' ? facts.rhythm : facts.score;
 
 function detectMistakes(facts: SessionFacts): MistakeTag[] {
+  // every tag is a singing mistake; a listening drill's stability/rhythm are
+  // stand-ins for its recognition score, so they'd only invent false ones
+  if (!isSungSession(facts)) return [];
   const mistakes: MistakeTag[] = [];
   if (Math.abs(facts.avgCents) >= 25) mistakes.push('intonation');
   if (facts.stability < 65) mistakes.push('stability');

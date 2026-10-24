@@ -22,6 +22,7 @@ export type PaywallSource =
   | 'attempt-comparison'
   | 'performance-overlay'
   | 'practice-library'
+  | 'melody-practice'
   | 'progress-mastery'
   | 'profile'
   | 'today'

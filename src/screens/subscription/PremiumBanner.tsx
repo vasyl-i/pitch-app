@@ -65,7 +65,7 @@ export function PremiumBanner({ source, style }: PremiumBannerProps) {
   const trialEnding = premium.trialDaysLeft !== null && premium.trialDaysLeft <= 1;
 
   const planName = premium.plan?.name ?? t('subscription.premium');
-  const title = premium.isPremium ? 'PitchGym Premium' : t('session.complete.unlockTitle');
+  const title = premium.isPremium ? 'PitchGym Premium' : t('subscription.banner.freeTitle');
 
   const subtitle = premium.isPremium
     ? premium.status === 'trialing'
@@ -80,10 +80,17 @@ export function PremiumBanner({ source, style }: PremiumBannerProps) {
       <ImageBackground source={UNLOCK_BG} style={styles.bannerBg} imageStyle={{ borderRadius: 10 }}>
         <Image source={UNLOCK_CAT} style={styles.bannerCat} resizeMode="contain" />
         <View style={styles.bannerTextWrap}>
-          <AppText variant="body" style={{ fontSize: 16, lineHeight: 20, color: '#0D022F', fontFamily: typography.family.medium }}>
+          {/* fixed 72pt banner: one title line + up to two subtitle lines fit, so never let the title wrap */}
+          <AppText
+            variant="body"
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.85}
+            style={{ fontSize: 16, lineHeight: 20, color: '#0D022F', fontFamily: typography.family.medium }}
+          >
             {title}
           </AppText>
-          <AppText variant="body" style={{ fontSize: 12, lineHeight: 16, color: '#3D3E42', fontFamily: typography.family.regular }}>
+          <AppText variant="body" numberOfLines={2} style={{ fontSize: 12, lineHeight: 16, color: '#3D3E42', fontFamily: typography.family.regular }}>
             {subtitle}
           </AppText>
         </View>

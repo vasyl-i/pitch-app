@@ -56,6 +56,40 @@ public class PitchNativeModule: Module {
       return dict
     }
 
+    /**
+     The per-frame call: reads the recorder's Float32Array in place, detects
+     pitch and, given a gate (`gateId` 0 = none), runs the voice gate on the
+     result — confirming a voiced frame's pitch when `confirm` is set. Writes
+     [hasFrequency, frequency, rms, clarity, clipped, voiced] into `out` (a
+     reused Float32Array of 6): one call, no conversions, nothing allocated.
+     */
+    Function("processSamples") {
+      (id: Int, samples: Float32Array, sampleRate: Int, out: Float32Array, gateId: Int, nowMs: Double, confirm: Bool) -> Bool in
+      guard let ptr = self.processors[id], out.length >= 6 else { return false }
+      var result = PitchResult()
+      var voiced: Int32 = 0
+      let valid = pitch_process_gated(
+        ptr,
+        gateId == 0 ? nil : self.gates[gateId],
+        samples.rawPointer.assumingMemoryBound(to: Float.self),
+        Int32(samples.length),
+        Int32(sampleRate),
+        nowMs,
+        confirm ? 1 : 0,
+        &result,
+        &voiced
+      )
+      if valid == 0 { return false }
+      let o = out.rawPointer.assumingMemoryBound(to: Float.self)
+      o[0] = Float(result.has_frequency)
+      o[1] = result.frequency
+      o[2] = result.rms
+      o[3] = result.clarity
+      o[4] = Float(result.clipped)
+      o[5] = Float(voiced)
+      return true
+    }
+
     // --- Voice gate lifecycle ---
 
     Function("createVoiceGate") { () -> Int in

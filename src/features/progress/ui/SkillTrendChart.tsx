@@ -9,7 +9,7 @@ import { Canvas, Group, Line, Path, Skia, vec } from '@shopify/react-native-skia
 import type { SkillId } from '@/features/learning';
 import { SKILL_LABELS } from '@/features/learning';
 import { AppText } from '@/shared/ui';
-import { useTheme } from '@/shared/theme';
+import { palette, useTheme } from '@/shared/theme';
 import { useTranslation } from '@/shared/i18n';
 
 export interface SnapshotPoint {
@@ -28,7 +28,7 @@ const PADDING_LEFT = 8;
 const PADDING_RIGHT = 8;
 
 const LINE_COLORS: string[] = [
-  '#C8DA59', // lime (accent)
+  palette.accent,
   '#6FA0E8', // blue
   '#B79FE8', // lavender
   '#EE8672', // coral

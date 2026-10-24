@@ -12,6 +12,9 @@ export {
 export type { AttemptSubject, AttemptScores, GradedNote, PhraseLike } from './lib/record';
 export {
   weeklyStats,
+  isSungSession,
+  singingAccuracy,
+  LISTENING_ONLY_EXERCISE_IDS,
   noteHeatmap,
   scoreTrend,
   totalStars,

@@ -19,6 +19,8 @@ import type { TargetNote } from '@/entities/exercise';
 export interface MelodyPlayer {
   /** seconds of silent lead-in before the first note */
   readonly leadIn: number;
+  /** phrase seconds per real second */
+  readonly rate: number;
   start(): void;
   stop(): void;
   /** phrase time in seconds (negative during lead-in) */
@@ -75,6 +77,7 @@ export function createMelodyPlayer(
 
   return {
     leadIn,
+    rate,
 
     start() {
       if (playing || disposed) return;

@@ -22,10 +22,14 @@ export const staff = {
   },
   restart: 'Restart',
   skipPreview: 'Skip preview',
+  /** header toggle: a light haptic tap on every beat */
+  metronome: 'Metronome',
   noInputTitle: "We didn't hear any singing.",
   noInputBody: "Check your mic, then give it a try — you'll hear the melody first, then sing it on your own.",
   singAgain: 'Sing again',
   singItAgain: 'Sing it again',
+  /** results card between rounds of a scale or arpeggio: on to the next key */
+  nextRound: 'Next round',
   couldNotStart: 'Could not start',
   transition: {
     title: 'Now it’s your turn!',
@@ -34,7 +38,8 @@ export const staff = {
   },
   summary: {
     title: 'Phrase score',
-    meta: '{{cents}}¢ average off  ·  {{rhythm}}% rhythm',
+    metaDeviation: '{{cents}}¢ average off',
+    metaRhythm: '{{rhythm}}% rhythm',
     comparisonTitle: 'Assisted vs. independent',
     comparisonWell: 'You held up well on your own this time — see the full accuracy, stability and rhythm breakdown with Premium.',
     comparisonSlipped: 'Premium shows exactly where the guide was carrying you — accuracy, stability and rhythm, side by side.',

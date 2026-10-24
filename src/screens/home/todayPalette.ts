@@ -1,3 +1,5 @@
+import { accentAlpha, palette } from '@/shared/theme';
+
 /**
  * Dark, atmospheric palette for the Today screen only. Close cousin of the
  * shared dark-glass system in `shared/theme/tokens.ts` (same near-black base,
@@ -25,7 +27,7 @@ export const todayColor = {
   inkOnBanner: '#2B2038',
   inkOnAccent: '#171B08',
 
-  orange: '#C8DA59',
+  orange: palette.accent,
   peach: '#F3C79B',
   coral: '#EE8672',
   blue: '#6FA0E8',
@@ -46,7 +48,7 @@ export const todayColor = {
   lavenderDeep: '#C4AEF0',
   indigoDeep: '#9BA0EC',
 
-  orangeTint: 'rgba(200, 218, 89, 0.18)',
+  orangeTint: accentAlpha(0.18),
   blueTint: 'rgba(111, 160, 232, 0.18)',
   lavenderTint: 'rgba(183, 159, 232, 0.18)',
   indigoTint: 'rgba(123, 127, 224, 0.20)',

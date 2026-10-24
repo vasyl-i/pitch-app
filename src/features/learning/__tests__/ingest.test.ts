@@ -39,6 +39,13 @@ test('mistake tags fire on weak metrics', () => {
   assert.deepEqual(annotation.mistakes, ['intonation', 'stability', 'rhythm', 'accuracy']);
 });
 
+test('a listening drill records no singing mistakes, but still trains its skill', () => {
+  const facts = { exerciseId: 'ear:major-minor', at: T0, score: 40, stability: 40, rhythm: 40, avgCents: 0, durationSec: 30 };
+  const { annotation } = ingestSession(makeSkills(), {}, facts, null);
+  assert.deepEqual(annotation.mistakes, []);
+  assert.ok(Object.keys(annotation.skills).length > 0);
+});
+
 test('an unknown future ear drill still feeds the profile via the generic mapping', () => {
   const facts = { exerciseId: 'ear:brand-new-drill', at: T0, score: 70, stability: 70, rhythm: 70, avgCents: 10 };
   const { annotation } = ingestSession(makeSkills(), {}, facts, null);

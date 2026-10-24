@@ -43,7 +43,8 @@ const EAR_DRILLS: Omit<Activity, 'minutes'>[] = [
     difficulties: null,
     secondsPerRep: 6,
     challenge: 0.2,
-    rounds: 8,
+    rounds: 4,
+    maxRounds: 4,
   },
   {
     kind: 'ear',

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { AttemptComparison, NoteResult, PhraseSummary, Verdict } from '@/entities/exercise';
+import { clearLivePitch, publishLivePitch } from './livePitchDisplay';
 
 /**
  * A run is three stages of the same phrase, assistance falling away between
@@ -139,7 +140,11 @@ export const useStaffStore = create<StaffState>((set) => ({
   setOutputIsolated: (outputIsolated) => set({ outputIsolated }),
   setError: (errorMessage) => set({ status: 'error', errorMessage }),
   setPlayback: (p) => set(p),
-  setPitch: (p) => set(p.trail !== undefined ? p : { liveMidi: p.liveMidi, liveCents: p.liveCents, liveRms: p.liveRms }),
+  // the on-screen readout reads the shared values, not these fields — see livePitchDisplay
+  setPitch: (p) => {
+    publishLivePitch(p.liveMidi, p.liveCents);
+    set(p.trail !== undefined ? p : { liveMidi: p.liveMidi, liveCents: p.liveCents, liveRms: p.liveRms });
+  },
   addResult: (result) =>
     set((s) => ({
       noteResults: { ...s.noteResults, [result.noteIndex]: result },
@@ -149,9 +154,14 @@ export const useStaffStore = create<StaffState>((set) => ({
   setSummary: (summary, comparison) => set({ summary, comparison, status: 'finished' }),
   // between stages the staff has to start clean — the assisted pass's verdicts
   // and trail must not sit under the unaided one, which is a fresh performance
-  clearStageFeedback: () =>
-    set({ ...blankPlayback, ...blankPitch, trail: [], noteResults: {}, lastVerdict: null }),
+  clearStageFeedback: () => {
+    clearLivePitch();
+    set({ ...blankPlayback, ...blankPitch, trail: [], noteResults: {}, lastVerdict: null });
+  },
   // the audio route is a property of the device, not of the run — a restart
   // must not forget that headphones are plugged in
-  reset: () => set((s) => ({ ...initial, noteResults: {}, trail: [], outputIsolated: s.outputIsolated })),
+  reset: () => {
+    clearLivePitch();
+    set((s) => ({ ...initial, noteResults: {}, trail: [], outputIsolated: s.outputIsolated }));
+  },
 }));

@@ -7,6 +7,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import {
     currentStreak,
     formatPracticeTime,
+    singingAccuracy,
     todayExerciseStats,
     useProgressStore,
 } from '@/features/progress';
@@ -44,11 +45,11 @@ export function TodayScreen({ navigation }: HomeScreenProps<'Today'>) {
         () => ({
             time: formatPracticeTime(totalPracticeSec),
             streak: currentStreak(sessions),
-            accuracy: sessions.length > 0
-                ? Math.round(sessions.reduce((sum, s) => sum + s.score, 0) / sessions.length)
-                : 0,
+            // sung attempts only: listening drills score recognition, not pitch
+            accuracy: singingAccuracy(sessions) ?? 0,
         }),
-        [sessions, totalPracticeSec],
+        // t: re-format the duration after a live language switch
+        [sessions, totalPracticeSec, t],
     );
     const todayStats = useMemo(() => todayExerciseStats(sessions), [sessions]);
 
@@ -119,7 +120,8 @@ export function TodayScreen({ navigation }: HomeScreenProps<'Today'>) {
                         </Pressable>
                     </View>
 
-                    <PremiumBanner source="today" style={{ marginTop: 16 }} />
+                    {/* same gap under the heading as on Account, so the banner holds still across tabs */}
+                    <PremiumBanner source="today" style={{ marginTop: spacing.lg }} />
 
                     <ProgressSection
                         accuracy={overall.accuracy}

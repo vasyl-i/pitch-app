@@ -61,6 +61,35 @@ Java_expo_modules_pitchnative_PitchNativeModule_nativeProcessFrame(
     return out;
 }
 
+JNIEXPORT jboolean JNICALL
+Java_expo_modules_pitchnative_PitchNativeModule_nativeProcessSamples(
+    JNIEnv *env, jobject thiz, jlong ptr, jlong gatePtr, jobject samples, jint count, jint sampleRate,
+    jdouble nowMs, jboolean confirm, jobject out
+) {
+    PitchProcessorState *state = (PitchProcessorState *)(intptr_t)ptr;
+    if (!state) return JNI_FALSE;
+
+    /* both are direct views of JS typed-array memory: read and write in place */
+    const float *data = (const float *)(*env)->GetDirectBufferAddress(env, samples);
+    float *o = (float *)(*env)->GetDirectBufferAddress(env, out);
+    if (!data || !o) return JNI_FALSE;
+
+    PitchResult result;
+    int voiced = 0;
+    VoiceGateState *gate = (VoiceGateState *)(intptr_t)gatePtr;
+    if (!pitch_process_gated(state, gate, data, count, sampleRate, nowMs, confirm, &result, &voiced)) {
+        return JNI_FALSE;
+    }
+
+    o[0] = (float)result.has_frequency;
+    o[1] = result.frequency;
+    o[2] = result.rms;
+    o[3] = result.clarity;
+    o[4] = (float)result.clipped;
+    o[5] = (float)voiced;
+    return JNI_TRUE;
+}
+
 /* Voice gate */
 
 JNIEXPORT jlong JNICALL

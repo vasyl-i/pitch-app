@@ -51,6 +51,19 @@ export const profile = {
   feedbackSubtitle: "We'll be happy to hear from you",
   micNotice: 'Uses your microphone. Audio never leaves the device.',
   version: 'Version {{version}}',
+  /** shorter row copy for narrow phones (iPhone SE / mini), one line in every language */
+  compact: {
+    feedback: 'Share your thoughts',
+    feedbackSubtitle: "We'd love to hear from you",
+    exerciseSettingsSubtitle: 'Exercises in your daily plan',
+    weeklyPlanSubtitle: 'Exercises for each day',
+    languageSubtitle: '{{language}} · phone language',
+    reminderOff: 'Off — tap to set',
+    termsSubtitle: 'Rules for using the app',
+    changePasswordSubtitle: 'Update your password',
+    logOutGuest: 'Using the app as a guest',
+    deleteAccountSubtitle: 'Remove account and all data',
+  },
   languageSettings: {
     appLanguage: 'App language',
   },

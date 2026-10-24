@@ -2,6 +2,8 @@ package expo.modules.pitchnative
 
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
+import expo.modules.kotlin.typedarray.Float32Array
+import java.nio.ByteBuffer
 
 class PitchNativeModule : Module() {
     private val processors = mutableMapOf<Int, Long>()
@@ -12,6 +14,9 @@ class PitchNativeModule : Module() {
     private external fun nativeResetProcessor(ptr: Long)
     private external fun nativeDestroyProcessor(ptr: Long)
     private external fun nativeProcessFrame(ptr: Long, samples: FloatArray, sampleRate: Int): FloatArray?
+    private external fun nativeProcessSamples(
+        ptr: Long, gate: Long, samples: ByteBuffer, count: Int, sampleRate: Int, nowMs: Double, confirm: Boolean, out: ByteBuffer
+    ): Boolean
 
     private external fun nativeCreateVoiceGate(): Long
     private external fun nativeVoiceGateAccept(ptr: Long, rms: Float, midi: Float, hasMidi: Boolean, nowMs: Double): Boolean
@@ -57,6 +62,21 @@ class PitchNativeModule : Module() {
                 dict["frequency"] = result[1].toDouble()
             }
             dict
+        }
+
+        // the per-frame call: reads the recorder's Float32Array in place, detects
+        // pitch and, given a gate (gateId 0 = none), runs the voice gate on the
+        // result — confirming a voiced frame's pitch when `confirm` is set.
+        // Writes [hasFrequency, frequency, rms, clarity, clipped, voiced] into
+        // `out` (a reused Float32Array of 6): one call, no boxing, no map out
+        Function("processSamples") { id: Int, samples: Float32Array, sampleRate: Int, out: Float32Array, gateId: Int, nowMs: Double, confirm: Boolean ->
+            val ptr = processors[id]
+            if (ptr == null || out.length < 6) {
+                false
+            } else {
+                val gate = if (gateId == 0) 0L else (gates[gateId] ?: 0L)
+                nativeProcessSamples(ptr, gate, samples.toDirectBuffer(), samples.length, sampleRate, nowMs, confirm, out.toDirectBuffer())
+            }
         }
 
         Function("createVoiceGate") {

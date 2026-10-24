@@ -37,13 +37,14 @@ it to `tokens.ts` rather than inlining it.
 | `textPrimary` | `#ffffff` | Primary text |
 | `textSecondary` | `rgba(255,255,255,0.64)` | Secondary text |
 | `textFaint` | `rgba(255,255,255,0.40)` | Tertiary/faint text |
-| `accent` | `#C8DA59` (lime) | **The** accent — buttons, active states, progress fills, links |
+| `accent` | `#EEFF88` (lime) | **The** accent — buttons, active states, progress fills, links |
+| `accentTint` | `accent` at 14% | Soft fill behind accent text: selected chips and pills, highlighted cards. Other strengths via `accentAlpha(a)` — never hand-write the accent's RGB |
 | `accentSecondary` | `#8B7CFF` (violet) | Reserved for "premium" identity (badges, premium glow) — deliberately *not* the same color as the primary accent, so premium signaling stays visually distinct from primary actions |
 | `accentTertiary` | `#4C6FFF` | Rarely used, mostly historical |
 | `onAccent` | `#000000` | Text/icons on top of the lime accent |
 | `warning` | `#e8c97a` | Warnings |
 | `danger` | `#ff6d5c` | Errors, "out of tune" |
-| `buttonPrimaryBg` / `buttonPrimaryText` | `#C8DA59` / `#000000` | `Button`'s primary variant |
+| `buttonPrimaryBg` / `buttonPrimaryText` | `#EEFF88` / `#000000` | `Button`'s primary variant |
 
 ### Ambient glow (`glow`)
 
@@ -57,7 +58,7 @@ coral:  '#EE8672'   peach:    '#F3C79B'
 
 ### Gradients (`gradient`)
 
-- `accent`: `['#C8DA59', '#9FB84A']` — active `ChipGroup` chips, lime glow shadows.
+- `accent`: `['#EEFF88', '#c6dc43']` — active `ChipGroup` chips, lime glow shadows.
 - `cardSheen`: a faint white sheen, rarely used.
 
 ### Typography (`typography`)
@@ -203,7 +204,7 @@ popping in per-icon.
   (`rgba(7,7,12,0.44 → 0.4)`, deliberately the same rgb as
   `palette.background` so the bar reads as the page's own surface made
   translucent) + a faint top highlight — matte, not glassy.
-- Active tab: a 58px lime circle (`#C8DA59`) with a lime glow shadow,
+- Active tab: a 58px lime circle (`#EEFF88`) with a lime glow shadow,
   spring-animated position.
 - Icons: **Feather** (from `@expo/vector-icons`), not Ionicons — Feather's
   2px rounded-stroke style matches the "minimal outlined icon" language the
@@ -215,7 +216,7 @@ popping in per-icon.
 `screens/home/todayPalette.ts` (`todayColor`) remains separate from
 `shared/theme/tokens.ts`. It shares the same near-black base and lime
 accent but carries its own warm secondary family (peach/coral/orange, all
-aliased to the shared lime — `orange: '#C8DA59'`) plus a few Today-specific
+aliased to the shared lime — `orange: palette.accent`) plus a few Today-specific
 concepts with no shared equivalent yet:
 
 - `banner` / `bannerDeep` / `bannerLight` — the light orchid hue used only

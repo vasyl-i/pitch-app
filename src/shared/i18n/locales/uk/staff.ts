@@ -25,10 +25,12 @@ export const staff: LocaleShape<typeof en> = {
   },
   restart: 'Почати знову',
   skipPreview: 'Пропустити прослуховування',
+  metronome: 'Метроном',
   noInputTitle: 'Ми не почули співу.',
   noInputBody: 'Перевірте мікрофон і спробуйте ще раз — спершу ви почуєте мелодію, а потім заспіваєте її самостійно.',
   singAgain: 'Заспівати ще раз',
   singItAgain: 'Заспівати ще раз',
+  nextRound: 'Наступний раунд',
   couldNotStart: 'Не вдалося почати',
   transition: {
     title: 'Тепер ваша черга!',
@@ -37,7 +39,8 @@ export const staff: LocaleShape<typeof en> = {
   },
   summary: {
     title: 'Оцінка фрази',
-    meta: 'середнє відхилення {{cents}}¢  ·  ритм {{rhythm}}%',
+    metaDeviation: 'середнє відхилення {{cents}}¢',
+    metaRhythm: 'ритм {{rhythm}}%',
     comparisonTitle: 'З підказкою чи самостійно',
     comparisonWell: 'Цього разу ви чудово впоралися самостійно — повний розбір точності, стабільності й ритму доступний у Premium.',
     comparisonSlipped: 'Premium показує, де саме вас «тягнула» підказка, — точність, стабільність і ритм поруч.',

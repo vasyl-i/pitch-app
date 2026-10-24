@@ -9,7 +9,7 @@
  * future scoring feature can use every frame.
  */
 import { AudioManager, AudioRecorder } from 'react-native-audio-api';
-import { NativePitchProcessor } from '../../../../modules/pitch-native/src';
+import { NativePitchProcessor, type NativeVoiceGate } from '../../../../modules/pitch-native/src';
 import { DIAGNOSTICS_AVAILABLE, recordFrame } from './diagnostics';
 
 export interface PitchFrame {
@@ -21,6 +21,8 @@ export interface PitchFrame {
   clipped: boolean;
   /** capture timestamp, seconds since recording start */
   when: number;
+  /** the voice gate's verdict, when the consumer handed the engine its gate */
+  voiced?: boolean;
 }
 
 export type PitchEngineStatus = 'idle' | 'running' | 'interrupted';
@@ -66,6 +68,19 @@ export interface PitchEngineOptions {
   onInterruption?: (phase: 'began' | 'ended', shouldResume: boolean) => void;
   /** the native recorder reported an error (e.g. route lost mid-capture) */
   onError?: (message: string) => void;
+  /**
+   * A voice gate to run inside the same native call as detection, instead of
+   * the consumer calling it once or twice more per frame. `confirming()` says
+   * whether a voiced frame should also teach the gate its pitch right now.
+   */
+  voiceGate?: { gate: NativeVoiceGate; confirming(): boolean };
+  /**
+   * Whether this frame will reach the consumer at all. A frame that won't is
+   * still analysed (the detector's window must stay continuous) but is neither
+   * gated nor delivered, so the gate never learns from audio the consumer
+   * never sees. Set by the mic broker.
+   */
+  admitFrame?: () => boolean;
 }
 
 export function createPitchEngine(
@@ -82,9 +97,6 @@ export function createPitchEngine(
    * deactivate it — doing so deafens whichever recorder is live now.
    */
   let holdsSession = false;
-  /** Reusable buffer for the native bridge — avoids allocating a new number[]
-   *  from Float32Array on every audio callback (~85/sec). */
-  const frameBuf: number[] = new Array(HOP);
 
   async function start() {
     if (status === 'running') return;
@@ -135,13 +147,18 @@ export function createPitchEngine(
       const chunk = event.buffer.getChannelData(0);
       const sr = event.buffer.sampleRate || SAMPLE_RATE;
 
-      // Copy into the reusable buffer instead of Array.from() — avoids
-      // allocating and GC'ing a 512-element array ~85 times per second.
-      for (let i = 0; i < chunk.length; i++) frameBuf[i] = chunk[i];
-      const result = processor!.processFrame(frameBuf, sr);
+      const admitted = options.admitFrame?.() ?? true;
+      const gate = admitted ? options.voiceGate : undefined;
+      // handed to C in place — detection and the voice gate in one native
+      // call, no copy, no conversion (~85 times a second)
+      const result = processor!.processSamples(
+        chunk,
+        sr,
+        gate && { gate: gate.gate, nowMs: Date.now(), confirm: gate.confirming() },
+      );
       if (!result) return;
 
-      const { frequency, rms, clarity, clipped } = result;
+      const { frequency, rms, clarity, clipped, voiced } = result;
 
       if (DIAGNOSTICS_AVAILABLE) {
         const now = Date.now();
@@ -157,7 +174,8 @@ export function createPitchEngine(
         });
       }
 
-      onFrame({ frequency, rms, clarity, clipped, when: event.when });
+      if (!admitted) return;
+      onFrame({ frequency, rms, clarity, clipped, when: event.when, voiced });
     });
 
     await recorder.start();

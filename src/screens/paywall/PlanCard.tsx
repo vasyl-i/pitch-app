@@ -61,7 +61,7 @@ export function PlanCard({ plan, selected, showTrial, onSelect }: PlanCardProps)
                     {plan.name}
                   </AppText>
                   {savings && (
-                    <View style={[styles.savings, { backgroundColor: 'rgba(200, 218, 89, 0.16)' }]}>
+                    <View style={[styles.savings, { backgroundColor: palette.accentTint }]}>
                       <AppText variant="caption" color={palette.accent} style={{ fontSize: 12, fontWeight: '600' }}>
                         {savings}
                       </AppText>

@@ -5,10 +5,11 @@ import { AppText } from '@/shared/ui';
 import { spellPitchClass } from '@/shared/lib/music';
 import { keyPitchClasses } from '../lib/grade';
 import type { FormingNote, NoteClass, SungNote } from '../lib/notes';
+import { palette } from '@/shared/theme';
 
 /** note accuracy → bar color: lime near-perfect, white middling, red off */
 export const ACCURACY_COLOR: Record<NoteClass, string> = {
-  perfect: '#C8DA59',
+  perfect: palette.accent,
   good: '#FFFFFF',
   off: '#ff6d5c',
 };

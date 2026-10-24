@@ -25,10 +25,12 @@ export const staff: PtLocaleShape<typeof en> = {
   },
   restart: 'Recomeçar',
   skipPreview: 'Saltar pré-visualização',
+  metronome: 'Metrónomo',
   noInputTitle: 'Não ouvimos ninguém a cantar.',
   noInputBody: 'Verifique o microfone e experimente — primeiro ouve a melodia e depois canta-a sozinho.',
   singAgain: 'Cantar outra vez',
   singItAgain: 'Cante outra vez',
+  nextRound: 'Próxima ronda',
   couldNotStart: 'Não foi possível começar',
   transition: {
     title: 'Agora é a sua vez!',
@@ -37,7 +39,8 @@ export const staff: PtLocaleShape<typeof en> = {
   },
   summary: {
     title: 'Pontuação da frase',
-    meta: 'desvio médio de {{cents}}¢  ·  {{rhythm}}% de ritmo',
+    metaDeviation: 'desvio médio de {{cents}}¢',
+    metaRhythm: '{{rhythm}}% de ritmo',
     comparisonTitle: 'Com guia vs. sozinho',
     comparisonWell: 'Desta vez aguentou-se bem sozinho — veja a análise completa de precisão, estabilidade e ritmo com o Premium.',
     comparisonSlipped: 'O Premium mostra exatamente onde a guia o estava a ajudar — precisão, estabilidade e ritmo, lado a lado.',

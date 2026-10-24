@@ -1,7 +1,7 @@
 import { StyleSheet, Text, type TextProps, type TextStyle } from 'react-native';
 import MaskedView from '@react-native-masked-view/masked-view';
 import { LinearGradient } from 'expo-linear-gradient';
-import { localizeFontFamily, useTheme } from '@/shared/theme';
+import { isManrope, localizeFontFamily, MANROPE_SIZE_SCALE, SATOSHI_LINE_HEIGHT, useTheme } from '@/shared/theme';
 
 type Variant = 'display' | 'title' | 'body' | 'caption' | 'label';
 
@@ -64,8 +64,9 @@ export function AppText({ variant = 'body', color, gradient, style, ...rest }: A
   // module-level StyleSheets captured the font of the language at launch — keep it in step with a live switch
   const styleFamily = StyleSheet.flatten(style)?.fontFamily;
   const fontStyle = styleFamily ? { fontFamily: localizeFontFamily(styleFamily, typography.family) } : null;
+  const metricsStyle = manropeMetrics(variants[variant], style, fontStyle?.fontFamily);
 
-  const textElement = <Text style={[variants[variant], color ? { color } : null, style, fontStyle]} {...rest} />;
+  const textElement = <Text style={[variants[variant], color ? { color } : null, style, fontStyle, metricsStyle]} {...rest} />;
 
   if (applyGradient) {
     return (
@@ -77,11 +78,25 @@ export function AppText({ variant = 'body', color, gradient, style, ...rest }: A
           end={{ x: 1, y: 0 }}
         >
           {/* Invisible text to preserve layout size */}
-          <Text style={[variants[variant], style, fontStyle, { opacity: 0 }]} {...rest} />
+          <Text style={[variants[variant], style, fontStyle, metricsStyle, { opacity: 0 }]} {...rest} />
         </LinearGradient>
       </MaskedView>
     );
   }
 
   return textElement;
+}
+
+/**
+ * Manrope (the Ukrainian UI) drawn a touch smaller so it matches Satoshi's
+ * visual size, on Satoshi's line height so rows keep their height across a
+ * language switch. An explicit `lineHeight` is left as the layout set it.
+ */
+function manropeMetrics(base: TextStyle, style: TextProps['style'], family: string | undefined): TextStyle | null {
+  const flat = StyleSheet.flatten([base, style]);
+  if (!isManrope(family ?? flat.fontFamily) || !flat.fontSize) return null;
+  return {
+    fontSize: flat.fontSize * MANROPE_SIZE_SCALE,
+    lineHeight: flat.lineHeight ?? Math.round(flat.fontSize * SATOSHI_LINE_HEIGHT),
+  };
 }

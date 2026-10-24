@@ -16,6 +16,11 @@
 import type { Language } from '@/shared/i18n';
 import { preferredLanguage } from '@/shared/i18n/device';
 
+/** the accent (#EEFF88) at `alpha` — tints, glows and fills that need a strength of their own */
+export function accentAlpha(alpha: number): string {
+  return `rgba(238, 255, 136, ${alpha})`;
+}
+
 export const palette = {
   background: '#08070C',
   backgroundElevated: '#0D0D14',
@@ -32,14 +37,16 @@ export const palette = {
   textSecondaryElevated: '#F0F0F0',
   textFaint: '#A1A0A5',
 
-  accent: '#C8DA59',
+  accent: '#EEFF88',
+  /** the accent as a soft fill behind accent text: selected chips and pills */
+  accentTint: accentAlpha(0.14),
   accentSecondary: '#8B7CFF',
   accentTertiary: '#4C6FFF',
   onAccent: '#000000',
   warning: '#e8c97a',
   danger: '#ff6d5c',
 
-  buttonPrimaryBg: '#C8DA59',
+  buttonPrimaryBg: '#EEFF88',
   buttonPrimaryText: '#000000',
 
   white: '#ffffff',
@@ -48,7 +55,7 @@ export const palette = {
 /** Gradient stop sets — always applied top-left → bottom-right. */
 export const gradient = {
   /** short accent gradient for active chips, glow shadows, progress fills */
-  accent: ['#C8DA59', '#9FB84A'] as const,
+  accent: ['#EEFF88', '#c6dc43'] as const,
   /** faint sheen on glass card edges */
   cardSheen: ['rgba(255,255,255,0.14)', 'rgba(255,255,255,0.02)'] as const,
   /**
@@ -141,6 +148,23 @@ const FONT_ROLE: Record<string, keyof FontFamilySet> = Object.fromEntries(
 export function localizeFontFamily(family: string | undefined, set: FontFamilySet): string | undefined {
   const role = family ? FONT_ROLE[family] : undefined;
   return role ? set[role] : family;
+}
+
+/**
+ * Manrope at the same size reads bigger than Satoshi: measured from the TTFs,
+ * its x-height is ~11% taller and Latin text ~4% wider. Drawn at this fraction
+ * of the requested size, a switch to Ukrainian doesn't visibly resize the UI
+ * (x-height within ~4%, caps ~6% smaller, width ~2% narrower).
+ */
+export const MANROPE_SIZE_SCALE = 0.94;
+
+/** Satoshi's natural line height (ascent + descent) in em, kept for Manrope text that sets none */
+export const SATOSHI_LINE_HEIGHT = 1.35;
+
+const MANROPE_FAMILIES: readonly string[] = Object.values(fontFamilies.manrope);
+
+export function isManrope(family: string | undefined): boolean {
+  return !!family && MANROPE_FAMILIES.includes(family);
 }
 
 export const typography = {

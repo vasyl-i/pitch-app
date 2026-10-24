@@ -54,6 +54,7 @@ export const subscription: LocaleShape<typeof en> = {
     trial_many: 'Пробний період · залишилося {{count}} днів',
     trial_other: 'Пробний період · залишилося {{count}} дня',
     active: 'Активна',
+    freeTitle: 'Відкрийте всі вправи',
     freeSubtitle: 'Необмежений доступ, щоб покращити голос',
     signInTitle: 'Потрібно увійти',
     signInMessage: 'Створіть акаунт або увійдіть, щоб відкрити Premium і зберегти прогрес на всіх пристроях.',

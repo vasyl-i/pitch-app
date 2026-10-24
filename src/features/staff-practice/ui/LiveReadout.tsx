@@ -1,37 +1,33 @@
 import { StyleSheet, View } from 'react-native';
-import { AppText } from '@/shared/ui';
+import { useDerivedValue } from 'react-native-reanimated';
+import { AnimatedText } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
-import { useTranslation } from '@/shared/i18n';
-import { colorForCents, midiToFreq } from '@/shared/lib/music';
-import { noteName } from '@/shared/lib/staff';
-import { useStabilizedNote } from '@/features/pitch-visualization';
-import { useStaffStore } from '../model/staffStore';
+import { centsColor, centsText, hzText, liveMidi, shownNoteText } from '../model/livePitchDisplay';
 
-/** The live note name + cents deviation, shown large and calm above the staff. */
+/**
+ * The live note name + cents deviation, shown large and calm above the staff.
+ *
+ * Drawn from shared values on the UI thread (see livePitchDisplay): it changes
+ * ~30 times a second while singing and never re-renders for it. The note name
+ * holds through small excursions across a boundary; the cents are raw.
+ */
 export function LiveReadout({ showHz = false }: { showHz?: boolean }) {
-  const { t } = useTranslation();
-  const { palette } = useTheme();
-  const liveMidi = useStaffStore((s) => s.liveMidi);
-  const liveCents = useStaffStore((s) => s.liveCents);
-
-  // Presentation only: the note name holds through small excursions across a
-  // boundary. `liveMidi` and `liveCents` are raw and are displayed as-is.
-  const shownNote = useStabilizedNote(liveMidi);
-
-  const color = liveCents === null ? palette.textFaint : colorForCents(liveCents);
+  // from the theme hook, so the font follows a live language switch
+  const { palette, typography } = useTheme();
+  const { textFaint, textPrimary } = palette;
+  // faint while silent
+  const noteColor = useDerivedValue<string>(() => (Number.isNaN(liveMidi.value) ? textFaint : textPrimary));
 
   return (
     <View style={styles.row}>
-      <AppText variant="title" color={liveMidi === null ? palette.textFaint : palette.textPrimary} style={styles.note}>
-        {shownNote === null ? '—' : noteName(shownNote)}
-      </AppText>
-      <AppText variant="label" color={color} style={styles.cents}>
-        {liveCents === null ? '' : `${liveCents > 0 ? '+' : ''}${Math.round(liveCents)}¢`}
-      </AppText>
-      {showHz && liveMidi !== null && (
-        <AppText variant="caption" style={styles.hz}>
-          {t('pitch.hz', { value: Math.round(midiToFreq(liveMidi)) })}
-        </AppText>
+      <AnimatedText text={shownNoteText} color={noteColor} style={{ ...styles.note, fontFamily: typography.family.bold }} />
+      <AnimatedText text={centsText} color={centsColor} style={{ ...styles.cents, fontFamily: typography.family.regular }} />
+      {showHz && (
+        <AnimatedText
+          text={hzText}
+          color={palette.textFaint}
+          style={{ ...styles.hz, fontFamily: typography.family.regular }}
+        />
       )}
     </View>
   );
@@ -39,7 +35,9 @@ export function LiveReadout({ showHz = false }: { showHz?: boolean }) {
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 12, height: 34 },
-  note: { fontSize: 26, fontVariant: ['tabular-nums'] },
-  cents: { fontSize: 18, fontVariant: ['tabular-nums'] },
-  hz: { fontSize: 13, fontVariant: ['tabular-nums'] },
+  // fixed widths: an animated text can't resize itself, so each box fits its
+  // longest value ('C#5', '+50¢', '1047 Hz') and the pair meets at the centre
+  note: { fontSize: 26, lineHeight: 34, width: 72, textAlign: 'right', letterSpacing: -0.3, fontVariant: ['tabular-nums'] },
+  cents: { fontSize: 18, lineHeight: 24, width: 72, textAlign: 'left', fontVariant: ['tabular-nums'] },
+  hz: { fontSize: 13, lineHeight: 18, width: 72, textAlign: 'left', fontVariant: ['tabular-nums'] },
 });

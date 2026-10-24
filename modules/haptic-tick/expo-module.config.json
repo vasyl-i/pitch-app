@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["HapticTickModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.haptictick.HapticTickModule"]
+  }
+}

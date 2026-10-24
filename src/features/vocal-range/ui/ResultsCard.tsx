@@ -1,6 +1,6 @@
 import { Dimensions, Image, StyleSheet, View } from 'react-native';
 import { AppText, Card } from '@/shared/ui';
-import { typography, useTheme } from '@/shared/theme';
+import { accentAlpha, typography, useTheme } from '@/shared/theme';
 import { midiToName } from '@/shared/lib/music';
 import { deriveComfortRange, voiceType } from '@/entities/profile';
 import { formatNumber, useTranslation } from '@/shared/i18n';
@@ -26,16 +26,16 @@ export function ResultsCard({ low, high, success }: { low: number; high: number;
             {success &&
                 <Image
                     source={require('../../../../assets/results-board-overlay.png')}
-                    style={styles.scoreColorOverlay}
+                    style={isSmallScreen ? styles.scoreColorOverlaySmall : styles.scoreColorOverlay}
                     resizeMode="contain"
-                    tintColor={'rgb(200 218 89 / 0.05)'}
+                    tintColor={accentAlpha(0.05)}
                 />
             }
             <View style={styles.scoreOverlay}>
                 <AppText color={palette.textSecondaryElevated} style={{ fontSize: 12, lineHeight: 14 }}>
                     {t('vocalRange.results.comfortable')}
                 </AppText>
-                <AppText color={"#EEFF88"} style={{ fontSize: 40, lineHeight: 42, fontFamily: typography.family.bold }}>
+                <AppText color={palette.accent} style={{ fontSize: 40, lineHeight: 42, fontFamily: typography.family.bold }}>
                     {`${midiToName(low)} — ${midiToName(high)}`}
                 </AppText>
                 <AppText color={palette.textSecondaryElevated} style={{ fontSize: 12, lineHeight: 14 }}>
@@ -71,6 +71,15 @@ const styles = StyleSheet.create({
         alignSelf: 'center',
         marginLeft: -6,
         opacity: 1,
+    },
+    // the small mascot is 220/320 of the full one; the success glow follows it
+    scoreColorOverlaySmall: {
+        position: 'absolute',
+        top: 89,
+        width: 195,
+        height: 116,
+        alignSelf: 'center',
+        marginLeft: -4,
     },
     scoreOverlay: {
         position: 'absolute',

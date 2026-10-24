@@ -5,7 +5,7 @@
  */
 import { View } from 'react-native';
 import type { OverlayNote } from '@/features/ear-training';
-import { useTheme } from '@/shared/theme';
+import { accentAlpha, useTheme } from '@/shared/theme';
 import { useTranslation } from '@/shared/i18n';
 import { AppText, Card } from '@/shared/ui';
 
@@ -47,7 +47,7 @@ export function MelodyOverlay({ target, sung }: MelodyOverlayProps) {
               top: y(n.midi),
               height: BAR,
               borderRadius: BAR / 2,
-              backgroundColor: 'rgba(200, 218, 89, 0.4)',
+              backgroundColor: accentAlpha(0.4),
             }}
           />
         ))}

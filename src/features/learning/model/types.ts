@@ -213,8 +213,10 @@ export interface Activity {
   secondsPerRep: number;
   /** intrinsic difficulty 0–1, for warm-up/challenge slotting */
   challenge: number;
-  /** default repetitions per session: ear rounds (3–8), melody sung passes (1) */
+  /** default repetitions per session: ear rounds (3–6), melody sung passes (1) */
   rounds: number;
+  /** hard ceiling on rounds even when a day's plan stretches the session */
+  maxRounds?: number;
 }
 
 /* ------------------------------------------------------------------ *

@@ -40,14 +40,15 @@ export function ProgressScreen({ navigation }: ProgressScreenProps<'ProgressOver
     const trend = useMemo(() => weeklyAccuracyTrend(sessions), [sessions]);
     const perfectCount = useMemo(() => perfectExercises(sessions).length, [sessions]);
     const practiceDays = useMemo(() => totalPracticeDays(sessions), [sessions]);
-    const practiceTime = useMemo(() => formatPracticeTime(totalPracticeSeconds(sessions)), [sessions]);
+    // t: re-format the translated strings after a live language switch
+    const practiceTime = useMemo(() => formatPracticeTime(totalPracticeSeconds(sessions)), [sessions, t]);
     const calendarDays = useMemo(() => practicedDayKeys(sessions), [sessions]);
 
     const insights = useMemo(() => {
         const today = localDayKey(Date.now());
         const todays = annotations.filter((a) => localDayKey(a.sessionAt) === today);
         return buildSessionInsights(annotations[0] ?? null, todays, skills);
-    }, [annotations, skills]);
+    }, [annotations, skills, t]);
 
     return (
         <Screen noHorizontalPadding noBottomPadding>
@@ -108,7 +109,7 @@ export function ProgressScreen({ navigation }: ProgressScreenProps<'ProgressOver
                                 </View>
                                 <View style={[styles.rowBetween, { marginTop: spacing.sm }]}>
                                     <AppText variant="label" style={{ fontSize: 40 }}>
-                                        {week.avgScore}
+                                        {week.sungSessions > 0 ? week.avgScore : '—'}
                                     </AppText>
                                     <AppText variant="caption">{t('progress.avgSummary', { cents: week.avgCents })}</AppText>
                                 </View>

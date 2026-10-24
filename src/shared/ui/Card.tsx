@@ -28,7 +28,7 @@ export function Card({
       <View
         style={[
           StyleSheet.absoluteFill,
-          { backgroundColor: highlighted ? 'rgba(200, 218, 89, 0.12)' : palette.surface },
+          { backgroundColor: highlighted ? palette.accentTint : palette.surface },
         ]}
       />
       {children}

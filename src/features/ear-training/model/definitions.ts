@@ -172,7 +172,7 @@ const majorMinor: ExerciseDefinition = {
   title: 'Major or minor?',
   tagline: 'Hear a chord and name its quality. Pure listening — no singing.',
   needsMic: false,
-  rounds: 8,
+  rounds: 4,
   difficulties: null,
   makeRound(ctx: RoundContext): EarRound {
     const hi = Math.max(ctx.range.low, ctx.range.high - 7);

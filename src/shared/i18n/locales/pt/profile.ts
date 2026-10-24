@@ -55,6 +55,18 @@ export const profile: PtLocaleShape<typeof en> = {
   feedbackSubtitle: 'Teremos todo o gosto em ouvi-lo',
   micNotice: 'Usa o microfone. O áudio nunca sai do dispositivo.',
   version: 'Versão {{version}}',
+  compact: {
+    feedback: 'Partilhe a sua opinião',
+    feedbackSubtitle: 'Gostamos de o ouvir',
+    exerciseSettingsSubtitle: 'Exercícios do plano diário',
+    weeklyPlanSubtitle: 'Exercícios para cada dia',
+    languageSubtitle: '{{language}} · do telemóvel',
+    reminderOff: 'Desligado — definir',
+    termsSubtitle: 'Regras de utilização',
+    changePasswordSubtitle: 'Atualize a palavra-passe',
+    logOutGuest: 'Está como convidado',
+    deleteAccountSubtitle: 'Remover a conta e os dados',
+  },
   languageSettings: {
     appLanguage: 'Idioma da aplicação',
   },

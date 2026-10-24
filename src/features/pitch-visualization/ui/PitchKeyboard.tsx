@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { useAnimatedStyle, type SharedValue } from 'react-native-reanimated';
 import { AppText } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
 import { noteName } from '@/shared/lib/staff';
@@ -24,13 +25,20 @@ const BLACK_PCS = [1, 3, 6, 8, 10];
 export function PitchKeyboard({
   lowMidi,
   highMidi,
-  liveMidi,
+  liveMidi = null,
+  sungNote,
   targetMidi,
   onPressKey,
 }: {
   lowMidi: number;
   highMidi: number;
-  liveMidi: number | null;
+  liveMidi?: number | null;
+  /**
+   * The sung key as a shared value (an integer MIDI note, -1 for none),
+   * already held steady by the caller. Outlines it on the UI thread, so a
+   * live pitch never re-renders the keyboard; overrides `liveMidi`.
+   */
+  sungNote?: SharedValue<number>;
   targetMidi?: number | null;
   /** if provided, keys become tappable (manual note picking in settings) */
   onPressKey?: (midi: number) => void;
@@ -52,7 +60,8 @@ export function PitchKeyboard({
   }, [lowMidi, highMidi]);
 
   // presentation only — the highlighted key holds through small excursions
-  const sungMidi = useStabilizedNote(liveMidi);
+  const stabilized = useStabilizedNote(liveMidi);
+  const sungMidi = sungNote ? null : stabilized;
 
   // Compute clamped black key width from measured container
   const whiteKeyGap = 2;
@@ -80,6 +89,9 @@ export function PitchKeyboard({
             >
               {isTarget && (
                 <LinearGradient colors={gradient.accent} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} />
+              )}
+              {sungNote && !isTarget && (
+                <SungOutline midi={m} sungNote={sungNote} width={2} radius={radii.sm} color={palette.textPrimary} />
               )}
               {((m % 12) + 12) % 12 === 0 && (
                 <AppText variant="caption" color={isTarget ? palette.onAccent : palette.textFaint} style={styles.cLabel}>
@@ -117,11 +129,37 @@ export function PitchKeyboard({
               {isTarget && (
                 <LinearGradient colors={gradient.accent} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} />
               )}
+              {sungNote && !isTarget && (
+                <SungOutline midi={m} sungNote={sungNote} width={1.5} radius={radii.sm} color={palette.textPrimary} />
+              )}
             </Pressable>
           );
         })}
       </View>
     </View>
+  );
+}
+
+/** the sung key's outline, shown and hidden on the UI thread */
+function SungOutline({
+  midi,
+  sungNote,
+  width,
+  radius,
+  color,
+}: {
+  midi: number;
+  sungNote: SharedValue<number>;
+  width: number;
+  radius: number;
+  color: string;
+}) {
+  const visible = useAnimatedStyle(() => ({ opacity: sungNote.value === midi ? 1 : 0 }));
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[StyleSheet.absoluteFill, { borderWidth: width, borderColor: color, borderRadius: radius }, visible]}
+    />
   );
 }
 

@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { starsForScore } from '@/features/progress';
 import { PremiumGate } from '@/features/subscription';
 import { AppText, Button, Card, Screen } from '@/shared/ui';
-import { typography, useTheme } from '@/shared/theme';
+import { accentAlpha, typography, useTheme } from '@/shared/theme';
 import { useTranslation } from '@/shared/i18n';
 import type { AttemptComparison, PhraseSummary } from '@/features/staff-practice';
 import { midiToName } from '@/shared/lib/music';
@@ -30,8 +30,11 @@ export function PhraseSummaryCard({
   primary,
   secondary,
   tertiary,
+  roundLabel,
 }: {
   summary: PhraseSummary;
+  /** which round this was, e.g. "Round 2 of 5", for exercises sung over several keys */
+  roundLabel?: string;
   comparison?: AttemptComparison | null;
   primary: SummaryAction;
   secondary: SummaryAction;
@@ -49,7 +52,7 @@ export function PhraseSummaryCard({
         <View style={{ flex: 1, justifyContent: 'flex-start', alignItems: 'center', paddingTop: 80 }}>
           <View style={styles.scoreFrame}>
             <AppText color={palette.textSecondaryElevated} style={{ fontSize: 14, lineHeight: 16, marginBottom: 12 }}>
-              {t('staff.summary.title')}
+              {roundLabel ? `${t('staff.summary.title')} · ${roundLabel}` : t('staff.summary.title')}
             </AppText>
             <Image
                 source={require('../../../assets/Score.png')}
@@ -59,17 +62,27 @@ export function PhraseSummaryCard({
             {isSuccess &&
                 <Image
                     source={require('../../../assets/results-board-overlay.png')}
-                    style={styles.scoreColorOverlay}
+                    style={isSmallScreen ? styles.scoreColorOverlaySmall : styles.scoreColorOverlay}
                     resizeMode="contain"
-                    tintColor={'rgb(200 218 89 / 0.05)'}
+                    tintColor={accentAlpha(0.05)}
                 />
             }
             <View style={styles.scoreOverlay}>
-              <AppText color={"#EEFF88"} style={{ fontSize: 48, lineHeight: 50, fontFamily: typography.family.bold }}>
+              <AppText
+                color={"#EEFF88"}
+                style={isSmallScreen ? styles.scoreTextSmall : { fontSize: 48, lineHeight: 50, fontFamily: typography.family.bold }}
+              >
                 {`${summary.score}%`}
               </AppText>
-              <AppText color={palette.textSecondaryElevated} style={{ fontSize: 12, lineHeight: 14 }}>
-                {t('staff.summary.meta', { cents: Math.round(summary.avgCents), rhythm: summary.rhythm })}
+              {/* the small board is too narrow for one line: each stat gets its own */}
+              <AppText
+                color={palette.textSecondaryElevated}
+                style={[isSmallScreen ? styles.metaSmall : { fontSize: 12, lineHeight: 14 }, { textAlign: 'center' }]}
+              >
+                {[
+                  t('staff.summary.metaDeviation', { cents: Math.round(summary.avgCents) }),
+                  t('staff.summary.metaRhythm', { rhythm: summary.rhythm }),
+                ].join(isSmallScreen ? '\n' : '  ·  ')}
               </AppText>
             </View>
           </View>
@@ -144,6 +157,16 @@ const styles = StyleSheet.create({
     marginLeft: -6,
     opacity: 1,
   },
+  // the small mascot is 220/320 of the full one; the success glow follows it
+  // (its top: the 28 pt title, then 132 pt into the mascot, scaled)
+  scoreColorOverlaySmall: {
+    position: 'absolute',
+    top: 119,
+    width: 195,
+    height: 116,
+    alignSelf: 'center',
+    marginLeft: -4,
+  },
   scoreOverlay: {
     position: 'absolute',
     gap: 4,
@@ -158,6 +181,15 @@ const styles = StyleSheet.create({
   scoreNumber: {
     fontSize: 48,
     fontFamily: typography.family.medium,
+  },
+  scoreTextSmall: {
+    fontSize: 36,
+    lineHeight: 40,
+    fontFamily: typography.family.bold,
+  },
+  metaSmall: {
+    fontSize: 11,
+    lineHeight: 14,
   },
 });
 

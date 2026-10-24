@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import {
   Canvas,
@@ -13,10 +13,11 @@ import {
   useFont,
   useClock,
   vec,
+  type SkFont,
 } from '@shopify/react-native-skia';
-import { useDerivedValue, useSharedValue } from 'react-native-reanimated';
-import { colorForCents, midiToName, pitchClassOf, NOTICEABLE_CENTS, PERFECT_CENTS, SLIGHT_CENTS } from '@/shared/lib/music';
-import { useStabilizedNote } from '../lib/useStabilizedNote';
+import { useDerivedValue, useSharedValue, type SharedValue } from 'react-native-reanimated';
+import { midiToName, pitchClassOf, NOTICEABLE_CENTS, PERFECT_CENTS, SLIGHT_CENTS } from '@/shared/lib/music';
+import { palette } from '@/shared/theme';
 
 interface PitchSample {
   t: number;
@@ -24,7 +25,7 @@ interface PitchSample {
   cents: number | null;
 }
 
-const LIME = '#C8DA59';
+const LIME = palette.accent;
 const YELLOW = '#e8c97a';
 const ORANGE = '#f0954a';
 const RED = '#ff6d5c';
@@ -50,10 +51,19 @@ const C_NOTE_LABEL_COLOR = 'rgba(255,255,255,0.45)';
 // Left margin for note labels
 const LABEL_MARGIN = 32;
 
+/** the live pitch as shared values, read on the UI thread — no re-render per pitch */
+export interface LivePitchValues {
+  /** raw sung pitch; NaN while silent */
+  midi: SharedValue<number>;
+  /** the deviation's colour band */
+  color: SharedValue<string>;
+  /** the steadied note's name */
+  noteText: SharedValue<string>;
+}
+
 interface StaticPitchCanvasProps {
   trail: PitchSample[];
-  liveMidi: number | null;
-  liveCents: number | null;
+  live: LivePitchValues;
   currentTime: number;
   targets: { start: number; duration: number; midi: number }[];
   rate?: number;
@@ -78,8 +88,7 @@ interface StaticPitchCanvasProps {
  */
 export function StaticPitchCanvas({
   trail,
-  liveMidi,
-  liveCents,
+  live,
   currentTime,
   targets,
   rate = 1,
@@ -354,28 +363,16 @@ export function StaticPitchCanvas({
   const paths = pathsRef.current;
 
   // ---- Live head (glowing dot) ----
-  const liveHead = useMemo(() => {
-    if (liveMidi === null) return null;
-    return {
-      x: xOfTime(currentTime),
-      y: yOfMidi(liveMidi),
-      color: colorForCents(liveCents),
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [liveMidi, liveCents, currentTime, H, W, midCenter, semiH, pxPerSec]);
-
-  const shownNote = useStabilizedNote(liveMidi);
+  // Entirely on the UI thread: its height and colour follow the live pitch's
+  // shared values and it rides the playhead's transform across, so a pitch
+  // update costs no React render and the dot glides at 60fps.
+  const liveY = useDerivedValue(() => {
+    const m = live.midi.value;
+    return Number.isNaN(m) ? -1000 : H / 2 - (m - midCenter) * semiH;
+  }, [H, midCenter, semiH]);
+  const liveOpacity = useDerivedValue(() => (Number.isNaN(live.midi.value) ? 0 : 1));
+  const liveLabelY = useDerivedValue(() => liveY.value + 5);
   const noteFont = useFont(require('../../../../assets/fonts/Satoshi-Medium.ttf'), 16);
-
-  const noteLabel = useMemo(() => {
-    if (shownNote === null || !liveHead || !noteFont) return null;
-    const text = midiToName(shownNote, 'ascii');
-    return {
-      text,
-      x: liveHead.x + 16,
-      y: liveHead.y + 5,
-    };
-  }, [shownNote, liveHead, noteFont]);
 
   // Playhead transform — driven on UI thread at 60fps
   const playheadTransform = useDerivedValue(() => {
@@ -387,90 +384,8 @@ export function StaticPitchCanvas({
     <View style={styles.container} onLayout={handleLayout}>
       {H > 0 && (
         <Canvas style={StyleSheet.absoluteFill}>
-          {/* Piano roll row backgrounds */}
-          {pianoRows.map((row, i) => (
-            <Group key={`row${i}`}>
-              <Rect
-                x={LABEL_MARGIN}
-                y={row.y}
-                width={W - LABEL_MARGIN}
-                height={row.height}
-                color={row.isBlack ? BLACK_KEY_BG : WHITE_KEY_BG}
-              />
-              <Line
-                p1={vec(LABEL_MARGIN, row.y + row.height)}
-                p2={vec(W, row.y + row.height)}
-                color={row.isC ? BAR_LINE_COLOR : ROW_LINE_COLOR}
-                strokeWidth={row.isC ? 1 : 0.5}
-              />
-            </Group>
-          ))}
-
-          {/* Note labels on the left */}
-          {pianoRows.map((row, i) => {
-            // Only label white keys to avoid clutter (or all if rows are tall enough)
-            if (row.isBlack && semiH < 18) return null;
-            return labelFont ? (
-              <SkiaText
-                key={`lbl${i}`}
-                x={4}
-                y={row.y + row.height / 2 + 4}
-                text={row.label}
-                font={labelFont}
-                color={row.isC ? C_NOTE_LABEL_COLOR : LABEL_COLOR}
-              />
-            ) : null;
-          })}
-
-          {/* Beat and bar lines */}
-          {beatLines.map((bl, i) => (
-            <Line
-              key={`bl${i}`}
-              p1={vec(bl.x, 0)}
-              p2={vec(bl.x, H)}
-              color={bl.isBar ? BAR_LINE_COLOR : BEAT_LINE_COLOR}
-              strokeWidth={bl.isBar ? 1 : 0.5}
-            />
-          ))}
-
-          {/* Target note blocks */}
-          {targetRects.map((r, i) => {
-            const color = r.active ? NOTE_ACTIVE : NOTE_BLUE;
-            return (
-              <Group key={i}>
-                {r.active && (
-                  <RoundedRect
-                    x={r.x - 3}
-                    y={r.y - 3}
-                    width={r.width + 6}
-                    height={r.height + 6}
-                    r={6}
-                    color={NOTE_ACTIVE}
-                    opacity={0.10}
-                  />
-                )}
-                <RoundedRect x={r.x} y={r.y} width={r.width} height={r.height} r={4} color={color} opacity={r.active ? 0.35 : 0.20} />
-                <RoundedRect
-                  x={r.x}
-                  y={r.y + r.height * 0.25}
-                  width={r.width}
-                  height={r.height * 0.5}
-                  r={3}
-                  color={color}
-                  opacity={r.active ? 0.55 : 0.30}
-                />
-                {showNoteLabels && targetFont && r.width > 20 && (
-                  <SkiaText
-                    x={r.x + 5}
-                    y={r.y + r.height / 2 + 4}
-                    text={r.label}
-                    font={targetFont}
-                    color={r.active ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.5)'}
-                  />
-                )}
-              </Group>
-            );
-          })}
+          <PianoRollGrid rows={pianoRows} beatLines={beatLines} W={W} H={H} semiH={semiH} font={labelFont} />
+          <TargetBlocks rects={targetRects} font={targetFont} showLabels={showNoteLabels} />
 
           {/* Voice pitch trail */}
           <Path path={paths.gray} color={GRAY} style="stroke" strokeWidth={2.5} strokeCap="round" strokeJoin="round" />
@@ -491,34 +406,146 @@ export function StaticPitchCanvas({
             </Group>
           )}
 
-          {/* Live head — glowing dot (no GPU blur, concentric circles) */}
-          {liveHead && (
-            <>
-              <Circle cx={liveHead.x} cy={liveHead.y} r={26} color={liveHead.color} opacity={0.05} />
-              <Circle cx={liveHead.x} cy={liveHead.y} r={20} color={liveHead.color} opacity={0.08} />
-              <Circle cx={liveHead.x} cy={liveHead.y} r={15} color={liveHead.color} opacity={0.15} />
-              <Circle cx={liveHead.x} cy={liveHead.y} r={10} color={liveHead.color} opacity={0.85} />
-              <Circle cx={liveHead.x} cy={liveHead.y} r={7.5} color={liveHead.color} opacity={0.5} />
-              <Circle cx={liveHead.x} cy={liveHead.y} r={7.5} color="#ffffff" opacity={0.5} />
-              <Circle cx={liveHead.x} cy={liveHead.y} r={5} color="#ffffff" opacity={0.95} />
-            </>
-          )}
-
-          {/* Note name label */}
-          {noteLabel && noteFont && (
-            <SkiaText
-              x={noteLabel.x}
-              y={noteLabel.y}
-              text={noteLabel.text}
-              font={noteFont}
-              color="#EEFF88"
-            />
-          )}
+          {/* Live head — glowing dot (no GPU blur, concentric circles) and
+              its note name, carried across by the playhead transform */}
+          <Group transform={playheadTransform} opacity={liveOpacity}>
+            <Circle cx={0} cy={liveY} r={26} color={live.color} opacity={0.05} />
+            <Circle cx={0} cy={liveY} r={20} color={live.color} opacity={0.08} />
+            <Circle cx={0} cy={liveY} r={15} color={live.color} opacity={0.15} />
+            <Circle cx={0} cy={liveY} r={10} color={live.color} opacity={0.85} />
+            <Circle cx={0} cy={liveY} r={7.5} color={live.color} opacity={0.5} />
+            <Circle cx={0} cy={liveY} r={7.5} color="#ffffff" opacity={0.5} />
+            <Circle cx={0} cy={liveY} r={5} color="#ffffff" opacity={0.95} />
+            {noteFont && <SkiaText x={16} y={liveLabelY} text={live.noteText} font={noteFont} color={LIME} />}
+          </Group>
         </Canvas>
       )}
     </View>
   );
 }
+
+type GridRow = { y: number; height: number; isBlack: boolean; label: string; isC: boolean };
+
+/**
+ * Row stripes, note names and beat lines: fixed for a layout, so memoised —
+ * a pitch update re-renders the canvas ~30 times a second and must not
+ * rebuild these hundred-odd nodes each time.
+ */
+const PianoRollGrid = memo(function PianoRollGrid({
+  rows,
+  beatLines,
+  W,
+  H,
+  semiH,
+  font,
+}: {
+  rows: GridRow[];
+  beatLines: { x: number; isBar: boolean }[];
+  W: number;
+  H: number;
+  semiH: number;
+  font: SkFont | null;
+}) {
+  return (
+    <>
+      {rows.map((row, i) => (
+        <Group key={`row${i}`}>
+          <Rect
+            x={LABEL_MARGIN}
+            y={row.y}
+            width={W - LABEL_MARGIN}
+            height={row.height}
+            color={row.isBlack ? BLACK_KEY_BG : WHITE_KEY_BG}
+          />
+          <Line
+            p1={vec(LABEL_MARGIN, row.y + row.height)}
+            p2={vec(W, row.y + row.height)}
+            color={row.isC ? BAR_LINE_COLOR : ROW_LINE_COLOR}
+            strokeWidth={row.isC ? 1 : 0.5}
+          />
+        </Group>
+      ))}
+
+      {/* Note labels on the left — white keys only unless rows are tall enough */}
+      {font &&
+        rows.map((row, i) =>
+          row.isBlack && semiH < 18 ? null : (
+            <SkiaText
+              key={`lbl${i}`}
+              x={4}
+              y={row.y + row.height / 2 + 4}
+              text={row.label}
+              font={font}
+              color={row.isC ? C_NOTE_LABEL_COLOR : LABEL_COLOR}
+            />
+          ),
+        )}
+
+      {beatLines.map((bl, i) => (
+        <Line
+          key={`bl${i}`}
+          p1={vec(bl.x, 0)}
+          p2={vec(bl.x, H)}
+          color={bl.isBar ? BAR_LINE_COLOR : BEAT_LINE_COLOR}
+          strokeWidth={bl.isBar ? 1 : 0.5}
+        />
+      ))}
+    </>
+  );
+});
+
+/** The target notes; re-rendered only when the active note moves. */
+const TargetBlocks = memo(function TargetBlocks({
+  rects,
+  font,
+  showLabels,
+}: {
+  rects: { x: number; width: number; y: number; height: number; label: string; active: boolean }[];
+  font: SkFont | null;
+  showLabels: boolean;
+}) {
+  return (
+    <>
+      {rects.map((r, i) => {
+        const color = r.active ? NOTE_ACTIVE : NOTE_BLUE;
+        return (
+          <Group key={i}>
+            {r.active && (
+              <RoundedRect
+                x={r.x - 3}
+                y={r.y - 3}
+                width={r.width + 6}
+                height={r.height + 6}
+                r={6}
+                color={NOTE_ACTIVE}
+                opacity={0.10}
+              />
+            )}
+            <RoundedRect x={r.x} y={r.y} width={r.width} height={r.height} r={4} color={color} opacity={r.active ? 0.35 : 0.20} />
+            <RoundedRect
+              x={r.x}
+              y={r.y + r.height * 0.25}
+              width={r.width}
+              height={r.height * 0.5}
+              r={3}
+              color={color}
+              opacity={r.active ? 0.55 : 0.30}
+            />
+            {showLabels && font && r.width > 20 && (
+              <SkiaText
+                x={r.x + 5}
+                y={r.y + r.height / 2 + 4}
+                text={r.label}
+                font={font}
+                color={r.active ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.5)'}
+              />
+            )}
+          </Group>
+        );
+      })}
+    </>
+  );
+});
 
 const styles = StyleSheet.create({
   container: { flex: 1, minHeight: 200 },

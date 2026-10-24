@@ -37,6 +37,7 @@ export const subscription = {
     trial_one: 'Free trial · {{count}} day left',
     trial_other: 'Free trial · {{count}} days left',
     active: 'Active',
+    freeTitle: 'Unlock all exercises',
     freeSubtitle: 'Get unlimited access to improve your voice',
     signInTitle: 'Sign in required',
     signInMessage: 'Create an account or sign in to unlock Premium and keep your progress safe across devices.',

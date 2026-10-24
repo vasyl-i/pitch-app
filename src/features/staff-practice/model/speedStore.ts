@@ -36,8 +36,11 @@ interface SpeedState {
   speeds: Record<string, SpeedLevel>;
   /** scale id → sweep direction; absent means up (lowest key first) */
   directions: Record<string, ScaleDirection>;
+  /** a light haptic tap on every beat of a piano-roll run, for all exercises */
+  metronome: boolean;
   setSpeed: (exerciseId: string, rate: SpeedLevel) => void;
   setDirection: (exerciseId: string, direction: ScaleDirection) => void;
+  setMetronome: (on: boolean) => void;
 }
 
 export const useSpeedStore = create<SpeedState>()(
@@ -45,9 +48,11 @@ export const useSpeedStore = create<SpeedState>()(
     (set) => ({
       speeds: {},
       directions: {},
+      metronome: false,
       setSpeed: (exerciseId, rate) => set((s) => ({ speeds: { ...s.speeds, [exerciseId]: rate } })),
       setDirection: (exerciseId, direction) =>
         set((s) => ({ directions: { ...s.directions, [exerciseId]: direction } })),
+      setMetronome: (on) => set({ metronome: on }),
     }),
     {
       name: 'pitch-coach-melody-speeds',

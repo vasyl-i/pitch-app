@@ -9,8 +9,29 @@ export const PITCH_NAMES = SHARP_PITCH_NAMES;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+/**
+ * Ear drills answered by choosing, with nothing sung (`needsMic: false`).
+ * Their score is recognition, not intonation, so they stay out of the
+ * singing accuracy figures. Keyed by record id; a test keeps this in step
+ * with the drill definitions.
+ */
+export const LISTENING_ONLY_EXERCISE_IDS: ReadonlySet<string> = new Set(['ear:major-minor', 'ear:odd-one-out']);
+
+/** whether this attempt was sung, so its score speaks to singing accuracy */
+export function isSungSession(session: Pick<SessionRecord, 'exerciseId'>): boolean {
+  return !LISTENING_ONLY_EXERCISE_IDS.has(session.exerciseId);
+}
+
+/** average singing accuracy (0–100) over sung attempts, null when nothing was sung */
+export function singingAccuracy(sessions: SessionRecord[]): number | null {
+  const sung = sessions.filter(isSungSession);
+  return sung.length ? Math.round(sung.reduce((sum, s) => sum + s.score, 0) / sung.length) : null;
+}
+
 export interface WeeklyStats {
   sessions: number;
+  /** sung attempts this week — `avgScore`/`avgCents` cover only these */
+  sungSessions: number;
   avgScore: number;
   avgCents: number;
   stars: number;
@@ -22,18 +43,21 @@ export interface WeeklyStats {
 
 export function weeklyStats(sessions: SessionRecord[], now = Date.now()): WeeklyStats {
   const thisWeek = sessions.filter((s) => now - s.at < 7 * DAY_MS);
-  const prevWeek = sessions.filter((s) => now - s.at >= 7 * DAY_MS && now - s.at < 14 * DAY_MS);
+  // accuracy and deviation come from sung attempts only
+  const sungThisWeek = thisWeek.filter(isSungSession);
+  const prevWeek = sessions.filter((s) => isSungSession(s) && now - s.at >= 7 * DAY_MS && now - s.at < 14 * DAY_MS);
 
   const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
-  const avgScore = avg(thisWeek.map((s) => s.score));
+  const avgScore = avg(sungThisWeek.map((s) => s.score));
   const prevAvg = prevWeek.length ? avg(prevWeek.map((s) => s.score)) : null;
 
   return {
     sessions: thisWeek.length,
+    sungSessions: sungThisWeek.length,
     avgScore: Math.round(avgScore),
-    avgCents: Math.round(avg(thisWeek.map((s) => s.avgCents))),
+    avgCents: Math.round(avg(sungThisWeek.map((s) => s.avgCents))),
     stars: thisWeek.reduce((sum, s) => sum + s.stars, 0),
-    scoreDelta: prevAvg === null ? null : Math.round(avgScore - prevAvg),
+    scoreDelta: prevAvg === null || sungThisWeek.length === 0 ? null : Math.round(avgScore - prevAvg),
     streak: currentStreak(sessions, now),
   };
 }
@@ -135,13 +159,14 @@ export interface WeeklyAccuracyPoint {
   sessions: number;
 }
 
-/** Average score per 7-day bucket, oldest first; the last bucket ends now. */
+/** Average sung score per 7-day bucket, oldest first; the last bucket ends now. */
 export function weeklyAccuracyTrend(sessions: SessionRecord[], weeks = 8, now = Date.now()): WeeklyAccuracyPoint[] {
   const out: WeeklyAccuracyPoint[] = [];
+  const sung = sessions.filter(isSungSession);
   for (let i = weeks - 1; i >= 0; i--) {
     const end = now - i * 7 * DAY_MS;
     const start = end - 7 * DAY_MS;
-    const bucket = sessions.filter((s) => s.at > start && s.at <= end);
+    const bucket = sung.filter((s) => s.at > start && s.at <= end);
     out.push({
       weekStart: start,
       sessions: bucket.length,
@@ -221,9 +246,9 @@ export function todayExerciseStats(
   return map;
 }
 
-/** most recent scores, oldest first, for the trend sparkline */
+/** most recent sung scores, oldest first, for the trend sparkline */
 export function scoreTrend(sessions: SessionRecord[], limit = 12): number[] {
-  return sessions.slice(0, limit).map((s) => s.score).reverse();
+  return sessions.filter(isSungSession).slice(0, limit).map((s) => s.score).reverse();
 }
 
 /** stars gate medium/hard exercises so difficulty ramps with skill */

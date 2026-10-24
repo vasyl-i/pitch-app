@@ -29,7 +29,7 @@ export const MAX_LADDER_ROUNDS = 4;
  * (`trainingRange`) bounds it too; without one it may take every round.
  */
 export function maxReps(activity: Activity, range: PitchRange | null = null): number {
-  if (activity.kind === 'ear') return activity.rounds * MAX_EAR_ROUND_FACTOR;
+  if (activity.kind === 'ear') return Math.min(activity.rounds * MAX_EAR_ROUND_FACTOR, activity.maxRounds ?? Infinity);
   const exercise = melodyById(activity.id);
   if (!exercise || categoryRepeats(exercise.category) === 'once') return 1;
   return Math.min(MAX_LADDER_ROUNDS, ladderRoom(exercise, range));

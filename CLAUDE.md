@@ -75,7 +75,7 @@ Import direction: `app -> screens -> features -> entities -> shared` (no reverse
 
 ## Design system essentials
 
-- Dark theme: background `#08070C`, lime accent `#C8DA59`, violet `#8B7CFF` (premium only)
+- Dark theme: background `#08070C`, lime accent `#EEFF88`, violet `#8B7CFF` (premium only)
 - All values in `shared/theme/tokens.ts` -- never hardcode colors/spacing/fonts
 - Font: **Satoshi** (Regular, Medium, Bold, Black) -- always set `fontFamily` explicitly, `fontWeight` alone doesn't work
 - Ukrainian UI uses **Manrope** (Satoshi has no Cyrillic; Portuguese stays on Satoshi, but avoid ª/º — no glyphs) -- `typography.family` swaps automatically by phone language; never name a font family directly

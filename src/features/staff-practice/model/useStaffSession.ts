@@ -44,11 +44,23 @@ export function cuesStartingNote(exercise: Exercise): boolean {
 export function useStaffSession(exercise: Exercise, rate = 1): StaffSessionControls {
   const restartRef = useRef<() => void>(() => {});
   const skipListenRef = useRef<() => void>(() => {});
+  const exerciseIdRef = useRef<string | null>(null);
+
+  // the screen is leaving: drop its feedback. Not in the run's own cleanup,
+  // which also runs on a speed change and must leave the screen as it is
+  useEffect(() => () => useStaffStore.getState().reset(), []);
 
   useEffect(() => {
     const store = useStaffStore.getState();
-    store.reset();
-    store.setStatus('loading');
+    // A new speed picked during the preview rebuilds the players at it, but
+    // restarts in place: the screen stays in its listening state rather than
+    // blanking through 'loading', so only the playhead jumps back
+    let warm = exerciseIdRef.current === exercise.id && store.status === 'listen';
+    exerciseIdRef.current = exercise.id;
+    if (!warm) {
+      store.reset();
+      store.setStatus('loading');
+    }
 
     let lease: MicLease | null = null;
     let disposed = false;
@@ -110,7 +122,7 @@ export function useStaffSession(exercise: Exercise, rate = 1): StaffSessionContr
     /** Acquire the mic for recording stages. */
     const acquireLease = async () => {
       if (lease || disposed) return;
-      lease = await acquireMic({ onFrame: controller.onFrame });
+      lease = await acquireMic({ onFrame: controller.onFrame, voiceGate: controller.voiceGate });
       if (disposed) {
         void lease.release();
         lease = null;
@@ -146,7 +158,15 @@ export function useStaffSession(exercise: Exercise, rate = 1): StaffSessionContr
       accompaniment,
       solo,
       store: {
-        reset: () => useStaffStore.getState().reset(),
+        reset: () => {
+          const staff = useStaffStore.getState();
+          if (!warm) return staff.reset();
+          // once: the warm restart's own reset keeps the listening status
+          warm = false;
+          const { status } = staff;
+          staff.reset();
+          staff.setStatus(status);
+        },
         clearStageFeedback: () => useStaffStore.getState().clearStageFeedback(),
         setStatus: (status) => {
           useStaffStore.getState().setStatus(status);
@@ -201,10 +221,14 @@ export function useStaffSession(exercise: Exercise, rate = 1): StaffSessionContr
 
     // Defer mic acquisition until the screen transition animation finishes —
     // AudioRecorder creation and audio session setup are heavy native calls
-    // that block the JS thread and cause the slide-in to stutter.
-    const task = InteractionManager.runAfterInteractions(() => {
-      void begin();
-    });
+    // that block the JS thread and cause the slide-in to stutter. A warm
+    // restart has no transition to wait for.
+    const task = warm
+      ? { cancel: () => {} }
+      : InteractionManager.runAfterInteractions(() => {
+          void begin();
+        });
+    if (warm) void begin();
 
     return () => {
       task.cancel();
@@ -218,7 +242,6 @@ export function useStaffSession(exercise: Exercise, rate = 1): StaffSessionContr
       void lease?.release();
       micActive.value = false;
       micGlowTier.value = 0;
-      useStaffStore.getState().reset();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exercise.id, rate]);

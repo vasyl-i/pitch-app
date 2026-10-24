@@ -6,6 +6,7 @@ import { Blur, Canvas, Circle, Group, Line, Paint, Path, Rect, RoundedRect, Skia
 import { useDerivedValue, useSharedValue } from 'react-native-reanimated';
 import { colorForCents, midiToName, NOTICEABLE_CENTS, PERFECT_CENTS, SLIGHT_CENTS } from '@/shared/lib/music';
 import { useStabilizedNote } from '../lib/useStabilizedNote';
+import { palette } from '@/shared/theme';
 
 interface PitchSample {
   t: number;
@@ -16,7 +17,7 @@ interface PitchSample {
 const VISIBLE_SECONDS = 4;
 const VISIBLE_SEMITONES = 16;
 
-const LIME = '#C8DA59';
+const LIME = palette.accent;
 const YELLOW = '#e8c97a';
 const ORANGE = '#f0954a';
 const RED = '#ff6d5c';

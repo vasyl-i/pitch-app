@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import {
   categoryRepeats,
   exercises,
@@ -16,29 +16,37 @@ import { useProfileStore } from '@/entities/profile';
 import { buildSessionRecord, elapsedPracticeSeconds, useProgressStore } from '@/features/progress';
 import {
   cuesStartingNote,
+  DirectionChips,
   directionFor,
   LiveReadout,
+  MetronomeButton,
+  metronomeSupported,
   MicGlow,
   PianoKeyboard,
+  PracticeCanvas,
   speedBpm,
+  SpeedChips,
   speedFor,
+  useHapticMetronome,
+  useSpeedStore,
   useStaffSession,
   useStaffStore,
   VERDICT_LABEL,
+  type ScaleDirection,
+  type SpeedLevel,
 } from '@/features/staff-practice';
-import { StaticPitchCanvas } from '@/features/pitch-visualization';
 import { AppText, BackButton, Button, Screen } from '@/shared/ui';
 import { useTheme } from '@/shared/theme';
 import { formatKeyName, useTranslation } from '@/shared/i18n';
 import type { RootScreenProps } from '@/app/navigation/types';
 import { resetToTab } from '@/app/navigation/resetToTab';
 import { useLessonSessionStore } from '@/features/learning';
-import { isPremium, useSubscriptionStore } from '@/features/subscription';
+import { isPremium, usePaywall, usePremiumStatus, useSubscriptionStore } from '@/features/subscription';
 import { activeStepLabel, advanceAfterStep } from '../session/lessonFlow';
 import { PhraseSummaryCard } from './PhraseSummaryCard';
 import { StageTransition } from './StageTransition';
 
-/** pause between one finished run and the next (loop, or the next key) */
+/** pause between one finished run and the next in loop practice */
 const NEXT_RUN_DELAY_MS = 600;
 
 export function StaffPracticeScreen({ navigation, route }: RootScreenProps<'MelodyPractice'>) {
@@ -46,9 +54,17 @@ export function StaffPracticeScreen({ navigation, route }: RootScreenProps<'Melo
   const original = exercises.find((e) => e.id === route.params.exerciseId) ?? odeToJoy;
   const guided = route.params.guided === true;
   // the speed picked for this exercise in the library, for preview and singing alike
-  const [rate, setRate] = useState<number>(() =>
+  const [rate, setRate] = useState<SpeedLevel>(() =>
     speedFor(original.id, isPremium(useSubscriptionStore.getState().subscription)),
   );
+  const premium = usePremiumStatus().isPremium;
+  const openPaywall = usePaywall('melody-practice');
+  // a speed picked here is remembered for the exercise, as in the library, and
+  // the run restarts from the preview at the new tempo
+  const changeRate = useCallback((level: SpeedLevel) => {
+    useSpeedStore.getState().setSpeed(original.id, level);
+    setRate(level);
+  }, [original.id]);
   const [loop, setLoop] = useState(false);
   const [showHz, setShowHz] = useState(false);
 
@@ -89,8 +105,28 @@ export function StaffPracticeScreen({ navigation, route }: RootScreenProps<'Melo
     return { shift: up ? room.lowest : room.highest, direction: up ? 1 : -1 };
   });
 
-  const [round, setRound] = useState(0);
-  const [previousShift, setPreviousShift] = useState<number | null>(null);
+  // A guided climb left mid-way resumes at the first unsung key: the ladder
+  // is deterministic for the day's plan, so the same keys come back. The slot
+  // is snapshotted so a round finishing after the step changed can't land on
+  // another step's progress.
+  const [slot] = useState(() => useLessonSessionStore.getState().activeSlot);
+  const [resumeRound] = useState(() => {
+    if (!ladder || !slot) return 0;
+    const done = useLessonSessionStore.getState().partialProgress[slot]?.completedRounds ?? 0;
+    return Math.min(done, ladder.length - 1);
+  });
+  // a scale from the library sweeps the keys; flipping it applies from the next key on
+  const [direction, setDirectionState] = useState<ScaleDirection>(() => directionFor(original.id));
+  const changeDirection = useCallback((next: ScaleDirection) => {
+    useSpeedStore.getState().setDirection(original.id, next);
+    setDirectionState(next);
+    setEndless((cur) => (cur ? { ...cur, direction: next === 'up' ? 1 : -1 } : cur));
+  }, [original.id]);
+
+  const [round, setRound] = useState(resumeRound);
+  const [previousShift, setPreviousShift] = useState<number | null>(
+    ladder && resumeRound > 0 ? ladder[resumeRound - 1] : null,
+  );
   const rounds = endless ? Infinity : (ladder?.length ?? 1);
   const roundShift = endless ? endless.shift : ladder ? ladder[round] : autoTranspose ? shift : 0;
 
@@ -106,6 +142,18 @@ export function StaffPracticeScreen({ navigation, route }: RootScreenProps<'Melo
       });
     }
   }, [roundShift, rounds, room, pattern]);
+
+  // a guided round before the last was sung: remember it, so leaving now
+  // still shows it on Home's progress circle and re-entry picks up after it
+  const saveRoundDone = useCallback(() => {
+    if (!ladder || !slot) return;
+    useLessonSessionStore.getState().savePartial(slot, {
+      completedRounds: round + 1,
+      results: [],
+      lastAnswerPc: undefined,
+      savedAt: Date.now(),
+    });
+  }, [ladder, slot, round]);
 
   // how this round's key relates to the last, for the preview prompt
   const keyChange =
@@ -131,7 +179,8 @@ export function StaffPracticeScreen({ navigation, route }: RootScreenProps<'Melo
     <StaffSession
       // the round too: a range with room for one key repeats it, and each
       // round still needs a fresh run
-      key={`${exercise.id}-${rate}-${roundShift}-${round}`}
+      // not the rate: a new speed restarts the run in place (see useStaffSession)
+      key={`${exercise.id}-${roundShift}-${round}`}
       navigation={navigation}
       guided={guided}
       endless={endless !== null}
@@ -139,10 +188,15 @@ export function StaffPracticeScreen({ navigation, route }: RootScreenProps<'Melo
       round={round}
       rounds={rounds}
       onRoundDone={nextRound}
+      onRoundRecorded={saveRoundDone}
       ladderSpan={ladderSpan}
       exercise={exercise}
       rate={rate}
-      setRate={setRate}
+      setRate={changeRate}
+      premium={premium}
+      onLockedSpeed={openPaywall}
+      direction={endless && pattern === 'scale' ? direction : null}
+      setDirection={changeDirection}
       loop={loop}
       setLoop={setLoop}
       showHz={showHz}
@@ -163,10 +217,15 @@ function StaffSession({
   round,
   rounds,
   onRoundDone,
+  onRoundRecorded,
   ladderSpan,
   exercise,
   rate,
   setRate,
+  premium,
+  onLockedSpeed,
+  direction,
+  setDirection,
   loop,
   setLoop,
   showHz,
@@ -187,11 +246,20 @@ function StaffSession({
   rounds: number;
   /** a round before the last has been sung: move on to the next key */
   onRoundDone: () => void;
+  /** that round was recorded, before the pause that leads into the next key */
+  onRoundRecorded: () => void;
   /** the whole climb's pitch span, for a display that holds still across keys */
   ladderSpan: { low: number; high: number } | undefined;
   exercise: typeof odeToJoy;
-  rate: number;
-  setRate: (r: number) => void;
+  rate: SpeedLevel;
+  /** pick a new speed: remembered, and the run restarts at it */
+  setRate: (r: SpeedLevel) => void;
+  premium: boolean;
+  /** a free user tapped a Premium speed */
+  onLockedSpeed: () => void;
+  /** the key sweep's direction, null when this run doesn't sweep (not a library scale) */
+  direction: ScaleDirection | null;
+  setDirection: (d: ScaleDirection) => void;
   loop: boolean;
   setLoop: (v: boolean) => void;
   showHz: boolean;
@@ -205,6 +273,9 @@ function StaffSession({
   const { palette, spacing } = useTheme();
   const keyLabel = formatKeyName(exercise.key);
   const { restart, skipListen } = useStaffSession(exercise, rate);
+  // felt, not heard: an audible click would reach the mic (see useHapticMetronome)
+  const metronome = useSpeedStore((s) => s.metronome);
+  useHapticMetronome(metronome, exercise.bpm, rate);
 
   const status = useStaffStore((s) => s.status);
   const errorMessage = useStaffStore((s) => s.errorMessage);
@@ -213,11 +284,8 @@ function StaffSession({
   const outputIsolated = useStaffStore((s) => s.outputIsolated);
   const lastVerdict = useStaffStore((s) => s.lastVerdict);
 
-  // canvas data
-  const trail = useStaffStore((s) => s.trail);
-  const liveMidi = useStaffStore((s) => s.liveMidi);
-  const liveCents = useStaffStore((s) => s.liveCents);
-  const position = useStaffStore((s) => s.position);
+  // the live pitch, trail and playhead are read inside PracticeCanvas, so
+  // their ~30 Hz updates re-render the canvas, not this whole screen
   const canvasRunning = status === 'running' || status === 'listen' || status === 'accompanied';
 
   const lowMidi = ladderSpan?.low ?? Math.min(...exercise.notes.map((n) => n.midi));
@@ -230,13 +298,9 @@ function StaffSession({
     if (status === 'listen') runStartedAtRef.current = Date.now();
   }, [status]);
 
-  // the summary waits for the step's last round; earlier rounds hand over to
-  // the next key once recorded (a manual restart redoes the current round)
+  // every round ends on its results; before the last, the singer moves on to
+  // the next key from there (or sings this one again)
   const lastRound = round >= rounds - 1;
-  const nextRoundTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => {
-    if (nextRoundTimer.current) clearTimeout(nextRoundTimer.current);
-  }, []);
 
   // persist every completed phrase exactly once (loops record each pass)
   const addSession = useProgressStore((s) => s.addSession);
@@ -251,9 +315,10 @@ function StaffSession({
       recordedRef.current = summary;
       const at = Date.now();
       addSession(buildSessionRecord(exercise, summary, at, rate, elapsedPracticeSeconds(runStartedAtRef.current, at)));
-      if (!lastRound && !loop) nextRoundTimer.current = setTimeout(onRoundDone, NEXT_RUN_DELAY_MS);
+      // remembered now, not on "Next round": leaving from the results keeps it
+      if (!lastRound && !loop) onRoundRecorded();
     }
-  }, [status, summary, exercise, addSession, rate, lastRound, loop, onRoundDone]);
+  }, [status, summary, exercise, addSession, rate, lastRound, loop, onRoundRecorded]);
 
   // loop practice: on finish, go again straight away instead of the summary
   useEffect(() => {
@@ -263,7 +328,13 @@ function StaffSession({
     }
   }, [loop, status, restart]);
 
-  const showSummary = status === 'finished' && summary && summary !== staleSummary && !loop && lastRound;
+  const showSummary = status === 'finished' && summary && summary !== staleSummary && !loop;
+  const roundLabel =
+    rounds <= 1
+      ? undefined
+      : endless
+        ? t('session.results.round', { number: round + 1 })
+        : t('session.round.counter', { round: round + 1, total: rounds });
   const showOverlay = status === 'error' || status === 'no-input' || status === 'transition' || showSummary;
 
   // What the singer should be doing right now, as a title/subtitle pair above
@@ -319,6 +390,9 @@ function StaffSession({
                 {rate !== 1 ? ` · ${t('exercises.bpm', { bpm: speedBpm(exercise.bpm, rate) })}` : ''}
               </AppText>
             </View>
+            {metronomeSupported() && (
+              <MetronomeButton on={metronome} onToggle={() => useSpeedStore.getState().setMetronome(!metronome)} />
+            )}
           </View>
       }
 
@@ -340,11 +414,7 @@ function StaffSession({
         </View>
 
         <View style={{ flex: 1, marginVertical: spacing.md }}>
-          <StaticPitchCanvas
-            trail={trail}
-            liveMidi={liveMidi}
-            liveCents={liveCents}
-            currentTime={position}
+          <PracticeCanvas
             targets={exercise.notes}
             rate={rate}
             bpm={exercise.bpm}
@@ -356,6 +426,31 @@ function StaffSession({
 
         {!showOverlay && (
           <>
+            {/* tempo (and a library scale's direction) while the preview plays;
+                always laid out, only shown then, so the canvas never resizes */}
+            <View
+              style={{ marginBottom: spacing.sm, opacity: status === 'listen' ? 1 : 0 }}
+              pointerEvents={status === 'listen' ? 'auto' : 'none'}
+            >
+              {/* the unit once, so the chips can be bare numbers and the row fits a narrow phone */}
+              <AppText variant="caption" style={{ fontSize: 12, lineHeight: 16, marginBottom: 4 }}>
+                {t('exercises.speedCaption')}
+              </AppText>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }}>
+                <SpeedChips
+                  bpm={exercise.bpm}
+                  value={rate}
+                  premium={premium}
+                  onChange={(level) => level !== rate && setRate(level)}
+                  onLocked={onLockedSpeed}
+                  compact
+                  style={{ flexWrap: 'nowrap' }}
+                />
+                {direction && (
+                  <DirectionChips value={direction} onChange={setDirection} compact style={{ flexWrap: 'nowrap', marginLeft: spacing.md }} />
+                )}
+              </ScrollView>
+            </View>
             <PianoKeyboard lowMidi={lowMidi} highMidi={highMidi} />
             <Button title={t('staff.restart')} variant="ghost" onPress={() => restart()} style={{ marginTop: spacing.md }} />
             {/* always laid out, only shown during the preview, so the canvas
@@ -408,25 +503,42 @@ function StaffSession({
       )}
       {showSummary && (
         <View style={styles.overlay}>
-          <PhraseSummaryCard
-            summary={summary}
-            comparison={comparison}
-            primary={
-              guided
-                ? { title: t('session.ear.continue'), onPress: () => advanceAfterStep(navigation) }
-                : { title: t('staff.singAgain'), onPress: () => restart() }
-            }
-            secondary={
-              guided
-                ? { title: t('staff.singItAgain'), onPress: () => restart() }
-                : { title: t('common.done'), onPress: () => navigation.goBack() }
-            }
-            tertiary={
-              guided
-                ? { title: t('session.ear.backHome'), onPress: () => resetToTab(navigation, 'HomeTab') }
-                : undefined
-            }
-          />
+          {lastRound ? (
+            <PhraseSummaryCard
+              summary={summary}
+              comparison={comparison}
+              roundLabel={roundLabel}
+              primary={
+                guided
+                  ? { title: t('session.ear.continue'), onPress: () => advanceAfterStep(navigation) }
+                  : { title: t('staff.singAgain'), onPress: () => restart() }
+              }
+              secondary={
+                guided
+                  ? { title: t('staff.singItAgain'), onPress: () => restart() }
+                  : { title: t('common.done'), onPress: () => navigation.goBack() }
+              }
+              tertiary={
+                guided
+                  ? { title: t('session.ear.backHome'), onPress: () => resetToTab(navigation, 'HomeTab') }
+                  : undefined
+              }
+            />
+          ) : (
+            // between rounds: on to the next key, this key again, or out
+            <PhraseSummaryCard
+              summary={summary}
+              comparison={comparison}
+              roundLabel={roundLabel}
+              primary={{ title: t('staff.nextRound'), onPress: onRoundDone }}
+              secondary={{ title: t('staff.singItAgain'), onPress: () => restart() }}
+              tertiary={
+                guided
+                  ? { title: t('session.ear.backHome'), onPress: () => resetToTab(navigation, 'HomeTab') }
+                  : { title: t('common.done'), onPress: () => navigation.goBack() }
+              }
+            />
+          )}
         </View>
       )}
     </Screen>

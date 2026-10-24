@@ -7,6 +7,7 @@ import { useCallback, useState } from 'react';
 import { LayoutChangeEvent, View } from 'react-native';
 import { Canvas, Circle, Path, Skia, vec } from '@shopify/react-native-skia';
 import type { SkillId } from '@/features/learning';
+import { palette } from '@/shared/theme';
 
 export interface SparklinePoint {
   weekKey: string;
@@ -24,7 +25,7 @@ function avgMastery(m: Partial<Record<string, number>>): number {
 
 export function MasterySparkline({
   snapshots,
-  color = '#C8DA59',
+  color = palette.accent,
   weeks = 4,
 }: {
   snapshots: SparklinePoint[];

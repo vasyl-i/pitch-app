@@ -3,7 +3,7 @@
  * melody/scale practice, grouped by category. Premium exercises are shown
  * locked so free users see what's available.
  */
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Animated, Image, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { categoriesInOrder, exercises, type Exercise } from '@/entities/exercise';
@@ -19,12 +19,11 @@ import {
 } from '@/features/learning';
 import { bestScores, starsForScore, useProgressStore } from '@/features/progress';
 import {
+    DirectionChips,
     isPremiumSpeed,
     MAX_FREE_SPEED,
-    SPEED_LEVELS,
-    speedBpm,
+    SpeedChips,
     useSpeedStore,
-    type ScaleDirection,
 } from '@/features/staff-practice';
 import { PremiumBadge, useEntitlement, usePremiumStatus, usePaywall } from '@/features/subscription';
 import { AppText, Screen } from '@/shared/ui';
@@ -127,12 +126,12 @@ export function ExercisesHubScreen({ navigation }: ExercisesScreenProps<'Exercis
                                                            resizeMode="contain"/>
                                                 </View>
                                                 <View style={styles.info}>
-                                                    <AppText variant="label" style={{ fontSize: 16 }}>
+                                                    <RowTitle>
                                                         {exercise.title}
-                                                    </AppText>
-                                                    <AppText variant="caption" style={{ marginTop: 3 }}>
+                                                    </RowTitle>
+                                                    <RowDescription>
                                                         {exercise.tagline}
-                                                    </AppText>
+                                                    </RowDescription>
                                                 </View>
                                                 <Ionicons name="lock-closed" size={16} color={palette.textFaint} />
                                             </View>
@@ -160,12 +159,12 @@ export function ExercisesHubScreen({ navigation }: ExercisesScreenProps<'Exercis
                                                        resizeMode="contain"/>
                                             </View>
                                             <View style={styles.info}>
-                                                <AppText variant="label" style={{ fontSize: 16 }}>
+                                                <RowTitle>
                                                     {exercise.title}
-                                                </AppText>
-                                                <AppText variant="caption" style={{ marginTop: 3 }}>
+                                                </RowTitle>
+                                                <RowDescription>
                                                     {exercise.tagline}
-                                                </AppText>
+                                                </RowDescription>
                                             </View>
                                             <Pressable
                                                 accessibilityRole="button"
@@ -199,7 +198,7 @@ export function ExercisesHubScreen({ navigation }: ExercisesScreenProps<'Exercis
                                                             }))}
                                                             style={[
                                                                 styles.chip,
-                                                                { backgroundColor: isSelected ? 'rgba(200, 218, 89, 0.14)' : palette.surface },
+                                                                { backgroundColor: isSelected ? palette.accentTint : palette.surface },
                                                             ]}
                                                         >
                                                             <AppText variant="caption"
@@ -300,12 +299,12 @@ function MelodyRow({ exercise, bgColor, best, premium, onPress, onAdd, onLockedS
                             <Image source={catIcon.source} style={{ width: imgSize, height: imgSize }} resizeMode="contain" />
                         </View>
                         <View style={styles.info}>
-                            <AppText variant="label" style={{ fontSize: 16 }}>
+                            <RowTitle>
                                 {exercise.title}
-                            </AppText>
-                            <AppText variant="caption" style={{ marginTop: 3 }}>
+                            </RowTitle>
+                            <RowDescription>
                                 {exercise.source} · {formatKeyName(exercise.key)}
-                            </AppText>
+                            </RowDescription>
                             {best !== undefined && (
                                 <View style={styles.starRow}>
                                     {[0, 1, 2].map((i) => (
@@ -327,67 +326,22 @@ function MelodyRow({ exercise, bgColor, best, premium, onPress, onAdd, onLockedS
                             <Ionicons name="add-circle" size={26} color={palette.accent} />
                         </Pressable>
                     </View>
-                    <View style={styles.chips}>
-                        {SPEED_LEVELS.map((level) => {
-                            const isSelected = level === speed;
-                            const locked = !premium && isPremiumSpeed(level);
-                            return (
-                                <Pressable
-                                    key={level}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={`${t('exercises.speedA11y', { bpm: speedBpm(exercise.bpm, level) })}${locked ? ', Premium' : ''}`}
-                                    accessibilityState={{ selected: isSelected }}
-                                    onPress={() => (locked ? onLockedSpeed() : setSpeed(exercise.id, level))}
-                                    style={[
-                                        styles.chip,
-                                        locked && styles.lockedChip,
-                                        { backgroundColor: isSelected ? 'rgba(200, 218, 89, 0.14)' : palette.surface },
-                                    ]}
-                                >
-                                    {locked && <Ionicons name="lock-closed" size={10} color={palette.textFaint} />}
-                                    <AppText variant="caption" color={isSelected ? palette.accent : locked ? palette.textFaint : palette.textSecondary}>
-                                        {t('exercises.bpm', { bpm: speedBpm(exercise.bpm, level) })}
-                                    </AppText>
-                                </Pressable>
-                            );
-                        })}
-                    </View>
+                    <SpeedChips
+                        bpm={exercise.bpm}
+                        value={speed}
+                        premium={premium}
+                        onChange={(level) => setSpeed(exercise.id, level)}
+                        onLocked={onLockedSpeed}
+                        style={{ marginTop: 10 }}
+                    />
                     {exercise.pattern === 'scale' && (
-                        <View style={[styles.chips, { marginTop: 6 }]}>
-                            {scaleDirections().map(({ id, label, icon }) => {
-                                const isSelected = id === direction;
-                                return (
-                                    <Pressable
-                                        key={id}
-                                        accessibilityRole="button"
-                                        accessibilityLabel={t('exercises.keysA11y', { direction: label.toLowerCase() })}
-                                        accessibilityState={{ selected: isSelected }}
-                                        onPress={() => setDirection(exercise.id, id)}
-                                        style={[
-                                            styles.chip,
-                                            styles.lockedChip,
-                                            { backgroundColor: isSelected ? 'rgba(200, 218, 89, 0.14)' : palette.surface },
-                                        ]}
-                                    >
-                                        <Ionicons name={icon} size={11} color={isSelected ? palette.accent : palette.textSecondary} />
-                                        <AppText variant="caption" color={isSelected ? palette.accent : palette.textSecondary}>
-                                            {label}
-                                        </AppText>
-                                    </Pressable>
-                                );
-                            })}
-                        </View>
+                        <DirectionChips value={direction} onChange={(id) => setDirection(exercise.id, id)} style={{ marginTop: 6 }} />
                     )}
                 </View>
             )}
         </Pressable>
     );
 }
-
-const scaleDirections = (): readonly { id: ScaleDirection; label: string; icon: 'arrow-up' | 'arrow-down' }[] => [
-    { id: 'up', label: t('exercises.lowToHigh'), icon: 'arrow-up' },
-    { id: 'down', label: t('exercises.highToLow'), icon: 'arrow-down' },
-];
 
 function LockedMelodyRow({ exercise, bgColor, onPress }: { exercise: Exercise; bgColor: string; onPress: () => void }) {
     const { palette } = useTheme();
@@ -404,12 +358,12 @@ function LockedMelodyRow({ exercise, bgColor, onPress }: { exercise: Exercise; b
                             <Image source={catIcon.source} style={{ width: imgSize, height: imgSize }} resizeMode="contain" />
                         </View>
                         <View style={styles.info}>
-                            <AppText variant="label" style={{ fontSize: 16 }}>
+                            <RowTitle>
                                 {exercise.title}
-                            </AppText>
-                            <AppText variant="caption" style={{ marginTop: 3 }}>
+                            </RowTitle>
+                            <RowDescription>
                                 {exercise.source} · {formatKeyName(exercise.key)}
-                            </AppText>
+                            </RowDescription>
                         </View>
                         <Ionicons name="lock-closed" size={16} color={palette.textFaint} />
                     </View>
@@ -477,6 +431,26 @@ function DayPickerModal({
     );
 }
 
+/** exercise name, matching the rows of Today's plan on Home */
+function RowTitle({ children }: { children: ReactNode }) {
+    const { typography } = useTheme();
+    return (
+        <AppText variant="label" numberOfLines={1} style={{ fontFamily: typography.family.bold, fontSize: 18, lineHeight: 20 }}>
+            {children}
+        </AppText>
+    );
+}
+
+/** exercise tagline or source, matching the rows of Today's plan on Home */
+function RowDescription({ children }: { children: ReactNode }) {
+    const { typography } = useTheme();
+    return (
+        <AppText variant="caption" numberOfLines={1} style={{ fontFamily: typography.family.regular, fontSize: 14, lineHeight: 16, marginTop: 6 }}>
+            {children}
+        </AppText>
+    );
+}
+
 function Toast({ message, onDone }: { message: string; onDone: () => void }) {
     const { palette, radii } = useTheme();
     const opacity = useRef(new Animated.Value(0)).current;
@@ -526,7 +500,6 @@ const styles = StyleSheet.create({
     chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
     chip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999 },
     // a chip with an icon before its label
-    lockedChip: { flexDirection: 'row', alignItems: 'center', gap: 4 },
     starRow: { flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 6 },
     addBtn: { marginLeft: 8, padding: 4 },
     modalOverlay: {

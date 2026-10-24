@@ -163,7 +163,7 @@ export function WeeklyPlanScreen({ navigation }: RootScreenProps<'WeeklyPlan'>) 
                       accessibilityRole="button"
                       style={({ pressed }) => [
                         styles.actionButton,
-                        { backgroundColor: 'rgba(200, 218, 89, 0.12)', marginTop: 8 },
+                        { backgroundColor: palette.accentTint, marginTop: 8 },
                         pressed && { opacity: 0.7 },
                       ]}
                     >

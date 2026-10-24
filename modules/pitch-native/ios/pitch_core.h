@@ -108,6 +108,30 @@ void voice_gate_confirm(
     double now_ms
 );
 
+/* ------------------------------------------------------------------ *
+ *  Detection + gate in one call
+ * ------------------------------------------------------------------ */
+
+/**
+ * Detect pitch on a frame and run the voice gate on the result — the whole
+ * per-frame decision in one native call. `gate` may be NULL (no gating;
+ * *voiced is then 0). When `confirm` is set and the frame is voiced, the gate
+ * also learns the sung pitch (voice_gate_confirm).
+ *
+ * Returns 1 if `out` is valid (window filled), 0 otherwise.
+ */
+int pitch_process_gated(
+    PitchProcessorState *state,
+    VoiceGateState *gate,
+    const float *raw_samples,
+    int sample_count,
+    int sample_rate,
+    double now_ms,
+    int confirm,
+    PitchResult *out,
+    int *voiced
+);
+
 #ifdef __cplusplus
 }
 #endif

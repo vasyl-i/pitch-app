@@ -50,7 +50,7 @@ export const ptContent: ContentOverlay = {
       hint: 'Os meios-tons são o intervalo mais fácil de cantar largo demais. Pense pequeno.',
     },
     'chromatic-neighbours': {
-      title: 'Vizinhas cromáticas',
+      title: 'Notas vizinhas cromáticas',
       source: 'Cromático · superior e inferior',
       hint: 'Saia da nota e volte logo — o regresso tem de ser exato.',
     },
@@ -71,7 +71,7 @@ export const ptContent: ContentOverlay = {
       hint: 'Apoio nas costelas, não na garganta. Pare se sentir tensão em algum lado.',
     },
     'mix-voice-ladder': {
-      title: 'Escada de voz mista',
+      title: 'Exercício de voz mista',
       source: 'Voz mista · através da passagem',
       hint: 'Atravesse a passagem sem mudar de registo — o mesmo timbre acima e abaixo.',
     },
