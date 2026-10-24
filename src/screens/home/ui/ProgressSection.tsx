@@ -6,7 +6,8 @@ import { formatPracticeTime } from '@/features/progress';
 import { todayColor } from '../todayPalette';
 
 interface Props {
-  accuracy: number;
+  /** pitch accuracy mastery 0–100, null until trained */
+  accuracy: number | null;
   streak: number;
   practiceTime: string;
 }
@@ -22,7 +23,7 @@ export function ProgressSection({ accuracy, streak, practiceTime }: Props) {
         {t('home.progress.title')}
       </AppText>
       <View style={styles.row}>
-        <Stat value={accuracy > 0 ? `${accuracy}%` : '—'} label={t('home.stats.accuracy')} />
+        <Stat value={accuracy !== null ? `${accuracy}%` : '—'} label={t('home.stats.accuracy')} />
         <Stat value={streak > 0 ? t('common.daysShort', { count: streak }) : '—'} label={t('home.stats.inARow')} divider />
         <Stat value={hasPracticeTime ? practiceTime : '—'} label={t('home.stats.practiceTime')} divider />
       </View>

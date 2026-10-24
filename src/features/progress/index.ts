@@ -11,12 +11,10 @@ export {
 } from './lib/record';
 export type { AttemptSubject, AttemptScores, GradedNote, PhraseLike } from './lib/record';
 export {
-  weeklyStats,
   isSungSession,
   singingAccuracy,
   LISTENING_ONLY_EXERCISE_IDS,
   noteHeatmap,
-  scoreTrend,
   totalStars,
   bestScores,
   isUnlocked,
@@ -25,14 +23,20 @@ export {
   totalPracticeDays,
   totalPracticeSeconds,
   formatPracticeTime,
+  formatTotalPracticeTime,
   practicedDayKeys,
   localDayKey,
-  weeklyAccuracyTrend,
   perfectExercises,
   todayExerciseStats,
 } from './lib/stats';
-export type { WeeklyStats, HeatmapEntry, WeeklyAccuracyPoint, PerfectExercise, TodayExerciseStat } from './lib/stats';
-export { WeeklyAccuracyChart } from './ui/WeeklyAccuracyChart';
+export type { HeatmapEntry, PerfectExercise, TodayExerciseStat } from './lib/stats';
+export { isoDay, isoDayStart, shiftDay, historyTotals, mergeHistories, allTimePracticeSeconds } from './lib/history';
+export type { DayStats, DayHistory, HistoryTotals } from './lib/history';
+export { bucketSeries, rangeStartDay, rangeTotal, BUCKET_DAYS, RANGE_DAYS } from './lib/series';
+export type { Bucket, HistoryRange } from './lib/series';
+export { RangeTabs } from './ui/history/RangeTabs';
+export { HistoryLineChart } from './ui/history/HistoryLineChart';
+export type { DayValue } from './ui/history/HistoryLineChart';
+export { HistoryBarChart } from './ui/history/HistoryBarChart';
 export { PracticeCalendar } from './ui/PracticeCalendar';
-export { SkillTrendChart } from './ui/skill-trend/SkillTrendChart';
-export type { SnapshotPoint } from './ui/skill-trend/useSkillTrend';
+

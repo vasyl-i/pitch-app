@@ -270,7 +270,7 @@ export const textVariants = {
   /** running text */
   body: { fontSize: 16, lineHeight: 24, weight: 'regular', color: 'textSecondary' },
   /** secondary lines, row subtitles, chips */
-  small: { fontSize: 14, lineHeight: 18, weight: 'regular', color: 'textSecondary' },
+  small: { fontSize: 14, lineHeight: 18, weight: 'medium', color: 'textSecondary' },
   /** meta text, hints, legends */
   caption: { fontSize: 12, lineHeight: 16, weight: 'regular', color: 'textFaint' },
 } as const satisfies Record<

@@ -84,8 +84,12 @@ export const AppText = memo(function AppText({ variant = 'body', weight, color, 
   const textElement = <Text style={textStyle} {...rest} />;
 
   if (applyGradient) {
+    // Rasterised: a mask is composited off-screen on every frame it moves, so
+    // a scrolling list of sheened titles otherwise redraws each one per frame.
+    // Cached at screen scale, the text stays crisp and only re-renders when
+    // it changes.
     return (
-      <MaskedView maskElement={textElement}>
+      <MaskedView maskElement={textElement} shouldRasterizeIOS renderToHardwareTextureAndroid>
         <LinearGradient colors={SHEEN} locations={SHEEN_STOPS} start={SHEEN_START} end={SHEEN_END}>
           {/* Invisible text to preserve layout size */}
           <Text style={[textStyle, styles.invisible]} {...rest} />

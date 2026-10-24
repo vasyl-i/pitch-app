@@ -8,7 +8,7 @@ import { BlurTargetView, BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLessonSessionStore } from '@/features/learning';
 import { usePaywall, usePremiumStatus } from '@/features/subscription';
-import { AppText, Button, COMPACT_SCREEN, Screen } from '@/shared/ui';
+import { AppText, Button, CalendarIcon, COMPACT_SCREEN, ExercisesIcon, Screen, TimeIcon } from '@/shared/ui';
 import { spacing } from '@/shared/theme';
 import { useTranslation } from '@/shared/i18n';
 import type { RootScreenProps } from '@/app/navigation/types';
@@ -16,7 +16,6 @@ import { resetToTab } from '@/app/navigation/resetToTab';
 import { useTodaySummary } from './useTodaySummary';
 import { CompleteStatTile } from './CompleteStatTile';
 import { UnlockCard } from './UnlockCard';
-import { CalendarIcon, ExercisesIcon, TimeIcon } from './StatIcons';
 
 export function PracticeCompleteScreen({ navigation }: RootScreenProps<'PracticeComplete'>) {
   const { t } = useTranslation();

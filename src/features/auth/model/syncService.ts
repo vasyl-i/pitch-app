@@ -10,12 +10,20 @@
 import { supabase } from '@/shared/lib/supabase';
 import { useAuthStore } from './authStore';
 import { useProfileStore } from '@/entities/profile';
-import { useProgressStore } from '@/features/progress';
-import { useLearningStore, useLessonSessionStore, usePreferencesStore, type SkillId } from '@/features/learning';
+import { useProgressStore, type DayHistory, type SessionRecord } from '@/features/progress';
+import {
+  useLearningStore,
+  useLessonSessionStore,
+  usePreferencesStore,
+  type MasteryHistory,
+  type SkillId,
+} from '@/features/learning';
 
 type Unsubscribe = () => void;
 
 let activeSubs: Unsubscribe[] = [];
+/** set while server data is merged in, so the watchers don't echo it back */
+let importing = false;
 
 // ── Sync-ready signal ──────────────────────────────────────────────
 // Lets consumers (e.g. RootNavigator) wait for the initial server pull
@@ -187,6 +195,100 @@ async function pushWeekSnapshots() {
   await supabase.from('skill_snapshots').upsert(rows);
 }
 
+// ── Daily stats (one row per local day, two writers) ───────────────
+// Rows are pushed by day key as they change. The progress store writes the
+// counters and the learning store the closing mastery — each upsert carries
+// only its own columns, so the two never clobber each other.
+const UPSERT_CHUNK = 500;
+const dirtyDays = new Set<string>();
+const dirtyMasteryDays = new Set<string>();
+
+async function upsertDailyStats(rows: Record<string, unknown>[]) {
+  for (let i = 0; i < rows.length; i += UPSERT_CHUNK) {
+    await supabase.from('daily_stats').upsert(rows.slice(i, i + UPSERT_CHUNK));
+  }
+}
+
+async function pushDirtyDays() {
+  const userId = getUserId();
+  if (!userId || dirtyDays.size === 0) return;
+  const { days } = useProgressStore.getState();
+  const keys = [...dirtyDays];
+  dirtyDays.clear();
+  const updatedAt = new Date().toISOString();
+  await upsertDailyStats(
+    keys.flatMap((day) => {
+      const row = days[day];
+      return row
+        ? [{
+            user_id: userId,
+            day,
+            sessions: row.sessions,
+            practice_sec: row.practiceSec,
+            perfect_notes: row.perfectNotes,
+            graded_notes: row.gradedNotes,
+            updated_at: updatedAt,
+          }]
+        : [];
+    }),
+  );
+}
+
+async function pushDirtyMastery() {
+  const userId = getUserId();
+  if (!userId || dirtyMasteryDays.size === 0) return;
+  const { masteryHistory } = useLearningStore.getState();
+  const keys = [...dirtyMasteryDays];
+  dirtyMasteryDays.clear();
+  const updatedAt = new Date().toISOString();
+  await upsertDailyStats(
+    keys.flatMap((day) =>
+      masteryHistory[day] ? [{ user_id: userId, day, mastery: masteryHistory[day], updated_at: updatedAt }] : [],
+    ),
+  );
+}
+
+/** keys whose row is new or replaced between two snapshots of a day-keyed map */
+function changedKeys<T>(next: Record<string, T>, prev: Record<string, T>): string[] {
+  return Object.keys(next).filter((k) => next[k] !== prev[k]);
+}
+
+/** pull the day history, merge it in, and send back what the server lacks */
+async function syncDailyStats(userId: string) {
+  const { data } = await supabase
+    .from('daily_stats')
+    .select('day, sessions, practice_sec, perfect_notes, graded_notes, mastery')
+    .eq('user_id', userId)
+    .order('day', { ascending: false })
+    .limit(5000);
+  const serverDays: DayHistory = {};
+  const serverMastery: MasteryHistory = {};
+  for (const row of data ?? []) {
+    serverDays[row.day] = {
+      day: row.day,
+      sessions: row.sessions ?? 0,
+      practiceSec: row.practice_sec ?? 0,
+      perfectNotes: row.perfect_notes ?? 0,
+      gradedNotes: row.graded_notes ?? 0,
+    };
+    if (row.mastery) serverMastery[row.day] = row.mastery;
+  }
+  useProgressStore.getState().importDays(serverDays);
+  useLearningStore.getState().importMasteryHistory(serverMastery);
+
+  // anything the server is missing or holds a smaller copy of goes back up
+  const { days } = useProgressStore.getState();
+  for (const [day, row] of Object.entries(days)) {
+    const remote = serverDays[day];
+    if (!remote || remote.sessions !== row.sessions || remote.practiceSec !== row.practiceSec) dirtyDays.add(day);
+  }
+  for (const day of Object.keys(useLearningStore.getState().masteryHistory)) {
+    if (!serverMastery[day]) dirtyMasteryDays.add(day);
+  }
+  await pushDirtyDays();
+  await pushDirtyMastery();
+}
+
 // ── Pull from server (on sign-in) ──────────────────────────────────
 export async function pullFromServer() {
   // Gate every pull, not just fresh sign-ins, so consumers that care about
@@ -287,35 +389,30 @@ export async function pullFromServer() {
       .limit(500);
 
     if (serverSessions && serverSessions.length > 0) {
-      const localSessions = useProgressStore.getState().sessions;
-      const localTimestamps = new Set(localSessions.map((s) => s.at));
-      const newSessions: import('@/features/progress').SessionRecord[] = [];
-      for (const row of serverSessions) {
-        const at = new Date(row.created_at).getTime();
-        if (!localTimestamps.has(at)) {
-          newSessions.push({
-            exerciseId: row.exercise_id,
-            exerciseTitle: row.exercise_title ?? '',
-            at,
-            score: row.score ?? 0,
-            stars: row.stars ?? 0,
-            avgCents: row.avg_cents ?? 0,
-            stability: row.stability ?? 0,
-            rhythm: row.rhythm ?? 0,
-            durationSec: row.duration_sec ?? undefined,
-            notes: row.notes ?? {},
-            notesByMidi: row.notes_by_midi ?? undefined,
-            intervals: row.intervals ?? undefined,
-          });
-        }
-      }
-      if (newSessions.length > 0) {
-        const merged = [...localSessions, ...newSessions]
-          .sort((a, b) => b.at - a.at)
-          .slice(0, 500);
-        useProgressStore.setState({ sessions: merged });
+      const records: SessionRecord[] = serverSessions.map((row) => ({
+        exerciseId: row.exercise_id,
+        exerciseTitle: row.exercise_title ?? '',
+        at: new Date(row.created_at).getTime(),
+        score: row.score ?? 0,
+        stars: row.stars ?? 0,
+        avgCents: row.avg_cents ?? 0,
+        stability: row.stability ?? 0,
+        rhythm: row.rhythm ?? 0,
+        durationSec: row.duration_sec ?? undefined,
+        notes: row.notes ?? {},
+        notesByMidi: row.notes_by_midi ?? undefined,
+        intervals: row.intervals ?? undefined,
+      }));
+      // already on the server: the session watcher must not send them back
+      importing = true;
+      try {
+        useProgressStore.getState().importSessions(records);
+      } finally {
+        importing = false;
       }
     }
+
+    await syncDailyStats(userId);
 
     // Total practice time (server value wins if larger — monotonically increasing)
     const { data: profileRow } = await supabase
@@ -386,16 +483,28 @@ export function startSync() {
     }),
   );
 
-  // Watch new sessions (append-only — track length changes)
-  let lastSessionCount = useProgressStore.getState().sessions.length;
+  // Watch new sessions: a fresh practice record is prepended to the list
   activeSubs.push(
-    useProgressStore.subscribe((state) => {
-      if (state.sessions.length > lastSessionCount) {
-        const newSession = state.sessions[0]; // newest is prepended
-        if (newSession) pushSession(newSession);
-        lastSessionCount = state.sessions.length;
+    useProgressStore.subscribe((state, prev) => {
+      if (state.days !== prev.days) {
+        changedKeys(state.days, prev.days).forEach((day) => dirtyDays.add(day));
+        debounced('daily-stats', pushDirtyDays);
+      }
+      if (importing || state.sessions === prev.sessions) return;
+      const newest = state.sessions[0];
+      if (newest && newest.at > (prev.sessions[0]?.at ?? 0)) {
+        pushSession(newest);
         debounced('total-practice', pushTotalPractice);
       }
+    }),
+  );
+
+  // Watch each day's closing mastery
+  activeSubs.push(
+    useLearningStore.subscribe((state, prev) => {
+      if (state.masteryHistory === prev.masteryHistory) return;
+      changedKeys(state.masteryHistory, prev.masteryHistory).forEach((day) => dirtyMasteryDays.add(day));
+      debounced('daily-mastery', pushDirtyMastery);
     }),
   );
 
@@ -436,4 +545,6 @@ export function stopSync() {
   activeSubs = [];
   timers.forEach((t) => clearTimeout(t));
   timers.clear();
+  dirtyDays.clear();
+  dirtyMasteryDays.clear();
 }

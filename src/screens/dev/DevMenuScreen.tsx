@@ -23,7 +23,7 @@ const SCREENS: ScreenEntry[] = [
   { label: '⚙️ Account', onPress: (n) => n.navigate('Main', { screen: 'AccountTab' }) },
 
   // Progress sub-screens
-  { label: '📈 Weekly Review', onPress: (n) => n.navigate('Main', { screen: 'ProgressTab', params: { screen: 'WeeklyReview' } }) },
+  { label: '📈 Stat history', onPress: (n) => n.navigate('Main', { screen: 'ProgressTab', params: { screen: 'StatHistory', params: { metric: 'pitch-accuracy' } } }) },
   { label: '🏆 Perfect Exercises', onPress: (n) => n.navigate('Main', { screen: 'ProgressTab', params: { screen: 'PerfectExercises' } }) },
   { label: '🗺️ Journey Overview', onPress: (n) => n.navigate('Main', { screen: 'ProgressTab', params: { screen: 'JourneyOverview' } }) },
 

@@ -1,3 +1,3 @@
 export { ProgressScreen } from './ProgressScreen';
-export { WeeklyReviewScreen } from './weekly-review/WeeklyReviewScreen';
+export { StatHistoryScreen } from './history/StatHistoryScreen';
 export { PerfectExercisesScreen } from './PerfectExercisesScreen';

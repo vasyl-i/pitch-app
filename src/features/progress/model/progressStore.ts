@@ -6,6 +6,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { mmkvStorage } from '@/shared/lib/storage';
+import { mergeHistories, recordInHistory, rollupSessions, type DayHistory } from '../lib/history';
 
 /** signed cents tendency per pitch class, accumulated across sessions */
 export interface NoteTally {
@@ -57,8 +58,14 @@ interface ProgressState {
   sessions: SessionRecord[];
   /** Running all-time total — survives the 500-session cap. */
   totalPracticeSec: number;
+  /** a counter row per practiced day, kept forever — see `lib/history` */
+  days: DayHistory;
   hydrated: boolean;
   addSession: (record: SessionRecord) => void;
+  /** merge sessions from another device (newest first, capped), rolling their days in */
+  importSessions: (records: SessionRecord[]) => void;
+  /** merge day rows from another device */
+  importDays: (days: DayHistory) => void;
   clear: () => void;
 }
 
@@ -67,18 +74,36 @@ export const useProgressStore = create<ProgressState>()(
     (set) => ({
       sessions: [],
       totalPracticeSec: 0,
+      days: {},
       hydrated: false,
       addSession: (record) =>
         set((s) => ({
           sessions: [record, ...s.sessions].slice(0, MAX_SESSIONS),
           totalPracticeSec: s.totalPracticeSec + (record.durationSec ?? 0),
+          days: recordInHistory(s.days, record),
         })),
-      clear: () => set({ sessions: [], totalPracticeSec: 0 }),
+      importSessions: (records) =>
+        set((s) => {
+          const known = new Set(s.sessions.map((r) => r.at));
+          const fresh = records.filter((r) => !known.has(r.at));
+          if (fresh.length === 0) return s;
+          const sessions = [...s.sessions, ...fresh].sort((a, b) => b.at - a.at).slice(0, MAX_SESSIONS);
+          return { sessions, days: mergeHistories(s.days, rollupSessions(sessions)) };
+        }),
+      importDays: (days) => set((s) => ({ days: mergeHistories(s.days, days) })),
+      clear: () => set({ sessions: [], totalPracticeSec: 0, days: {} }),
     }),
     {
       name: 'pitch-coach-progress',
       storage: createJSONStorage(() => mmkvStorage),
-      partialize: (s) => ({ sessions: s.sessions, totalPracticeSec: s.totalPracticeSec }) as ProgressState,
+      version: 1,
+      // v1 added the day history: seed it from the sessions still on hand
+      migrate: (persisted, version) => {
+        const p = persisted as Partial<ProgressState>;
+        if (version < 1) p.days = rollupSessions(p.sessions ?? []);
+        return p as ProgressState;
+      },
+      partialize: (s) => ({ sessions: s.sessions, totalPracticeSec: s.totalPracticeSec, days: s.days }) as ProgressState,
       onRehydrateStorage: () => (state) => {
         if (state) {
           state.hydrated = true;

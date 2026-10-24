@@ -14,6 +14,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { mmkvStorage } from '@/shared/lib/storage';
 import { ingestSession, type SessionFacts } from '../lib/ingest';
 import { emptySkillState } from '../lib/mastery';
+import { masteryHistoryFromAnnotations, recordMasteryDay, type MasteryHistory } from '../lib/masteryHistory';
 import { chooseWeeklyFocus, weekKeyOf } from '../lib/weekly';
 import {
   ALL_SKILLS,
@@ -46,11 +47,15 @@ interface LearningState {
   weeklyFocus: { weekKey: string; skill: SkillId } | null;
   /** mastery at the start of each recent week, for weekly-review deltas */
   weekSnapshots: WeekSnapshot[];
+  /** each practiced day's closing mastery, kept forever (synced as `daily_stats.mastery`) */
+  masteryHistory: MasteryHistory;
 
   /** roll the week over if needed: pick a focus and snapshot mastery */
   ensureWeek: (prefs: LearningPreferences | null, now?: number) => void;
   /** fold newly-recorded practice sessions into the profile (oldest first) */
   ingest: (records: SessionFacts[]) => void;
+  /** merge day rows from another device; rows already held locally win */
+  importMasteryHistory: (rows: MasteryHistory) => void;
   clearLearningData: () => void;
 }
 
@@ -63,6 +68,7 @@ export const useLearningStore = create<LearningState>()(
       lastIngestedAt: 0,
       weeklyFocus: null,
       weekSnapshots: [],
+      masteryHistory: {},
 
       ensureWeek: (prefs, now = Date.now()) => {
         const s = get();
@@ -87,6 +93,7 @@ export const useLearningStore = create<LearningState>()(
         let { skills, reviews } = s;
         const annotations = [...s.annotations];
         let lastIngestedAt = s.lastIngestedAt;
+        let masteryHistory = s.masteryHistory;
 
         for (const facts of [...records].sort((a, b) => a.at - b.at)) {
           if (facts.at <= s.lastIngestedAt) continue;
@@ -94,11 +101,14 @@ export const useLearningStore = create<LearningState>()(
           skills = result.skills;
           reviews = result.reviews;
           annotations.unshift(result.annotation);
+          masteryHistory = recordMasteryDay(masteryHistory, skills, facts.at);
           lastIngestedAt = Math.max(lastIngestedAt, facts.at);
         }
 
-        set({ skills, reviews, annotations: annotations.slice(0, MAX_ANNOTATIONS), lastIngestedAt });
+        set({ skills, reviews, annotations: annotations.slice(0, MAX_ANNOTATIONS), lastIngestedAt, masteryHistory });
       },
+
+      importMasteryHistory: (rows) => set((s) => ({ masteryHistory: { ...rows, ...s.masteryHistory } })),
 
       clearLearningData: () =>
         set({
@@ -108,12 +118,21 @@ export const useLearningStore = create<LearningState>()(
           lastIngestedAt: 0,
           weeklyFocus: null,
           weekSnapshots: [],
+          masteryHistory: {},
         }),
     }),
     {
       name: 'pitch-coach-learning',
       storage: createJSONStorage(() => mmkvStorage),
-      version: 1,
+      version: 2,
+      // v2 added the mastery history: rebuild it from the session annotations
+      migrate: (persisted, version) => {
+        const p = persisted as Partial<LearningState>;
+        if (version < 2) {
+          p.masteryHistory = masteryHistoryFromAnnotations({ ...emptySkills(), ...(p.skills ?? {}) }, p.annotations ?? []);
+        }
+        return p as LearningState;
+      },
       // new skills added in later app versions get a fresh empty state
       merge: (persisted, current) => {
         const p = persisted as Partial<LearningState> | undefined;

@@ -2,7 +2,7 @@
  * Derived progress statistics — pure functions over the session history.
  */
 import { SHARP_PITCH_NAMES } from '@/shared/lib/music';
-import { t } from '@/shared/i18n';
+import { formatNumber, t } from '@/shared/i18n';
 import type { NoteTally, SessionRecord } from '../model/progressStore';
 
 export const PITCH_NAMES = SHARP_PITCH_NAMES;
@@ -26,40 +26,6 @@ export function isSungSession(session: Pick<SessionRecord, 'exerciseId'>): boole
 export function singingAccuracy(sessions: SessionRecord[]): number | null {
   const sung = sessions.filter(isSungSession);
   return sung.length ? Math.round(sung.reduce((sum, s) => sum + s.score, 0) / sung.length) : null;
-}
-
-export interface WeeklyStats {
-  sessions: number;
-  /** sung attempts this week — `avgScore`/`avgCents` cover only these */
-  sungSessions: number;
-  avgScore: number;
-  avgCents: number;
-  stars: number;
-  /** change in average score vs the previous 7 days (null if no prior data) */
-  scoreDelta: number | null;
-  /** consecutive days practiced, ending today or yesterday */
-  streak: number;
-}
-
-export function weeklyStats(sessions: SessionRecord[], now = Date.now()): WeeklyStats {
-  const thisWeek = sessions.filter((s) => now - s.at < 7 * DAY_MS);
-  // accuracy and deviation come from sung attempts only
-  const sungThisWeek = thisWeek.filter(isSungSession);
-  const prevWeek = sessions.filter((s) => isSungSession(s) && now - s.at >= 7 * DAY_MS && now - s.at < 14 * DAY_MS);
-
-  const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
-  const avgScore = avg(sungThisWeek.map((s) => s.score));
-  const prevAvg = prevWeek.length ? avg(prevWeek.map((s) => s.score)) : null;
-
-  return {
-    sessions: thisWeek.length,
-    sungSessions: sungThisWeek.length,
-    avgScore: Math.round(avgScore),
-    avgCents: Math.round(avg(sungThisWeek.map((s) => s.avgCents))),
-    stars: thisWeek.reduce((sum, s) => sum + s.stars, 0),
-    scoreDelta: prevAvg === null || sungThisWeek.length === 0 ? null : Math.round(avgScore - prevAvg),
-    streak: currentStreak(sessions, now),
-  };
 }
 
 function dayIndex(ms: number): number {
@@ -151,29 +117,16 @@ export function formatPracticeTime(totalSec: number): string {
   return m ? t('progress.duration.hoursMinutes', { h, m }) : t('progress.duration.hours', { h });
 }
 
-export interface WeeklyAccuracyPoint {
-  /** epoch ms of the start of this 7-day bucket */
-  weekStart: number;
-  /** null when nothing was practiced that week */
-  avgScore: number | null;
-  sessions: number;
-}
-
-/** Average sung score per 7-day bucket, oldest first; the last bucket ends now. */
-export function weeklyAccuracyTrend(sessions: SessionRecord[], weeks = 8, now = Date.now()): WeeklyAccuracyPoint[] {
-  const out: WeeklyAccuracyPoint[] = [];
-  const sung = sessions.filter(isSungSession);
-  for (let i = weeks - 1; i >= 0; i--) {
-    const end = now - i * 7 * DAY_MS;
-    const start = end - 7 * DAY_MS;
-    const bucket = sung.filter((s) => s.at > start && s.at <= end);
-    out.push({
-      weekStart: start,
-      sessions: bucket.length,
-      avgScore: bucket.length ? Math.round(bucket.reduce((sum, s) => sum + s.score, 0) / bucket.length) : null,
-    });
-  }
-  return out;
+/**
+ * An all-time total that has to fit a stat tile: minutes up to an hour, then
+ * hours — one decimal below ten ("2.5 h"), whole hours after ("37 h").
+ */
+export function formatTotalPracticeTime(totalSec: number): string {
+  const minutes = Math.round(totalSec / 60);
+  if (minutes < 60) return t('progress.duration.totalMinutes', { m: minutes });
+  const hours = totalSec / 3600;
+  const h = formatNumber(hours, { maximumFractionDigits: hours < 10 ? 1 : 0 });
+  return t('progress.duration.totalHours', { h });
 }
 
 /** best score achieved per exercise */
@@ -244,11 +197,6 @@ export function todayExerciseStats(
     }
   }
   return map;
-}
-
-/** most recent sung scores, oldest first, for the trend sparkline */
-export function scoreTrend(sessions: SessionRecord[], limit = 12): number[] {
-  return sessions.filter(isSungSession).slice(0, limit).map((s) => s.score).reverse();
 }
 
 /** stars gate medium/hard exercises so difficulty ramps with skill */

@@ -3,7 +3,7 @@ import { palette } from '@/shared/theme';
 import { TodayScreen } from '@/screens/home';
 import { SingHubScreen, InstrumentalUploadScreen, InstrumentalAnalyzingScreen } from '@/screens/sing';
 import { ExercisesHubScreen } from '@/screens/exercises';
-import { ProgressScreen, WeeklyReviewScreen, PerfectExercisesScreen } from '@/screens/progress';
+import { ProgressScreen, StatHistoryScreen, PerfectExercisesScreen } from '@/screens/progress';
 import { JourneyScreen, JourneyAreaScreen } from '@/screens/journey';
 import { ProfileScreen } from '@/screens/profile';
 import {
@@ -64,12 +64,12 @@ export function ExercisesNavigator() {
   );
 }
 
-/** Progress: stats, trends, calendar, journey, and weekly review. */
+/** Progress: stats, calendar, the last 7 days, each number's history, and the journey. */
 export function ProgressNavigator() {
   return (
     <ProgressStack.Navigator screenOptions={STACK_OPTIONS}>
       <ProgressStack.Screen name="ProgressOverview" component={ProgressScreen} />
-      <ProgressStack.Screen name="WeeklyReview" component={WeeklyReviewScreen} />
+      <ProgressStack.Screen name="StatHistory" component={StatHistoryScreen} />
       <ProgressStack.Screen name="PerfectExercises" component={PerfectExercisesScreen} />
       <ProgressStack.Screen name="JourneyOverview" component={JourneyScreen} />
       <ProgressStack.Screen name="JourneyArea" component={JourneyAreaScreen} />

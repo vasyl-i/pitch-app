@@ -15,6 +15,8 @@ export { FlowScreen } from './FlowScreen';
 export { Screen } from './Screen';
 export { ScreenHeader } from './ScreenHeader';
 export { SearchField } from './SearchField';
+export { StatTile } from './StatTile';
+export { CalendarIcon, ExercisesIcon, NoteIcon, RhythmIcon, StarIcon, SteadyIcon, TimeIcon, TrendIcon } from './StatIcons';
 export { TextField } from './TextField';
 export { TimeDropdown } from './TimeDropdown';
 export { TimePicker } from './TimePicker';

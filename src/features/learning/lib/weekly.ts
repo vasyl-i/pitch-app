@@ -128,7 +128,6 @@ export function buildWeeklyReview(input: WeeklyReviewInput): WeeklyReport {
       summary.push(t('learning.weekly.weakest', { skill: SKILL_LABELS[weakestSkill], mastery: skills[weakestSkill].mastery }));
     }
   }
-  summary.push(t('learning.weekly.nextFocus', { focus: FOCUS_TITLES[recommendedFocus] }));
 
   return {
     weekKey: input.weekKey,

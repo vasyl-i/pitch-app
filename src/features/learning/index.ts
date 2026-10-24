@@ -41,6 +41,8 @@ export { generateDailyLesson } from './lib/lessonGenerator';
 export type { LessonInput, TendencyFact } from './lib/lessonGenerator';
 export { buildRecommendations } from './lib/recommendations';
 export { buildCoachMessage, buildSessionInsights } from './lib/coach';
+export { masteryAsOf, masterySeries } from './lib/masteryHistory';
+export type { MasteryHistory } from './lib/masteryHistory';
 export { chooseWeeklyFocus, buildWeeklyReview, weekKeyOf, FOCUS_TITLES } from './lib/weekly';
 export type { WeeklyReviewInput } from './lib/weekly';
 export { dueReviews, REVIEW_INTERVALS_DAYS } from './lib/spacedRepetition';

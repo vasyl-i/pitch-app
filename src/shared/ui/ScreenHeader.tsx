@@ -15,7 +15,7 @@ export function ScreenHeader({ title, subtitle, onBack, large = false }: {
   large?: boolean;
 }) {
   return (
-    <View>
+    <View style={styles.container}>
       {onBack && <BackButton onPress={onBack} />}
       <AppText variant={large ? 'headline' : 'title'} style={onBack && styles.title}>
         {title}
@@ -30,6 +30,7 @@ export function ScreenHeader({ title, subtitle, onBack, large = false }: {
 }
 
 const styles = StyleSheet.create({
+  container: { paddingBottom: spacing.lg },
   title: { marginTop: spacing.md },
   subtitle: { marginTop: spacing.xs },
 });

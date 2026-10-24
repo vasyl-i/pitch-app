@@ -37,29 +37,15 @@ const NAV_INACTIVE = whiteAlpha(0.55);
  */
 export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
-  const [width, setWidth] = useState(0);
-  const translateX = useRef(new Animated.Value(state.index)).current;
   const activeRouteKey = state.routes[state.index].key;
   const blurTarget = useTabBlurTarget(activeRouteKey);
-
-  useEffect(() => {
-    Animated.spring(translateX, { toValue: state.index, useNativeDriver: true, damping: 20, stiffness: 220, mass: 0.9 }).start();
-  }, [state.index, translateX]);
-
-  const onLayout = (e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width);
-  const tabWidth = (width - TAB_PADDING * 2) / state.routes.length;
+  const indicatorX = useTabIndicator(state.index);
   const wrapper = [styles.wrapper, { bottom: insets.bottom + BAR_BOTTOM_GAP }];
 
   const content = (
     <>
-      {width > 0 && (
-        <Animated.View
-          pointerEvents="none"
-          style={[
-            styles.indicator,
-            { left: TAB_PADDING + (tabWidth - CIRCLE) / 2, transform: [{ translateX: Animated.multiply(translateX, tabWidth) }] },
-          ]}
-        />
+      {indicatorX.ready && (
+        <Animated.View pointerEvents="none" style={[styles.indicator, { transform: [{ translateX: indicatorX.value }] }]} />
       )}
       <View style={styles.tabs}>
         {state.routes.map((route, index) => {
@@ -69,7 +55,14 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
             if (!focused && !event.defaultPrevented) navigation.navigate(route.name);
           };
           return (
-            <Pressable key={route.key} accessibilityRole="button" accessibilityState={focused ? { selected: true } : {}} onPress={onPress} style={styles.tab}>
+            <Pressable
+              key={route.key}
+              accessibilityRole="button"
+              accessibilityState={focused ? { selected: true } : {}}
+              onPress={onPress}
+              onLayout={(e) => indicatorX.onTabLayout(index, e)}
+              style={styles.tab}
+            >
               {descriptors[route.key].options.tabBarIcon?.({ focused, color: focused ? NAV_ON_ACTIVE : NAV_INACTIVE, size: 22 })}
             </Pressable>
           );
@@ -81,7 +74,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
   if (USE_LIQUID_GLASS) {
     return (
       <View style={wrapper}>
-        <GlassView onLayout={onLayout} glassEffectStyle="clear" style={styles.bar}>
+        <GlassView glassEffectStyle="clear" style={styles.bar}>
           {content}
         </GlassView>
       </View>
@@ -90,7 +83,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
 
   return (
     <View style={wrapper}>
-      <View onLayout={onLayout} style={[styles.bar, styles.ring]}>
+      <View style={[styles.bar, styles.ring]}>
         <View style={styles.clip}>
           <BlurView
             // remount per tab so the native view binds to the newly focused target
@@ -108,6 +101,49 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
   );
 }
 
+/**
+ * The active circle's horizontal position, centred on the focused tab as it
+ * was actually laid out — not on a slot computed from the bar's width, which
+ * the bar's border and any re-measure throw off. The tabs row and the circle
+ * share the bar's padding box, so a tab's own `x` is the circle's coordinate
+ * too. Placed without animation until every tab is measured (and whenever
+ * the layout changes), then sprung without overshoot, so it never swings
+ * past the icon.
+ */
+function useTabIndicator(index: number) {
+  const value = useRef(new Animated.Value(0)).current;
+  const [centres, setCentres] = useState<(number | undefined)[]>([]);
+  const placed = useRef(false);
+
+  const onTabLayout = (tab: number, e: LayoutChangeEvent) => {
+    const { x, width } = e.nativeEvent.layout;
+    // `x` is within the tabs row, padding included — the circle's own frame
+    const centre = x + width / 2;
+    setCentres((prev) => {
+      if (prev[tab] === centre) return prev;
+      placed.current = false;
+      const next = [...prev];
+      next[tab] = centre;
+      return next;
+    });
+  };
+
+  const target = centres[index];
+  useEffect(() => {
+    if (target === undefined) return;
+    const x = target - CIRCLE / 2;
+    if (!placed.current) {
+      value.stopAnimation();
+      value.setValue(x);
+      placed.current = true;
+      return;
+    }
+    Animated.spring(value, { toValue: x, useNativeDriver: true, damping: 28, stiffness: 220, mass: 0.9, overshootClamping: true }).start();
+  }, [target, value]);
+
+  return { value, ready: target !== undefined, onTabLayout };
+}
+
 const styles = StyleSheet.create({
   wrapper: { position: 'absolute', left: BAR_MARGIN, right: BAR_MARGIN, alignItems: 'center' },
   bar: { width: '100%', maxWidth: 380, height: BAR_HEIGHT, borderRadius: BAR_RADIUS },
@@ -119,6 +155,7 @@ const styles = StyleSheet.create({
     height: CIRCLE,
     borderRadius: CIRCLE / 2,
     top: (BAR_HEIGHT - CIRCLE) / 2,
+    left: 0,
     backgroundColor: palette.white,
   },
   tabs: { flexDirection: 'row', height: BAR_HEIGHT, paddingHorizontal: TAB_PADDING },

@@ -192,8 +192,8 @@ export const learning: LocaleShape<typeof en> = {
     levelUp: '«{{skill}}» уже сильна ({{mastery}}/100) — ви готові до складнішого рівня.',
   },
   weekly: {
-    noPractice: 'Цього тижня практики не було — навіть одне 5-хвилинне заняття не дасть навичкам згаснути.',
-    practiced: 'Цього тижня ви практикували {{days}} ({{sessions}}).',
+    noPractice: 'За останні 7 днів практики не було — навіть одне 5-хвилинне заняття не дасть навичкам згаснути.',
+    practiced: 'За останні 7 днів ви практикували {{days}} ({{sessions}}).',
     days_one: '{{count}} день',
     days_few: '{{count}} дні',
     days_many: '{{count}} днів',
@@ -202,10 +202,9 @@ export const learning: LocaleShape<typeof en> = {
     sessions_few: '{{count}} заняття',
     sessions_many: '{{count}} занять',
     sessions_other: '{{count}} заняття',
-    biggestJump: 'Найбільший стрибок — «{{skill}}»: {{from}} → {{to}}.',
-    focusMoved: 'Ваш фокус («{{skill}}») зріс {{from}} → {{to}} — зосереджена робота окупилася.',
+    biggestJump: 'Найбільший стрибок — «{{skill}}»: {{from}}% → {{to}}%.',
+    focusMoved: 'Ваш фокус («{{skill}}») зріс {{from}}% → {{to}}% — зосереджена робота окупилася.',
     focusWas: 'Вашим фокусом була «{{skill}}» — приділяйте їй трохи часу на кожному занятті.',
     weakest: '«{{skill}}» зараз ваша найслабша сторона ({{mastery}}/100).',
-    nextFocus: 'Рекомендований фокус на наступний тиждень: {{focus}}.',
   },
 };

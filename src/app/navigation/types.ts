@@ -1,7 +1,7 @@
 import type { CompositeScreenProps, NavigatorScreenParams } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
-import type { SkillCategory } from '@/features/learning';
+import type { SkillCategory, SkillId } from '@/features/learning';
 import type { PaywallSource, PremiumFeature } from '@/features/subscription';
 import type { DetectionResult } from '@/features/vocal-range';
 
@@ -22,10 +22,13 @@ export type ExercisesStackParamList = {
   ExercisesHub: undefined;
 };
 
-/** The Progress tab: stats, trends, calendar, journey, and weekly review. */
+/** A Progress-tab number with a history to chart: a skill's mastery, or an all-time count. */
+export type HistoryMetric = SkillId | 'perfect-notes' | 'practice-days' | 'practice-time';
+
+/** The Progress tab: stats, calendar, the last 7 days, each number's history, and the journey. */
 export type ProgressStackParamList = {
   ProgressOverview: undefined;
-  WeeklyReview: undefined;
+  StatHistory: { metric: HistoryMetric };
   PerfectExercises: undefined;
   JourneyOverview: undefined;
   JourneyArea: { category: SkillCategory };
