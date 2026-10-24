@@ -1,7 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AppText } from '@/shared/ui';
-import { useTheme } from '@/shared/theme';
+import { gradient, palette, radii } from '@/shared/theme';
 import { useTranslation } from '@/shared/i18n';
 
 /**
@@ -12,10 +12,8 @@ import { useTranslation } from '@/shared/i18n';
  */
 export function ConfidenceMeter({ confidence, label }: { confidence: number; label?: string }) {
   const { t } = useTranslation();
-  const { palette, radii, gradient } = useTheme();
   const pct = Math.round(Math.max(0, Math.min(1, confidence)) * 100);
   const color = pct >= 70 ? palette.accent : pct >= 40 ? palette.warning : palette.danger;
-  const isAccent = color === palette.accent;
 
   return (
     <View>
@@ -25,12 +23,12 @@ export function ConfidenceMeter({ confidence, label }: { confidence: number; lab
           {pct}%
         </AppText>
       </View>
-      <View style={[styles.track, { backgroundColor: palette.borderSubtle, borderRadius: radii.pill }]}>
-        <View style={[styles.fill, { width: `${pct}%`, borderRadius: radii.pill, overflow: 'hidden' }]}>
-          {isAccent ? (
-            <LinearGradient colors={gradient.accent} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+      <View style={styles.track}>
+        <View style={[styles.fill, { width: `${pct}%` }]}>
+          {color === palette.accent ? (
+            <LinearGradient colors={gradient.accent} start={START} end={END} style={StyleSheet.absoluteFill} />
           ) : (
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: "#7189FF" }]} />
+            <View style={styles.neutralFill} />
           )}
         </View>
       </View>
@@ -38,8 +36,12 @@ export function ConfidenceMeter({ confidence, label }: { confidence: number; lab
   );
 }
 
+const START = { x: 0, y: 0 };
+const END = { x: 1, y: 1 };
+
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  track: { height: 6, overflow: 'hidden' },
-  fill: { height: '100%' },
+  track: { height: 6, overflow: 'hidden', borderRadius: radii.pill, backgroundColor: palette.borderSubtle },
+  fill: { height: '100%', borderRadius: radii.pill, overflow: 'hidden' },
+  neutralFill: { ...StyleSheet.absoluteFill, backgroundColor: palette.meterFill },
 });

@@ -19,7 +19,7 @@ export function MetronomeButton({ on, onToggle }: { on: boolean; onToggle: () =>
       onPress={onToggle}
       style={({ pressed }) => [
         styles.button,
-        { borderRadius: radii.pill, borderColor: on ? palette.accent : '#535353' },
+        { borderRadius: radii.pill, borderColor: on ? palette.accent : palette.outline },
         pressed && { opacity: 0.7 },
       ]}
     >

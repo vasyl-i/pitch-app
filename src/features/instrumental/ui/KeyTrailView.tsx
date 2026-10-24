@@ -5,13 +5,13 @@ import { AppText } from '@/shared/ui';
 import { spellPitchClass } from '@/shared/lib/music';
 import { keyPitchClasses } from '../lib/grade';
 import type { FormingNote, NoteClass, SungNote } from '../lib/notes';
-import { palette } from '@/shared/theme';
+import { palette, whiteAlpha } from '@/shared/theme';
 
 /** note accuracy → bar color: lime near-perfect, white middling, red off */
 export const ACCURACY_COLOR: Record<NoteClass, string> = {
   perfect: palette.accent,
-  good: '#FFFFFF',
-  off: '#ff6d5c',
+  good: palette.white,
+  off: palette.danger,
 };
 
 /** seconds of history kept on screen */
@@ -88,7 +88,7 @@ export function KeyTrailView({
                 key={lane.midi}
                 p1={vec(34, yOf(lane.midi))}
                 p2={vec(size.width - 8, yOf(lane.midi))}
-                color={lane.tonic ? 'rgba(255,255,255,0.30)' : 'rgba(255,255,255,0.12)'}
+                color={lane.tonic ? whiteAlpha(0.3) : whiteAlpha(0.12)}
                 strokeWidth={1}
               />
             ))}
@@ -99,9 +99,9 @@ export function KeyTrailView({
             {/* glowing head at the exact live pitch */}
             {headMidi !== null && (
               <>
-                <Circle cx={size.width * HEAD_X} cy={yOf(headMidi)} r={12} color={forming ? ACCURACY_COLOR[forming.cls] : '#FFFFFF'} opacity={0.18} />
-                <Circle cx={size.width * HEAD_X} cy={yOf(headMidi)} r={6.5} color={forming ? ACCURACY_COLOR[forming.cls] : '#FFFFFF'} opacity={0.5} />
-                <Circle cx={size.width * HEAD_X} cy={yOf(headMidi)} r={3.5} color="#ffffff" />
+                <Circle cx={size.width * HEAD_X} cy={yOf(headMidi)} r={12} color={forming ? ACCURACY_COLOR[forming.cls] : palette.white} opacity={0.18} />
+                <Circle cx={size.width * HEAD_X} cy={yOf(headMidi)} r={6.5} color={forming ? ACCURACY_COLOR[forming.cls] : palette.white} opacity={0.5} />
+                <Circle cx={size.width * HEAD_X} cy={yOf(headMidi)} r={3.5} color={palette.white} />
               </>
             )}
           </Canvas>
@@ -111,7 +111,7 @@ export function KeyTrailView({
             <AppText
               key={lane.midi}
               variant="caption"
-              color={lane.tonic ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.4)'}
+              color={lane.tonic ? whiteAlpha(0.8) : whiteAlpha(0.4)}
               style={[styles.label, { top: yOf(lane.midi) - 6 }]}
             >
               {lane.label}
@@ -125,5 +125,5 @@ export function KeyTrailView({
 
 const styles = StyleSheet.create({
   container: { flex: 1, minHeight: 220 },
-  label: { position: 'absolute', left: 4, fontSize: 12 },
+  label: { position: 'absolute', left: 4 },
 });

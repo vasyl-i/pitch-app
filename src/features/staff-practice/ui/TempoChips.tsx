@@ -7,7 +7,7 @@
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/shared/ui';
-import { useTheme } from '@/shared/theme';
+import { palette, radii, spacing } from '@/shared/theme';
 import { useTranslation } from '@/shared/i18n';
 import { isPremiumSpeed, SPEED_LEVELS, speedBpm, type ScaleDirection, type SpeedLevel } from '../model/speedStore';
 
@@ -33,7 +33,6 @@ export function SpeedChips({
   style?: StyleProp<ViewStyle>;
 }) {
   const { t } = useTranslation();
-  const { palette } = useTheme();
   return (
     <View style={[styles.chips, style]}>
       {SPEED_LEVELS.map((level) => {
@@ -46,7 +45,7 @@ export function SpeedChips({
             accessibilityLabel={`${t('exercises.speedA11y', { bpm: speedBpm(bpm, level) })}${locked ? ', Premium' : ''}`}
             accessibilityState={{ selected: isSelected }}
             onPress={() => (locked ? onLocked() : onChange(level))}
-            style={[styles.chip, locked && styles.iconChip, { backgroundColor: isSelected ? palette.accentTint : palette.surface }]}
+            style={[styles.chip, locked && styles.iconChip, isSelected && styles.selected]}
           >
             {locked && <Ionicons name="lock-closed" size={10} color={palette.textFaint} />}
             <AppText variant="caption" color={isSelected ? palette.accent : locked ? palette.textFaint : palette.textSecondary}>
@@ -73,7 +72,6 @@ export function DirectionChips({
   style?: StyleProp<ViewStyle>;
 }) {
   const { t } = useTranslation();
-  const { palette } = useTheme();
   const options: readonly { id: ScaleDirection; label: string; icon: 'arrow-up' | 'arrow-down' }[] = [
     { id: 'up', label: t('exercises.lowToHigh'), icon: 'arrow-up' },
     { id: 'down', label: t('exercises.highToLow'), icon: 'arrow-down' },
@@ -89,7 +87,7 @@ export function DirectionChips({
             accessibilityLabel={t('exercises.keysA11y', { direction: label.toLowerCase() })}
             accessibilityState={{ selected: isSelected }}
             onPress={() => onChange(id)}
-            style={[styles.chip, styles.iconChip, { backgroundColor: isSelected ? palette.accentTint : palette.surface }]}
+            style={[styles.chip, styles.iconChip, isSelected && styles.selected]}
           >
             <Ionicons name={icon} size={compact ? 14 : 11} color={isSelected ? palette.accent : palette.textSecondary} />
             {!compact && (
@@ -106,6 +104,7 @@ export function DirectionChips({
 
 const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  chip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999 },
-  iconChip: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  chip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: radii.pill, backgroundColor: palette.surface },
+  selected: { backgroundColor: palette.accentTint },
+  iconChip: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
 });

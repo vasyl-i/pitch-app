@@ -1,65 +1,33 @@
 import { Image, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { AppText, BackButton, Button, Screen } from '@/shared/ui';
-import { useTheme } from '@/shared/theme';
+import { AppText, Button, FlowScreen } from '@/shared/ui';
+import { spacing } from '@/shared/theme';
 import { useTranslation } from '@/shared/i18n';
 import type { OnboardingScreenProps } from '@/app/navigation/types';
 
 const ICON = require('../../../assets/onboarding/tune.png');
 
-/** Splash screen: treble clef icon, tagline, and a single CTA. */
-export function VocalRangeStartScreen({ navigation }: OnboardingScreenProps<'Welcome'>) {
-    const { t } = useTranslation();
-    const { spacing, typography, palette } = useTheme();
-    const insets = useSafeAreaInsets();
-
-    return (
-        <Screen noBottomPadding>                <View style={{ flexDirection: 'row', marginBottom: 8 }}>
-            <BackButton onPress={() => navigation.goBack()}/>
-        </View>
-            <View style={styles.root}>
-                <View style={styles.content}>
-                    <Image source={ICON} style={styles.icon} resizeMode="contain" />
-                    <AppText
-                        variant="title"
-                        color={palette.textPrimary}
-                        style={{ fontSize: 28, textAlign: 'center', fontFamily: typography.family.bold, marginTop: spacing.xl }}
-                    >
-                        {t('onboarding.rangeStart.title')}
-                    </AppText>
-                    <AppText
-                        variant="body"
-                        color={palette.textSecondary}
-                        style={{ textAlign: 'center', marginTop: spacing.md, lineHeight: 22 }}
-                    >
-                        {t('onboarding.rangeStart.subtitle')}
-                    </AppText>
-                </View>
-
-                <View style={{ paddingBottom: insets.bottom + spacing.lg }}>
-                    <Button
-                        title={t('common.start')}
-                        onPress={() => navigation.navigate('Lowest')}
-                        style={{ backgroundColor: '#ffffff' }}
-                    />
-                </View>
-            </View>
-        </Screen>
-    );
+/** Before range detection: treble clef icon, what's about to happen, and Start. */
+export function VocalRangeStartScreen({ navigation }: OnboardingScreenProps<'RangeStart'>) {
+  const { t } = useTranslation();
+  return (
+    <FlowScreen onBack={navigation.goBack}>
+      <View style={styles.content}>
+        <Image source={ICON} style={styles.icon} resizeMode="contain" />
+        <AppText variant="title" center style={styles.title}>
+          {t('onboarding.rangeStart.title')}
+        </AppText>
+        <AppText variant="body" center style={styles.subtitle}>
+          {t('onboarding.rangeStart.subtitle')}
+        </AppText>
+      </View>
+      <Button title={t('common.start')} onPress={() => navigation.navigate('Lowest')} />
+    </FlowScreen>
+  );
 }
 
 const styles = StyleSheet.create({
-    root: {
-        flex: 1,
-        justifyContent: 'space-between',
-    },
-    content: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    icon: {
-        width: 100,
-        height: 100,
-    },
+  content: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  icon: { width: 100, height: 100 },
+  title: { marginTop: spacing.xl },
+  subtitle: { marginTop: spacing.md },
 });

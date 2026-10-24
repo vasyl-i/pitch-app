@@ -7,35 +7,29 @@ import { useMemo } from 'react';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { buildJourney, useLearningStore, type JourneyArea } from '@/features/learning';
-import { AppText, Card, Screen } from '@/shared/ui';
-import { useTheme } from '@/shared/theme';
+import { AppText, Card, ProgressBar, Screen } from '@/shared/ui';
+import { palette, spacing } from '@/shared/theme';
 import { useTranslation } from '@/shared/i18n';
 import type { ProgressScreenProps } from '@/app/navigation/types';
 
 export function JourneyScreen({ navigation }: ProgressScreenProps<'JourneyOverview'>) {
   const { t, i18n } = useTranslation();
-  const { spacing } = useTheme();
   const skills = useLearningStore((s) => s.skills);
   // area copy is resolved while building, so the language is a dependency too
-  const journey = useMemo(() => buildJourney(skills), [skills, i18n.language]);
+  const journey = useMemo(() => buildJourney(skills), [skills, i18n.language]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <Screen>
-      <AppText variant="title" style={{ fontSize: 40 }}>
-        {t('journey.title')}
-      </AppText>
-      <AppText variant="body" style={{ marginTop: spacing.xs }}>
+      <AppText variant="score">{t('journey.title')}</AppText>
+      <AppText variant="body" style={styles.subtitle}>
         {t('journey.subtitle')}
       </AppText>
-
       <FlatList
         data={journey}
         keyExtractor={(area) => area.category}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingVertical: spacing.lg, paddingBottom: spacing.xxl }}
-        renderItem={({ item }) => (
-          <AreaCard area={item} onPress={() => navigation.navigate('JourneyArea', { category: item.category })} />
-        )}
+        contentContainerStyle={styles.list}
+        renderItem={({ item }) => <AreaCard area={item} onPress={() => navigation.navigate('JourneyArea', { category: item.category })} />}
       />
     </Screen>
   );
@@ -43,25 +37,19 @@ export function JourneyScreen({ navigation }: ProgressScreenProps<'JourneyOvervi
 
 function AreaCard({ area, onPress }: { area: JourneyArea; onPress: () => void }) {
   const { t } = useTranslation();
-  const { palette } = useTheme();
-  const progress = area.totalCount === 0 ? 0 : area.doneCount / area.totalCount;
   return (
     <Pressable accessibilityRole="button" onPress={onPress}>
       {({ pressed }) => (
-        <Card style={[styles.card, pressed && { opacity: 0.85 }]}>
-          <View style={{ flex: 1 }}>
-            <AppText variant="label" style={{ fontSize: 16 }}>
-              {area.title}
-            </AppText>
-            <AppText variant="caption" style={{ marginTop: 3 }}>
+        <Card style={[styles.card, pressed && styles.pressed]}>
+          <View style={styles.fill}>
+            <AppText variant="label">{area.title}</AppText>
+            <AppText variant="caption" style={styles.meta}>
               {area.started ? t('journey.milestonesCount', { done: area.doneCount, count: area.totalCount }) : area.tagline}
             </AppText>
-            <View style={[styles.track, { backgroundColor: palette.borderSubtle }]}>
-              <View
-                style={[
-                  styles.fill,
-                  { backgroundColor: area.started ? palette.accent : palette.borderSubtle, width: `${Math.round(progress * 100)}%` },
-                ]}
+            <View style={styles.bar}>
+              <ProgressBar
+                progress={area.totalCount === 0 ? 0 : area.doneCount / area.totalCount}
+                color={area.started ? palette.accent : palette.borderSubtle}
               />
             </View>
           </View>
@@ -73,7 +61,11 @@ function AreaCard({ area, onPress }: { area: JourneyArea; onPress: () => void })
 }
 
 const styles = StyleSheet.create({
-  card: { padding: 16, marginBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  track: { height: 3, borderRadius: 2, marginTop: 10, overflow: 'hidden' },
-  fill: { height: 3, borderRadius: 2 },
+  subtitle: { marginTop: spacing.xs },
+  list: { paddingVertical: spacing.lg, paddingBottom: spacing.xxl },
+  card: { padding: spacing.lg, marginBottom: spacing.sm, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  pressed: { opacity: 0.85 },
+  fill: { flex: 1 },
+  meta: { marginTop: 3 },
+  bar: { marginTop: 10 },
 });

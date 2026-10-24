@@ -12,7 +12,6 @@ export {
   useSpeedStore,
 } from './model/speedStore';
 export type { ScaleDirection, SpeedLevel } from './model/speedStore';
-export { StaffView } from './ui/StaffView';
 export { LiveReadout } from './ui/LiveReadout';
 export { PianoKeyboard } from './ui/PianoKeyboard';
 export { PracticeCanvas } from './ui/PracticeCanvas';

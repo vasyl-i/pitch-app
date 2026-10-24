@@ -1,8 +1,8 @@
-export { ProfileScreen } from './ProfileScreen';
+export { ProfileScreen } from './account/ProfileScreen';
 export { LearningPreferencesScreen } from './LearningPreferencesScreen';
-export { ExerciseSettingsScreen } from './ExerciseSettingsScreen';
-export { WeeklyPlanScreen } from './WeeklyPlanScreen';
-export { ExercisePickerScreen } from './ExercisePickerScreen';
+export { ExerciseSettingsScreen } from './exercise-settings/ExerciseSettingsScreen';
+export { WeeklyPlanScreen } from './weekly-plan/WeeklyPlanScreen';
+export { ExercisePickerScreen } from './exercise-picker/ExercisePickerScreen';
 export { SoundSettingsScreen } from './SoundSettingsScreen';
 export { LanguageSettingsScreen } from './LanguageSettingsScreen';
-export { ReminderSettingsScreen } from './ReminderSettingsScreen';
+export { ReminderSettingsScreen } from './reminder/ReminderSettingsScreen';

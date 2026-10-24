@@ -1,37 +1,30 @@
 import type { ReactNode } from 'react';
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText, IconBubble } from '@/shared/ui';
-import { useTheme } from '@/shared/theme';
+import { spacing } from '@/shared/theme';
 import { todayColor } from '../todayPalette';
 import { SoftCard } from './SoftCard';
 
 /** A tappable, icon-led row — the "Set your goal" / "Weak spots" pattern. */
-export function SoftRow({
-  icon,
-  title,
-  subtitle,
-  onPress,
-  badge,
-}: {
+export function SoftRow({ icon, title, subtitle, onPress, badge }: {
   icon: keyof typeof Ionicons.glyphMap;
   title: string;
   subtitle: string;
   onPress: () => void;
   badge?: ReactNode;
 }) {
-  const { spacing } = useTheme();
   return (
-    <SoftCard onPress={onPress} style={{ padding: spacing.lg, flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+    <SoftCard onPress={onPress} style={styles.row}>
       <IconBubble name={icon} />
-      <View style={{ flex: 1 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <AppText color={todayColor.ink} style={{ fontSize: 15.5 }} variant="label">
+      <View style={styles.text}>
+        <View style={styles.titleRow}>
+          <AppText variant="label" color={todayColor.ink}>
             {title}
           </AppText>
           {badge}
         </View>
-        <AppText color={todayColor.inkSecondary} style={{ marginTop: 3, fontSize: 12.5 }} variant="caption">
+        <AppText variant="caption" color={todayColor.inkSecondary} style={styles.subtitle}>
           {subtitle}
         </AppText>
       </View>
@@ -39,3 +32,10 @@ export function SoftRow({
     </SoftCard>
   );
 }
+
+const styles = StyleSheet.create({
+  row: { padding: spacing.lg, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  text: { flex: 1 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  subtitle: { marginTop: 3 },
+});

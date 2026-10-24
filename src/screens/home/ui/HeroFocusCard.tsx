@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 import { AppText } from '@/shared/ui';
-import { useTheme } from '@/shared/theme';
+import { radii, spacing } from '@/shared/theme';
 import { todayColor } from '../todayPalette';
 
 const HEIGHT = 180;
@@ -19,51 +19,31 @@ const BG_ASPECT = 1218 / 540;
  * off-white, since it sits on a light surface. No border, no glass panel.
  */
 export function HeroFocusCard({ eyebrow, title, subcopy, footer }: { eyebrow: string; title: string; subcopy: string; footer?: ReactNode }) {
-  const { typography, radii, spacing } = useTheme();
-
   return (
-    <View style={[styles.root, { borderRadius: radii.lg + 4 }]}>
-      <Image
-        source={require('../../../../assets/focus-bg.png')}
-        resizeMode="cover"
-        style={{ position: 'absolute', top: 0, right: 0, height: HEIGHT, width: HEIGHT * BG_ASPECT }}
-      />
-
-      <View style={[styles.content, { padding: spacing.lg }]}>
-        <AppText
-          variant="caption"
-          color="rgba(43,32,56,0.65)"
-          style={{ fontFamily: typography.family.medium, letterSpacing: 0.2, fontSize: 13 }}
-        >
+    <View style={styles.root}>
+      <Image source={require('../../../../assets/focus-bg.png')} resizeMode="cover" style={styles.artwork} />
+      <View style={styles.content}>
+        <AppText variant="small" weight="medium" color={todayColor.inkOnBannerMuted} style={styles.eyebrow}>
           {eyebrow}
         </AppText>
-        <AppText
-          color={todayColor.inkOnBanner}
-          style={{
-            fontFamily: typography.family.bold,
-            fontSize: 24,
-            lineHeight: 30,
-            letterSpacing: -0.3,
-            marginTop: 8,
-            maxWidth: '80%',
-          }}
-        >
+        <AppText variant="title" color={todayColor.inkOnBanner} style={styles.title}>
           {title}
         </AppText>
-        <AppText
-          color="rgba(43,32,56,0.72)"
-          style={{ fontFamily: typography.family.regular, fontSize: 14, lineHeight: 20, marginTop: 6, maxWidth: '72%' }}
-        >
+        <AppText variant="small" color={todayColor.inkOnBannerMuted} style={styles.subcopy}>
           {subcopy}
         </AppText>
-
-        {footer && <View style={{ marginTop: spacing.md }}>{footer}</View>}
+        {footer && <View style={styles.footer}>{footer}</View>}
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { height: HEIGHT, overflow: 'hidden' },
-  content: { flex: 1, justifyContent: 'center' },
+  root: { height: HEIGHT, overflow: 'hidden', borderRadius: radii.lg + 4 },
+  artwork: { position: 'absolute', top: 0, right: 0, height: HEIGHT, width: HEIGHT * BG_ASPECT },
+  content: { flex: 1, justifyContent: 'center', padding: spacing.lg },
+  eyebrow: { letterSpacing: 0.2 },
+  title: { marginTop: spacing.sm, maxWidth: '80%' },
+  subcopy: { marginTop: 6, maxWidth: '72%' },
+  footer: { marginTop: spacing.md },
 });

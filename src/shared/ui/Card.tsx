@@ -1,7 +1,7 @@
 import type { PropsWithChildren } from 'react';
 import { StyleSheet, View, type LayoutChangeEvent, type StyleProp, type ViewStyle } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { useTheme } from '@/shared/theme';
+import { blur, palette, radii } from '@/shared/theme';
 
 type Variant = 'default' | 'highlighted';
 
@@ -19,18 +19,10 @@ export function Card({
   style,
   onLayout,
 }: PropsWithChildren<{ variant?: Variant; style?: StyleProp<ViewStyle>; onLayout?: (e: LayoutChangeEvent) => void }>) {
-  const { palette, radii, blur } = useTheme();
-  const highlighted = variant === 'highlighted';
-
   return (
-    <View style={[styles.root, { borderRadius: radii.lg }, style]} onLayout={onLayout}>
+    <View style={[styles.root, style]} onLayout={onLayout}>
       <BlurView intensity={blur.card} tint="dark" style={StyleSheet.absoluteFill} />
-      <View
-        style={[
-          StyleSheet.absoluteFill,
-          { backgroundColor: highlighted ? palette.accentTint : palette.surface },
-        ]}
-      />
+      <View style={variant === 'highlighted' ? styles.highlightedFill : styles.fill} />
       {children}
     </View>
   );
@@ -38,11 +30,14 @@ export function Card({
 
 const styles = StyleSheet.create({
   root: {
+    borderRadius: radii.lg,
     overflow: 'hidden',
-    shadowColor: '#000000',
+    shadowColor: palette.black,
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.35,
     shadowRadius: 24,
     elevation: 3,
   },
+  fill: { ...StyleSheet.absoluteFill, backgroundColor: palette.surface },
+  highlightedFill: { ...StyleSheet.absoluteFill, backgroundColor: palette.accentTint },
 });

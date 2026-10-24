@@ -21,6 +21,16 @@ export function accentAlpha(alpha: number): string {
   return `rgba(238, 255, 136, ${alpha})`;
 }
 
+/** white at `alpha` — hairlines, translucent fills and faint labels on the dark backdrop */
+export function whiteAlpha(alpha: number): string {
+  return `rgba(255, 255, 255, ${alpha})`;
+}
+
+/** black at `alpha` — scrims and shadows */
+export function blackAlpha(alpha: number): string {
+  return `rgba(0, 0, 0, ${alpha})`;
+}
+
 export const palette = {
   background: '#08070C',
   backgroundElevated: '#0D0D14',
@@ -36,21 +46,60 @@ export const palette = {
   textSecondary: 'rgba(255, 255, 255, 0.64)',
   textSecondaryElevated: '#F0F0F0',
   textFaint: '#A1A0A5',
+  /** settings-row subtitles: between secondary and faint, warmer */
+  textSubtle: '#CDC9C9',
+  /** hairlines between rows of a grouped list */
+  divider: 'rgba(205, 201, 201, 0.1)',
+  /** an "off" switch track */
+  switchTrack: '#2A2A2C',
+  /** the rounded square behind a settings row's icon */
+  iconCircle: 'rgba(82, 81, 88, 0.7)',
 
   accent: '#EEFF88',
   /** the accent as a soft fill behind accent text: selected chips and pills */
   accentTint: accentAlpha(0.14),
   accentSecondary: '#8B7CFF',
+  /** the violet at 16%: behind Premium badges */
+  premiumTint: 'rgba(139, 124, 255, 0.16)',
   accentTertiary: '#4C6FFF',
   onAccent: '#000000',
   warning: '#e8c97a',
+  /** between warning and danger: "noticeably off" pitch, attention notes */
+  caution: '#F0954A',
+  /** caution at 14% over the background, opaque — for pills that straddle an edge */
+  cautionSurface: '#291B12',
   danger: '#ff6d5c',
+  /** the warning and danger hues as soft fills behind a mark */
+  warningTint: 'rgba(232, 201, 122, 0.26)',
+  dangerTint: 'rgba(255, 109, 92, 0.22)',
 
   buttonPrimaryBg: '#EEFF88',
   buttonPrimaryText: '#000000',
 
+  /** a meter's fill outside its good band (confidence below the accent threshold) */
+  meterFill: '#7189FF',
+  /** outline of round icon buttons (back, metronome) */
+  outline: '#535353',
+  /** the dark square behind a row's illustration */
+  iconWell: '#1E1D1F',
+  /** a piano's black key */
+  keyBlack: '#0B0C0E',
+
+  /** dark text on light surfaces (banners, light cards) */
+  ink: '#0D022F',
+  inkMuted: '#3D3E42',
+  /** dark text on the accent */
+  inkOnAccent: '#171B08',
+
   white: '#ffffff',
+  black: '#000000',
 } as const;
+
+/** one colour per exercise category, in catalogue order (practice library, exercise picker) */
+export const categoryColors = [
+  '#E84855', '#F67828', '#F5B700', '#44AF69',
+  '#3B82F6', '#8B5CF6', '#EC4899', '#14B8A6',
+] as const;
 
 /** Gradient stop sets — always applied top-left → bottom-right. */
 export const gradient = {
@@ -77,6 +126,11 @@ export const glow = {
   blue: '#6FA0E8',
   coral: '#EE8672',
   peach: '#F3C79B',
+  /** the band under the welcome illustration, matching its bottom edge */
+  periwinkle: '#8896F5',
+  /** the screen-edge glow while the mic listens */
+  mic: '#5B8DEF',
+  micClear: 'rgba(91, 141, 239, 0)',
 } as const;
 
 /** expo-blur `intensity` presets (0–100). */
@@ -188,6 +242,43 @@ export const typography = {
     bold: '700',
   },
 } as const;
+
+export type TextWeight = 'regular' | 'medium' | 'bold' | 'black';
+type TextColorRole = 'textPrimary' | 'textSecondary' | 'textFaint';
+
+/**
+ * The type scale every `AppText` draws from — ten steps, each a size, a line
+ * height, a default weight and a default colour. Sizes in between are not
+ * part of the system: pick the nearest step and change `weight`/`color`
+ * rather than nudging the size.
+ */
+export const textVariants = {
+  /** onboarding hero words */
+  display: { fontSize: 72, lineHeight: 80, weight: 'black', color: 'textPrimary', letterSpacing: -1.2 },
+  /** big result numbers: scores, ranges, percentages */
+  score: { fontSize: 40, lineHeight: 44, weight: 'bold', color: 'textPrimary', letterSpacing: -0.5 },
+  /** screen and step headlines */
+  headline: { fontSize: 32, lineHeight: 38, weight: 'bold', color: 'textPrimary', letterSpacing: -0.4 },
+  /** screen titles, the live note */
+  title: { fontSize: 26, lineHeight: 32, weight: 'bold', color: 'textPrimary', letterSpacing: -0.3 },
+  /** section and card headings */
+  heading: { fontSize: 20, lineHeight: 26, weight: 'bold', color: 'textPrimary' },
+  /** emphasised lines under a heading, prominent row titles */
+  subtitle: { fontSize: 18, lineHeight: 24, weight: 'medium', color: 'textPrimary' },
+  /** primary-coloured body text: row titles, prompts */
+  label: { fontSize: 16, lineHeight: 22, weight: 'regular', color: 'textPrimary' },
+  /** running text */
+  body: { fontSize: 16, lineHeight: 24, weight: 'regular', color: 'textSecondary' },
+  /** secondary lines, row subtitles, chips */
+  small: { fontSize: 14, lineHeight: 18, weight: 'regular', color: 'textSecondary' },
+  /** meta text, hints, legends */
+  caption: { fontSize: 12, lineHeight: 16, weight: 'regular', color: 'textFaint' },
+} as const satisfies Record<
+  string,
+  { fontSize: number; lineHeight: number; weight: TextWeight; color: TextColorRole; letterSpacing?: number }
+>;
+
+export type TextVariant = keyof typeof textVariants;
 
 export const theme = {
   palette,

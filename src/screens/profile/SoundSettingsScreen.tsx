@@ -2,11 +2,11 @@
  * Sound preferences: master volume and oscillator waveform.
  */
 import { useCallback, useRef } from 'react';
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useSoundStore, SOUND_TYPE_LABELS, preloadSamples, type SoundType, audioContext, createToneGroup, audioNow } from '@/shared/audio';
 import type { ToneGroup } from '@/shared/audio';
-import { AppText, BackButton, ChipGroup, Screen } from '@/shared/ui';
-import { useTheme } from '@/shared/theme';
+import { ChipGroup, Screen, ScreenHeader } from '@/shared/ui';
+import { spacing } from '@/shared/theme';
 import { useTranslation } from '@/shared/i18n';
 import type { RootScreenProps } from '@/app/navigation/types';
 
@@ -33,7 +33,6 @@ function usePreview() {
 
 export function SoundSettingsScreen({ navigation }: RootScreenProps<'SoundSettings'>) {
   const { t } = useTranslation();
-  const { spacing } = useTheme();
   const volume = useSoundStore((s) => s.volume);
   const soundType = useSoundStore((s) => s.soundType);
   const setVolume = useSoundStore((s) => s.setVolume);
@@ -47,12 +46,8 @@ export function SoundSettingsScreen({ navigation }: RootScreenProps<'SoundSettin
 
   return (
     <Screen>
-      <BackButton onPress={navigation.goBack} />
-      <AppText variant="title" style={{ marginTop: spacing.md }}>
-        {t('profile.sound')}
-      </AppText>
-
-      <View style={{ marginTop: spacing.lg }}>
+      <ScreenHeader title={t('profile.sound')} onBack={navigation.goBack} />
+      <View style={styles.body}>
         <ChipGroup
           title={t('profile.soundSettings.volumeTitle')}
           options={volumeOptions}
@@ -70,3 +65,7 @@ export function SoundSettingsScreen({ navigation }: RootScreenProps<'SoundSettin
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  body: { marginTop: spacing.lg },
+});

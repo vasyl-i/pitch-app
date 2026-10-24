@@ -1,118 +1,50 @@
-import { useEffect, useRef } from 'react';
-import { AppState, Pressable, Image, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Image, StyleSheet, View } from 'react-native';
 import { AppText, BackButton, Button, Screen } from '@/shared/ui';
-import { typography, useTheme } from '@/shared/theme';
-import { supabase } from '@/shared/lib/supabase';
+import { palette, spacing } from '@/shared/theme';
 import { useTranslation } from '@/shared/i18n';
 import type { AuthScreenProps } from '@/app/navigation/types';
-
-const POLL_INTERVAL = 4000;
+import { useConfirmationPolling } from './useConfirmationPolling';
 
 export function CheckEmailScreen({ navigation, route }: AuthScreenProps<'CheckEmail'>) {
-    const { t } = useTranslation();
-    const { palette, radii } = useTheme();
-    const { email, password } = route.params;
-    const polling = useRef<ReturnType<typeof setInterval>>(undefined);
-    const mounted = useRef(true);
+  const { t } = useTranslation();
+  const { email, password } = route.params;
+  useConfirmationPolling(email, password);
 
-    useEffect(() => {
-        mounted.current = true;
-
-        const trySignIn = async () => {
-            try {
-                const { error } = await supabase.auth.signInWithPassword({ email, password });
-                if (!error && mounted.current) {
-                    // Sign-in succeeded — email was confirmed.
-                    // Auth state listener in AuthGate handles navigation.
-                    clearInterval(polling.current);
-                }
-            } catch {
-                // Ignore — email not yet confirmed
-            }
-        };
-
-        // Check when app returns to foreground
-        const sub = AppState.addEventListener('change', (state) => {
-            if (state === 'active') trySignIn();
-        });
-
-        // Poll periodically
-        polling.current = setInterval(trySignIn, POLL_INTERVAL);
-
-        return () => {
-            mounted.current = false;
-            sub.remove();
-            clearInterval(polling.current);
-        };
-    }, [email, password]);
-
-    return (
-        <Screen>
-            <View style={{ paddingBottom: 16 }}>
-                <BackButton onPress={() => navigation.popToTop()} />
-            </View>
-            <View style={styles.content}>
-                <View style={styles.hero}>
-                    <View style={styles.iconCircle}>
-                        <Image source={require('../../../assets/email-solid.png')}/>
-                    </View>
-                    <AppText variant="title" gradient style={{ fontSize: 40, textAlign: 'center' }}>
-                        {t('auth.checkEmail.title')}
-                    </AppText>
-                    <View style={{
-                        alignItems: 'center',
-                        gap: 10,
-                    }}>
-                        <AppText
-                            variant="body"
-                            style={{
-                                fontSize: 20,
-                                color: palette.textSecondaryElevated,
-                                textAlign: "center",
-                            }}
-                        >
-                            {t('auth.checkEmail.sentTo')}</AppText>
-                        <AppText variant="body"
-                                 style={{
-                                     fontSize: 20,
-                                     color: palette.textPrimary,
-                                     fontFamily: typography.family.bold,
-                                     textAlign: "center",
-                                 }}>
-                            {email}
-                        </AppText>
-                        <AppText variant="body"
-                                 style={{
-                                     fontSize: 20,
-                                     color: palette.textSecondaryElevated,
-                                     textAlign: "center",
-                                 }}>
-                            {t('auth.checkEmail.tapLink')}
-                        </AppText>
-                    </View>
-                </View>
-                <Button onPress={() => navigation.popToTop()} variant="ghost" title={t('auth.backToSignIn')} />
-            </View>
-        </Screen>
-    );
+  return (
+    <Screen>
+      <View style={styles.back}>
+        <BackButton onPress={() => navigation.popToTop()} />
+      </View>
+      <View style={styles.content}>
+        <View style={styles.hero}>
+          <View style={styles.icon}>
+            <Image source={require('../../../assets/email-solid.png')} />
+          </View>
+          <AppText variant="score" center gradient>
+            {t('auth.checkEmail.title')}
+          </AppText>
+          <View style={styles.message}>
+            <AppText variant="heading" weight="regular" color={palette.textSecondaryElevated} center>
+              {t('auth.checkEmail.sentTo')}
+            </AppText>
+            <AppText variant="heading" center>
+              {email}
+            </AppText>
+            <AppText variant="heading" weight="regular" color={palette.textSecondaryElevated} center>
+              {t('auth.checkEmail.tapLink')}
+            </AppText>
+          </View>
+        </View>
+        <Button onPress={() => navigation.popToTop()} variant="ghost" title={t('auth.backToSignIn')} />
+      </View>
+    </Screen>
+  );
 }
 
 const styles = StyleSheet.create({
-    content: { flex: 1, justifyContent: 'center', gap: 40 },
-    hero: { alignItems: 'center', gap: 16 },
-    iconCircle: {
-        width: 118,
-        height: 118,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 8,
-    },
-    button: {
-        height: 58,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 10,
-    },
+  back: { paddingBottom: spacing.lg },
+  content: { flex: 1, justifyContent: 'center', gap: 40 },
+  hero: { alignItems: 'center', gap: spacing.lg },
+  icon: { width: 118, height: 118, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.sm },
+  message: { alignItems: 'center', gap: 10 },
 });

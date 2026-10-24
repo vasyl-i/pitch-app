@@ -1,16 +1,12 @@
 /**
- * Shared live-pitch UI: the piano keyboard, single-note staff, cents gauge
- * and confidence meter used anywhere the app shows "what am I singing right
- * now" outside of a fixed melody timeline (staff practice keeps its own
- * `StaffView` for that — it lays out a whole phrase across time, which these
- * components deliberately don't do).
+ * Shared live-pitch UI: the piano keyboard, the confidence meter, and the
+ * piano-roll canvases — a scrolling one for open-ended singing (range
+ * detection) and a static one that lays a whole exercise out at once.
  */
 export { PitchKeyboard } from './ui/PitchKeyboard';
-export { MiniStaff } from './ui/MiniStaff';
-export { CentsGauge } from './ui/CentsGauge';
 export { ConfidenceMeter } from './ui/ConfidenceMeter';
-export { ScrollingPitchCanvas } from './ui/ScrollingPitchCanvas';
-export { StaticPitchCanvas } from './ui/StaticPitchCanvas';
+export { ScrollingPitchCanvas } from './ui/scrolling/ScrollingPitchCanvas';
+export { StaticPitchCanvas } from './ui/static/StaticPitchCanvas';
 
 /**
  * Display stabilization — the UI-only half of the pitch path.

@@ -9,14 +9,15 @@ import { StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { micActive } from '@/shared/lib/micRmsBus';
+import { glow } from '@/shared/theme';
 
 const AnimatedGradient = Animated.createAnimatedComponent(LinearGradient);
 
 const EDGE_SIZE = 30;
 const STATIC_OPACITY = 0.15;
 
-const BLUE_SOLID = '#5B8DEF';
-const BLUE_TRANSPARENT = 'rgba(91, 141, 239, 0)';
+const BLUE_SOLID = glow.mic;
+const BLUE_TRANSPARENT = glow.micClear;
 
 export function MicGlow() {
   const style = useAnimatedStyle(() => ({

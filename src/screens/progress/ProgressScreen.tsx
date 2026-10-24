@@ -3,208 +3,81 @@
  * and doorways into the weekly review and the perfect-runs list. Shows what
  * happened — never a place to pick exercises.
  */
-import { useMemo } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import {
-    PracticeCalendar,
-    SkillTrendChart,
-    WeeklyAccuracyChart,
-    formatPracticeTime,
-    localDayKey,
-    practicedDayKeys,
-    perfectExercises,
-    totalPracticeDays,
-    totalPracticeSeconds,
-    useProgressStore,
-    weeklyAccuracyTrend,
-    weeklyStats,
-} from '@/features/progress';
-import { ALL_SKILLS, buildSessionInsights, useLearningStore } from '@/features/learning';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { PracticeCalendar, SkillTrendChart, WeeklyAccuracyChart } from '@/features/progress';
+import { ALL_SKILLS } from '@/features/learning';
 import { AppText, Card, Screen } from '@/shared/ui';
-import { typography, useTheme } from '@/shared/theme';
+import { spacing } from '@/shared/theme';
 import { useTranslation } from '@/shared/i18n';
 import { useFloatingTabBarClearance } from '@/app/navigation/FloatingTabBar';
 import type { ProgressScreenProps } from '@/app/navigation/types';
+import { useProgressOverview } from './useProgressOverview';
+import { StatTile } from './ui/StatTile';
+import { ChartCard } from './ui/ChartCard';
+import { InsightsCard } from './ui/InsightsCard';
+import { WeeklyAccuracyCard } from './ui/WeeklyAccuracyCard';
+import { LinkCard } from './ui/LinkCard';
 
 export function ProgressScreen({ navigation }: ProgressScreenProps<'ProgressOverview'>) {
-    const { t } = useTranslation();
-    const { palette, spacing } = useTheme();
-    const tabBarClearance = useFloatingTabBarClearance(spacing.xl);
-    const sessions = useProgressStore((s) => s.sessions);
-    const skills = useLearningStore((s) => s.skills);
-    const annotations = useLearningStore((s) => s.annotations);
-    const weekSnapshots = useLearningStore((s) => s.weekSnapshots);
+  const { t } = useTranslation();
+  const tabBarClearance = useFloatingTabBarClearance(spacing.xl);
+  const p = useProgressOverview();
 
-    const week = useMemo(() => weeklyStats(sessions), [sessions]);
-    const trend = useMemo(() => weeklyAccuracyTrend(sessions), [sessions]);
-    const perfectCount = useMemo(() => perfectExercises(sessions).length, [sessions]);
-    const practiceDays = useMemo(() => totalPracticeDays(sessions), [sessions]);
-    // t: re-format the translated strings after a live language switch
-    const practiceTime = useMemo(() => formatPracticeTime(totalPracticeSeconds(sessions)), [sessions, t]);
-    const calendarDays = useMemo(() => practicedDayKeys(sessions), [sessions]);
+  return (
+    <Screen noHorizontalPadding noBottomPadding>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.content, { paddingBottom: tabBarClearance }]}>
+        <AppText variant="title">{t('nav.progress')}</AppText>
 
-    const insights = useMemo(() => {
-        const today = localDayKey(Date.now());
-        const todays = annotations.filter((a) => localDayKey(a.sessionAt) === today);
-        return buildSessionInsights(annotations[0] ?? null, todays, skills);
-    }, [annotations, skills, t]);
+        {!p.hasSessions ? (
+          <Card style={styles.empty}>
+            <AppText variant="body">{t('progress.empty')}</AppText>
+          </Card>
+        ) : (
+          <>
+            <View style={styles.tiles}>
+              <StatTile
+                label={t('progress.perfectRuns')}
+                value={String(p.perfectCount)}
+                icon="trophy"
+                onPress={() => navigation.navigate('PerfectExercises')}
+              />
+              <StatTile
+                label={t('progress.daysPracticed')}
+                value={p.practiceDays > 0 ? t('common.daysShort', { count: p.practiceDays }) : '—'}
+                icon="star"
+              />
+              <StatTile label={t('home.stats.practiceTime')} value={p.practiceTime} icon="time" />
+            </View>
 
-    return (
-        <Screen noHorizontalPadding noBottomPadding>
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: tabBarClearance }}>
-                <View style={{ paddingHorizontal: spacing.lg }}>
-                    <AppText color={palette.textPrimary}
-                             style={[styles.heading, { fontFamily: typography.family.bold }]}>
-                        {t('nav.progress')}
-                    </AppText>
-
-                    {sessions.length === 0 ? (
-                        <Card style={[styles.card, { marginTop: spacing.lg }]}>
-                            <AppText variant="body">
-                                {t('progress.empty')}
-                            </AppText>
-                        </Card>
-                    ) : (
-                        <>
-                            <View style={styles.tiles}>
-                                <Tile
-                                    label={t('progress.perfectRuns')}
-                                    value={String(perfectCount)}
-                                    icon="trophy"
-                                    onPress={() => navigation.navigate('PerfectExercises')}
-                                />
-                                <Tile label={t('progress.daysPracticed')} value={practiceDays > 0 ? t('common.daysShort', { count: practiceDays }) : '—'}
-                                      icon="star"/>
-                                <Tile label={t('home.stats.practiceTime')} value={practiceTime} icon="time"/>
-                            </View>
-
-                            {insights.length > 0 && (
-                                <Card style={[styles.card, { marginTop: spacing.md }]}>
-                                    <AppText variant="caption">{t('progress.afterLast')}</AppText>
-                                    {insights.map((insight) => (
-                                        <View key={insight.text} style={styles.insightRow}>
-                                            <Ionicons
-                                                name={insight.kind === 'improvement' ? 'trending-up' : insight.kind === 'decline' ? 'trending-down' : 'analytics'}
-                                                size={14}
-                                                color={insight.kind === 'improvement' ? palette.accent : palette.textFaint}
-                                            />
-                                            <AppText variant="body" style={{ flex: 1, fontSize: 14 }}>
-                                                {insight.text}
-                                            </AppText>
-                                        </View>
-                                    ))}
-                                </Card>
-                            )}
-
-                            <Card style={[styles.card, { marginTop: spacing.md }]}>
-                                <View style={styles.rowBetween}>
-                                    <AppText variant="caption">{t('progress.weeklyAccuracy')}</AppText>
-                                    {week.scoreDelta !== null && week.scoreDelta !== 0 && (
-                                        <AppText variant="caption"
-                                                 color={week.scoreDelta > 0 ? palette.accent : palette.warning}>
-                                            {week.scoreDelta > 0 ? '▲' : '▼'} {t('progress.vsLastWeek', { delta: Math.abs(week.scoreDelta) })}
-                                        </AppText>
-                                    )}
-                                </View>
-                                <View style={[styles.rowBetween, { marginTop: spacing.sm }]}>
-                                    <AppText variant="label" style={{ fontSize: 40 }}>
-                                        {week.sungSessions > 0 ? week.avgScore : '—'}
-                                    </AppText>
-                                    <AppText variant="caption">{t('progress.avgSummary', { cents: week.avgCents })}</AppText>
-                                </View>
-                            </Card>
-
-                            <Card style={[styles.card, { marginTop: spacing.md }]}>
-                                <AppText variant="caption">{t('progress.accuracyTrend')}</AppText>
-                                <View style={{ marginTop: spacing.md }}>
-                                    <WeeklyAccuracyChart points={trend}/>
-                                </View>
-                            </Card>
-
-                            {weekSnapshots.length >= 2 && (
-                                <Card style={[styles.card, { marginTop: spacing.md }]}>
-                                    <AppText variant="caption">{t('progress.masteryOverTime')}</AppText>
-                                    <View style={{ marginTop: spacing.md }}>
-                                        <SkillTrendChart snapshots={weekSnapshots} skills={[...ALL_SKILLS]}/>
-                                    </View>
-                                </Card>
-                            )}
-
-                            <Card style={[styles.card, { marginTop: spacing.md }]}>
-                                <PracticeCalendar practicedDays={calendarDays}/>
-                            </Card>
-                        </>
-                    )}
-
-                    <Pressable
-                        accessibilityRole="button"
-                        onPress={() => navigation.navigate('WeeklyReview')}
-                        style={{ marginTop: spacing.md }}
-                    >
-                        {({ pressed }) => (
-                            <Card style={[styles.card, styles.navRow, pressed && { opacity: 0.85 }]}>
-                                <Ionicons name="calendar" size={18} color={palette.accent}/>
-                                <View style={{ flex: 1 }}>
-                                    <AppText variant="label" style={{ fontSize: 15 }}>
-                                        {t('progress.weeklyReview')}
-                                    </AppText>
-                                    <AppText variant="caption" style={{ fontSize: 12 }}>
-                                        {t('progress.weeklyReviewSubtitle')}
-                                    </AppText>
-                                </View>
-                                <Ionicons name="chevron-forward" size={18} color={palette.textFaint}/>
-                            </Card>
-                        )}
-                    </Pressable>
-                </View>
-            </ScrollView>
-        </Screen>
-    );
-}
-
-function Tile({
-                  label,
-                  value,
-                  icon,
-                  onPress,
-              }: {
-    label: string;
-    value: string;
-    icon: keyof typeof Ionicons.glyphMap;
-    onPress?: () => void;
-}) {
-    const { palette, typography } = useTheme();
-    return (
-        <Pressable accessibilityRole={onPress ? 'button' : undefined} onPress={onPress} disabled={!onPress}
-                   style={{ flex: 1 }}>
-            {({ pressed }) => (
-                <Card style={[styles.tile, pressed && onPress && { opacity: 0.85 }]}>
-                    <Ionicons name={icon} size={22} color={palette.accent}/>
-                    <AppText style={{
-                        fontFamily: typography.family.bold,
-                        fontSize: 26,
-                        lineHeight: 32,
-                        marginTop: 10
-                    }}>{value}</AppText>
-                    <AppText variant="caption" style={{ fontSize: 12, marginTop: 2 }}>
-                        {label}
-                    </AppText>
-                </Card>
+            {p.insights.length > 0 && <InsightsCard insights={p.insights} />}
+            <WeeklyAccuracyCard week={p.week} />
+            <ChartCard title={t('progress.accuracyTrend')}>
+              <WeeklyAccuracyChart points={p.trend} />
+            </ChartCard>
+            {p.weekSnapshots.length >= 2 && (
+              <ChartCard title={t('progress.masteryOverTime')}>
+                <SkillTrendChart snapshots={p.weekSnapshots} skills={[...ALL_SKILLS]} />
+              </ChartCard>
             )}
-        </Pressable>
-    );
+            <ChartCard>
+              <PracticeCalendar practicedDays={p.calendarDays} />
+            </ChartCard>
+          </>
+        )}
+
+        <LinkCard
+          icon="calendar"
+          title={t('progress.weeklyReview')}
+          subtitle={t('progress.weeklyReviewSubtitle')}
+          onPress={() => navigation.navigate('WeeklyReview')}
+        />
+      </ScrollView>
+    </Screen>
+  );
 }
 
 const styles = StyleSheet.create({
-    card: { padding: 18 },
-    heading: {
-        fontSize: 24,
-        lineHeight: 28,
-    },
-    tiles: { flexDirection: 'row', gap: 10, marginTop: 18 },
-    tile: { padding: 18, alignItems: 'flex-start' },
-    rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
-    navRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-    insightRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 8 },
+  content: { paddingHorizontal: spacing.lg },
+  empty: { padding: 18, marginTop: spacing.lg },
+  tiles: { flexDirection: 'row', gap: 10, marginTop: 18 },
 });

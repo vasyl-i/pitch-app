@@ -1,141 +1,66 @@
 import { useRef, useState } from 'react';
-import { Alert, Pressable, StyleSheet, TextInput, View } from 'react-native';
-import { BlurView } from 'expo-blur';
-import { AmpMaskView } from '@amplitude/plugin-session-replay-react-native';
-import { AppText, BackButton, Screen } from '@/shared/ui';
-import { useTheme } from '@/shared/theme';
+import { Alert, StyleSheet, View, type TextInput } from 'react-native';
+import { Button, TextField } from '@/shared/ui';
+import { spacing } from '@/shared/theme';
 import { useAuthStore } from '@/features/auth';
 import { useTranslation } from '@/shared/i18n';
 import type { AuthScreenProps } from '@/app/navigation/types';
+import { AuthLayout } from './ui/AuthLayout';
+import { AuthHeader } from './ui/AuthHeader';
+import { SwitchLink } from './ui/SwitchLink';
 
 export function EmailSignUpScreen({ navigation, route }: AuthScreenProps<'EmailSignUp'>) {
-    const { t } = useTranslation();
-    const { spacing, palette, radii, blur, typography } = useTheme();
-    const signUpWithEmail = useAuthStore((s) => s.signUpWithEmail);
-    const [name, setName] = useState('');
-    const [password, setPassword] = useState('');
-    const [loading, setLoading] = useState(false);
-    const passwordRef = useRef<TextInput>(null);
+  const { t } = useTranslation();
+  const { email } = route.params;
+  const signUpWithEmail = useAuthStore((s) => s.signUpWithEmail);
+  const [name, setName] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const passwordRef = useRef<TextInput>(null);
+  const valid = name.trim().length >= 1 && password.length >= 6;
 
-    const { email } = route.params;
-    const valid = name.trim().length >= 1 && password.length >= 6;
+  const signUp = async () => {
+    setLoading(true);
+    try {
+      const confirmed = await signUpWithEmail(email, name.trim(), password);
+      if (!confirmed) navigation.replace('CheckEmail', { email, password });
+    } catch (e: unknown) {
+      Alert.alert(t('auth.signUp.failed'), e instanceof Error ? e.message : t('common.somethingWentWrong'));
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const handleSignUp = async () => {
-        setLoading(true);
-        try {
-            const confirmed = await signUpWithEmail(email, name.trim(), password);
-            if (!confirmed) {
-                navigation.replace('CheckEmail', { email, password });
-            }
-        } catch (e: unknown) {
-            const message = e instanceof Error ? e.message : t('common.somethingWentWrong');
-            Alert.alert(t('auth.signUp.failed'), message);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const inputStyle = [styles.input, { color: palette.textPrimary, fontFamily: typography.family.regular }];
-
-    return (
-        <Screen dismissKeyboard avoidKeyboard>
-          <View style={{ paddingBottom: 16 }}>
-            <BackButton onPress={() => navigation.goBack()} />
-          </View>
-          <AmpMaskView mask="amp-block" style={{ flex: 1 }}>
-            <View style={styles.content}>
-                <View style={styles.header}>
-                    <AppText variant="title" style={{ fontSize: 26, textAlign: 'center' }}>
-                        {t('auth.signUp.title')}
-                    </AppText>
-                    <AppText variant="body" style={{ textAlign: 'center', color: palette.textSecondary }}>
-                        {email}
-                    </AppText>
-                </View>
-                <View style={{ gap: spacing.sm }}>
-                    <View style={[styles.inputWrapper, { borderRadius: radii.pill, overflow: 'hidden' }]}>
-                        <BlurView intensity={blur.card} tint="dark" style={StyleSheet.absoluteFill} />
-                        <View style={[StyleSheet.absoluteFill, { backgroundColor: palette.surface }]} />
-                        <TextInput
-                            style={inputStyle}
-                            placeholder={t('auth.signUp.namePlaceholder')}
-                            placeholderTextColor={palette.textSecondary}
-                            autoCapitalize="words"
-                            autoComplete="name"
-                            autoFocus
-                            value={name}
-                            onChangeText={setName}
-                            returnKeyType="next"
-                            onSubmitEditing={() => passwordRef.current?.focus()}
-                        />
-                    </View>
-                    <View style={[styles.inputWrapper, { borderRadius: radii.pill, overflow: 'hidden' }]}>
-                        <BlurView intensity={blur.card} tint="dark" style={StyleSheet.absoluteFill} />
-                        <View style={[StyleSheet.absoluteFill, { backgroundColor: palette.surface }]} />
-                        <TextInput
-                            ref={passwordRef}
-                            style={inputStyle}
-                            placeholder={t('auth.signUp.passwordPlaceholder')}
-                            placeholderTextColor={palette.textSecondary}
-                            secureTextEntry
-                            value={password}
-                            onChangeText={setPassword}
-                            returnKeyType="go"
-                            onSubmitEditing={() => { if (valid && !loading) handleSignUp(); }}
-                        />
-                    </View>
-                </View>
-                <Pressable
-                    accessibilityRole="button"
-                    disabled={!valid || loading}
-                    onPress={handleSignUp}
-                    style={({ pressed }) => [
-                        styles.button,
-                        {
-                            borderRadius: radii.pill,
-                            backgroundColor: palette.buttonPrimaryBg,
-                        },
-                        (pressed || !valid || loading) && { opacity: (!valid || loading) ? 0.3 : 0.8 },
-                    ]}
-                >
-                    <AppText variant="label" color={palette.buttonPrimaryText}>
-                        {loading ? t('auth.signUp.creating') : t('auth.signUp.cta')}
-                    </AppText>
-                </Pressable>
-                <Pressable
-                    onPress={() => {
-                        navigation.replace('EmailSignIn', { email });
-                    }}
-                    style={styles.switchLink}
-                >
-                    <AppText variant="body" style={{ color: palette.textSecondary }}>
-                        {t('auth.signUp.haveAccount')}
-                    </AppText>
-                    <AppText variant="body" style={{ color: palette.accent }}>
-                        {t('auth.signInCta')}
-                    </AppText>
-                </Pressable>
-            </View>
-          </AmpMaskView>
-        </Screen>
-    );
+  return (
+    <AuthLayout onBack={navigation.goBack}>
+      <AuthHeader title={t('auth.signUp.title')} subtitle={email} />
+      <View style={styles.fields}>
+        <TextField
+          placeholder={t('auth.signUp.namePlaceholder')}
+          autoCapitalize="words"
+          autoComplete="name"
+          autoFocus
+          value={name}
+          onChangeText={setName}
+          returnKeyType="next"
+          onSubmitEditing={() => passwordRef.current?.focus()}
+        />
+        <TextField
+          ref={passwordRef}
+          placeholder={t('auth.signUp.passwordPlaceholder')}
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+          returnKeyType="go"
+          onSubmitEditing={() => valid && !loading && signUp()}
+        />
+      </View>
+      <Button variant="accent" title={loading ? t('auth.signUp.creating') : t('auth.signUp.cta')} disabled={!valid || loading} onPress={signUp} />
+      <SwitchLink lead={t('auth.signUp.haveAccount')} action={t('auth.signInCta')} onPress={() => navigation.replace('EmailSignIn', { email })} />
+    </AuthLayout>
+  );
 }
 
 const styles = StyleSheet.create({
-    content: { flex: 1, justifyContent: 'center', gap: 24 },
-    header: { alignItems: 'center', gap: 8 },
-    inputWrapper: { height: 58, justifyContent: 'center' },
-    input: { height: 58, paddingHorizontal: 20, fontSize: 16 },
-    button: {
-        height: 58,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 10,
-    },
-    switchLink: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
+  fields: { gap: spacing.sm },
 });

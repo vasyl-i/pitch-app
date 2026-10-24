@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import { useTheme } from '@/shared/theme';
+import { blur, gradient, palette, radii, spacing } from '@/shared/theme';
 import { AppText } from './AppText';
 
 export interface ChipOption<T> {
@@ -24,47 +24,48 @@ export function ChipGroup<T extends string | number | null>({
   selected: readonly T[];
   onSelect: (value: T) => void;
 }) {
-  const { palette, spacing, radii, gradient, blur } = useTheme();
   return (
-    <View style={{ marginTop: spacing.xl }}>
-      <AppText variant="caption" style={{ fontSize: 13, color: palette.textSecondary }}>
-        {title}
-      </AppText>
-      <View style={[styles.chips, { marginTop: spacing.sm }]}>
-        {options.map((o) => {
-          const active = selected.includes(o.value);
-          return (
-            <Pressable
-              key={String(o.value)}
-              accessibilityRole="button"
-              onPress={() => onSelect(o.value)}
-              style={({ pressed }) => [styles.chip, { borderRadius: radii.pill }, pressed && { opacity: 0.8 }]}
-            >
-              {active ? (
-                <LinearGradient
-                  colors={gradient.accent}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={[StyleSheet.absoluteFill, { borderRadius: radii.pill }]}
-                />
-              ) : (
-                <>
-                  <BlurView intensity={blur.card} tint="dark" style={[StyleSheet.absoluteFill, { borderRadius: radii.pill }]} />
-                  <View style={[StyleSheet.absoluteFill, { backgroundColor: palette.surface, borderRadius: radii.pill }]} />
-                </>
-              )}
-              <AppText variant="caption" color={active ? palette.onAccent : palette.textSecondary} style={{ fontSize: 13 }}>
-                {o.label}
-              </AppText>
-            </Pressable>
-          );
-        })}
+    <View style={styles.group}>
+      <AppText variant="small">{title}</AppText>
+      <View style={styles.chips}>
+        {options.map((o) => (
+          <Chip key={String(o.value)} label={o.label} active={selected.includes(o.value)} onPress={() => onSelect(o.value)} />
+        ))}
       </View>
     </View>
   );
 }
 
+function Chip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => [styles.chip, pressed && styles.pressed]}
+    >
+      {active ? (
+        <LinearGradient colors={gradient.accent} start={GRADIENT_START} end={GRADIENT_END} style={styles.fill} />
+      ) : (
+        <>
+          <BlurView intensity={blur.card} tint="dark" style={styles.fill} />
+          <View style={[styles.fill, styles.surface]} />
+        </>
+      )}
+      <AppText variant="small" color={active ? palette.onAccent : palette.textSecondary}>
+        {label}
+      </AppText>
+    </Pressable>
+  );
+}
+
+const GRADIENT_START = { x: 0, y: 0 };
+const GRADIENT_END = { x: 1, y: 1 };
+
 const styles = StyleSheet.create({
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { paddingHorizontal: 14, paddingVertical: 8, overflow: 'hidden' },
+  group: { marginTop: spacing.xl },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.sm },
+  chip: { paddingHorizontal: 14, paddingVertical: spacing.sm, borderRadius: radii.pill, overflow: 'hidden' },
+  pressed: { opacity: 0.8 },
+  fill: { ...StyleSheet.absoluteFill, borderRadius: radii.pill },
+  surface: { backgroundColor: palette.surface },
 });

@@ -1,7 +1,7 @@
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/shared/ui';
-import { useTheme } from '@/shared/theme';
+import { spacing } from '@/shared/theme';
 import { useTranslation } from '@/shared/i18n';
 import { todayColor } from '../todayPalette';
 import { LightPremiumBadge } from './LightPremiumBadge';
@@ -14,14 +14,7 @@ import { SoftCard } from './SoftCard';
  * `PremiumGate` via its `fallback` prop so the shared component (used by
  * other screens) stays untouched.
  */
-export function LightLockedCard({
-  title,
-  description,
-  preview,
-  bullets,
-  cta,
-  onPress,
-}: {
+export function LightLockedCard({ title, description, preview, bullets, cta, onPress }: {
   title: string;
   description: string;
   preview?: string;
@@ -30,36 +23,35 @@ export function LightLockedCard({
   onPress: () => void;
 }) {
   const { t } = useTranslation();
-  const { spacing } = useTheme();
 
   return (
-    <SoftCard onPress={onPress} tint={todayColor.surfaceMuted} style={{ padding: spacing.lg }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+    <SoftCard onPress={onPress} tint={todayColor.surfaceMuted} style={styles.card}>
+      <View style={styles.header}>
         <LightPremiumBadge locked />
         <Ionicons name="lock-closed" size={12} color={todayColor.inkFaint} />
       </View>
 
-      <AppText color={todayColor.ink} variant="label" style={{ fontSize: 16, marginTop: spacing.sm }}>
+      <AppText variant="label" color={todayColor.ink} style={styles.title}>
         {title}
       </AppText>
-      <AppText color={todayColor.inkSecondary} style={{ marginTop: 4, fontSize: 13.5, lineHeight: 19 }}>
+      <AppText variant="small" color={todayColor.inkSecondary} style={styles.description}>
         {description}
       </AppText>
 
       {preview !== undefined && (
-        <View style={{ marginTop: spacing.md, paddingLeft: spacing.md, borderLeftWidth: 2, borderLeftColor: todayColor.indigo }}>
-          <AppText color={todayColor.inkSecondary} style={{ fontStyle: 'italic', fontSize: 12.5 }}>
+        <View style={styles.preview}>
+          <AppText variant="caption" color={todayColor.inkSecondary} style={styles.italic}>
             {preview}
           </AppText>
         </View>
       )}
 
       {bullets && bullets.length > 0 && (
-        <View style={{ marginTop: spacing.md, gap: 6 }}>
+        <View style={styles.bullets}>
           {bullets.map((b) => (
-            <View key={b} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View key={b} style={styles.bullet}>
               <Ionicons name="checkmark" size={13} color={todayColor.indigoDeep} />
-              <AppText color={todayColor.inkSecondary} style={{ flex: 1, fontSize: 12.5 }}>
+              <AppText variant="caption" color={todayColor.inkSecondary} style={styles.bulletText}>
                 {b}
               </AppText>
             </View>
@@ -67,8 +59,8 @@ export function LightLockedCard({
         </View>
       )}
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: spacing.md }}>
-        <AppText color={todayColor.indigoDeep} variant="label" style={{ fontSize: 13.5 }}>
+      <View style={styles.cta}>
+        <AppText variant="small" color={todayColor.indigoDeep}>
           {cta ?? t('subscription.seePremium')}
         </AppText>
         <Ionicons name="arrow-forward" size={13} color={todayColor.indigoDeep} />
@@ -76,3 +68,16 @@ export function LightLockedCard({
     </SoftCard>
   );
 }
+
+const styles = StyleSheet.create({
+  card: { padding: spacing.lg },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  title: { marginTop: spacing.sm },
+  description: { marginTop: spacing.xs },
+  preview: { marginTop: spacing.md, paddingLeft: spacing.md, borderLeftWidth: 2, borderLeftColor: todayColor.indigo },
+  italic: { fontStyle: 'italic' },
+  bullets: { marginTop: spacing.md, gap: 6 },
+  bullet: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  bulletText: { flex: 1 },
+  cta: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: spacing.md },
+});

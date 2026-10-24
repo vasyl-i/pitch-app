@@ -40,7 +40,6 @@ export type ProfileStackParamList = {
 export type OnboardingStackParamList = {
   Welcome: undefined;
   /** Educational interstitial — not currently wired into the flow */
-  Why: undefined;
   Lowest: undefined;
   Highest: { low: DetectionResult };
   Results: { low: DetectionResult; high: DetectionResult };

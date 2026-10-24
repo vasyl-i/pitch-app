@@ -3,13 +3,13 @@
  * as a vertical list with per-exercise status, a thin progress bar, and a
  * primary CTA to start/continue practice.
  */
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { GuidedStep, LessonSlot } from '@/features/learning';
 import { useLessonSessionStore } from '@/features/learning';
 import type { TodayExerciseStat } from '@/features/progress';
 import { AppText } from '@/shared/ui';
-import { useTheme } from '@/shared/theme';
+import { spacing } from '@/shared/theme';
 import { useTranslation } from '@/shared/i18n';
 import { todayColor } from '../todayPalette';
 import { ExerciseRow } from './ExerciseRow';
@@ -17,16 +17,7 @@ import { PillButton } from './PillButton';
 
 type StepStatus = 'completed' | 'in-progress' | 'ready' | 'upcoming';
 
-export function TodayExerciseList({
-  steps,
-  completedSlots,
-  planReady,
-  allDone,
-  doneCount,
-  onPrimaryAction,
-  onStepPress,
-  todayStats,
-}: {
+export function TodayExerciseList({ steps, completedSlots, planReady, allDone, doneCount, onPrimaryAction, onStepPress, todayStats }: {
   steps: GuidedStep[];
   completedSlots: LessonSlot[];
   planReady: boolean;
@@ -37,90 +28,60 @@ export function TodayExerciseList({
   todayStats: Map<string, TodayExerciseStat>;
 }) {
   const { t } = useTranslation();
-  const { typography, spacing } = useTheme();
   const activeSlot = useLessonSessionStore((s) => s.activeSlot);
   const partialProgress = useLessonSessionStore((s) => s.partialProgress);
   const nextSlot = steps.find((s) => !completedSlots.includes(s.slot))?.slot ?? null;
-
   const progress = steps.length > 0 ? doneCount / steps.length : 0;
+
+  const statusOf = (step: GuidedStep): StepStatus =>
+    completedSlots.includes(step.slot)
+      ? 'completed'
+      : step.slot === activeSlot
+        ? 'in-progress'
+        : step.slot === nextSlot
+          ? 'ready'
+          : 'upcoming';
 
   return (
     <View>
-      {/* Header */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <AppText color={todayColor.ink} style={{ fontFamily: typography.family.medium, fontSize: 16 }}>
+      <View style={styles.header}>
+        <AppText variant="label" weight="medium" color={todayColor.ink}>
           {t('home.plan.title')}
         </AppText>
-        <AppText color={todayColor.inkSecondary} style={{ fontFamily: typography.family.medium, fontSize: 14 }}>
+        <AppText variant="small" weight="medium" color={todayColor.inkSecondary}>
           {doneCount}/{steps.length}
         </AppText>
       </View>
 
-      {/* Progress bar */}
-      <View
-        style={{
-          height: 3,
-          borderRadius: 1.5,
-          backgroundColor: todayColor.surfaceMuted,
-          marginTop: spacing.sm,
-          overflow: 'hidden',
-        }}
-      >
-        <View
-          style={{
-            height: 3,
-            borderRadius: 1.5,
-            backgroundColor: todayColor.orange,
-            width: `${Math.round(progress * 100)}%`,
-          }}
-        />
+      <View style={styles.progressTrack}>
+        <View style={[styles.progressFill, { width: `${Math.round(progress * 100)}%` }]} />
       </View>
 
-      {/* Exercise rows */}
-      <View style={{ marginTop: spacing.md }}>
+      <View style={styles.rows}>
         {!planReady && steps.length === 0 ? (
-          <AppText
-            color={todayColor.inkSecondary}
-            variant="caption"
-            style={{ paddingVertical: spacing.lg, textAlign: 'center' }}
-          >
+          <AppText variant="caption" color={todayColor.inkSecondary} center style={styles.preparing}>
             {t('home.plan.preparing')}
           </AppText>
         ) : (
-          steps.map((step, i) => {
-            const done = completedSlots.includes(step.slot);
-            const status: StepStatus = done
-              ? 'completed'
-              : step.slot === activeSlot
-                ? 'in-progress'
-                : step.slot === nextSlot
-                  ? 'ready'
-                  : 'upcoming';
-
-            return (
-              <ExerciseRow
-                key={step.slot}
-                step={step}
-                status={status}
-                index={i}
-                stat={todayStats.get(step.activityId)}
-                partialRounds={partialProgress[step.slot]?.completedRounds}
-                onPress={() => onStepPress(step)}
-              />
-            );
-          })
+          steps.map((step, i) => (
+            <ExerciseRow
+              key={step.slot}
+              step={step}
+              status={statusOf(step)}
+              index={i}
+              stat={todayStats.get(step.activityId)}
+              partialRounds={partialProgress[step.slot]?.completedRounds}
+              onPress={() => onStepPress(step)}
+            />
+          ))
         )}
       </View>
 
-      {/* CTA */}
-      <View style={{ marginTop: spacing.lg }}>
+      <View style={styles.cta}>
         {allDone ? (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <View style={styles.complete}>
             <Ionicons name="checkmark-circle" size={20} color={todayColor.orange} />
-            <AppText
-              color={todayColor.inkSecondary}
-              style={{ flex: 1, fontSize: 13.5, lineHeight: 19 }}
-            >
+            <AppText variant="small" color={todayColor.inkSecondary} style={styles.completeText}>
               {t('home.plan.complete')}
             </AppText>
           </View>
@@ -135,3 +96,14 @@ export function TodayExerciseList({
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  progressTrack: { height: 3, borderRadius: 1.5, backgroundColor: todayColor.surfaceMuted, marginTop: spacing.sm, overflow: 'hidden' },
+  progressFill: { height: 3, borderRadius: 1.5, backgroundColor: todayColor.orange },
+  rows: { marginTop: spacing.md },
+  preparing: { paddingVertical: spacing.lg },
+  cta: { marginTop: spacing.lg },
+  complete: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  completeText: { flex: 1 },
+});

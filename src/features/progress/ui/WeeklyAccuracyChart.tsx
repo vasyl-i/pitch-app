@@ -1,19 +1,17 @@
 import { StyleSheet, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { AppText } from '@/shared/ui';
-import { useTheme } from '@/shared/theme';
+import { spacing } from '@/shared/theme';
 import { useTranslation } from '@/shared/i18n';
 import type { WeeklyAccuracyPoint } from '../lib/stats';
+import { EmptyScoreBar, ScoreBar } from './ScoreBar';
 
 /** Average accuracy per week as bars — is the singer trending up across weeks? */
 export function WeeklyAccuracyChart({ points }: { points: WeeklyAccuracyPoint[] }) {
   const { t } = useTranslation();
-  const { palette, radii, gradient } = useTheme();
-  const weeksWithData = points.filter((p) => p.avgScore !== null).length;
 
-  if (weeksWithData < 2) {
+  if (points.filter((p) => p.avgScore !== null).length < 2) {
     return (
-      <AppText variant="caption" style={{ paddingVertical: 12 }}>
+      <AppText variant="caption" style={styles.empty}>
         {t('progress.charts.accuracyEmpty')}
       </AppText>
     );
@@ -22,52 +20,24 @@ export function WeeklyAccuracyChart({ points }: { points: WeeklyAccuracyPoint[] 
   return (
     <View>
       <View style={styles.row}>
-        {points.map((p, i) => {
-          const opacity = i === points.length - 1 ? 1 : 0.55;
-          return (
-            <View key={p.weekStart} style={styles.slot}>
-              {p.avgScore === null ? (
-                <View style={[styles.empty, { backgroundColor: palette.borderSubtle, borderRadius: radii.sm }]} />
-              ) : p.avgScore >= 90 ? (
-                <LinearGradient
-                  colors={gradient.accent}
-                  start={{ x: 0, y: 1 }}
-                  end={{ x: 0, y: 0 }}
-                  style={[styles.bar, { height: `${Math.max(6, p.avgScore)}%`, borderRadius: radii.sm, opacity }]}
-                />
-              ) : (
-                <View
-                  style={[
-                    styles.bar,
-                    {
-                      height: `${Math.max(6, p.avgScore)}%`,
-                      backgroundColor: p.avgScore >= 70 ? palette.warning : palette.danger,
-                      borderRadius: radii.sm,
-                      opacity,
-                    },
-                  ]}
-                />
-              )}
-            </View>
-          );
-        })}
+        {points.map((p, i) =>
+          p.avgScore === null ? (
+            <EmptyScoreBar key={p.weekStart} />
+          ) : (
+            <ScoreBar key={p.weekStart} score={p.avgScore} latest={i === points.length - 1} />
+          ),
+        )}
       </View>
       <View style={styles.labels}>
-        <AppText variant="caption" style={{ fontSize: 12 }}>
-          {t('progress.charts.weeksAgo', { count: points.length })}
-        </AppText>
-        <AppText variant="caption" style={{ fontSize: 12 }}>
-          {t('progress.charts.thisWeek')}
-        </AppText>
+        <AppText variant="caption">{t('progress.charts.weeksAgo', { count: points.length })}</AppText>
+        <AppText variant="caption">{t('progress.charts.thisWeek')}</AppText>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'flex-end', height: 64, gap: 4 },
-  slot: { flex: 1, height: '100%', justifyContent: 'flex-end' },
-  bar: { width: '100%' },
-  empty: { width: '100%', height: 4 },
+  empty: { paddingVertical: spacing.md },
+  row: { flexDirection: 'row', alignItems: 'flex-end', height: 64, gap: spacing.xs },
   labels: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 },
 });

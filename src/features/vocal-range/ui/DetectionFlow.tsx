@@ -1,30 +1,24 @@
 import { useEffect } from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { StyleSheet, View } from 'react-native';
 import { AppText, Button } from '@/shared/ui';
-import { useTheme } from '@/shared/theme';
+import { palette, spacing } from '@/shared/theme';
 import { translatedRecord, useTranslation } from '@/shared/i18n';
-import {
-    ConfidenceMeter,
-    ScrollingPitchCanvas,
-    usePitchTrail,
-    useStabilizedNote
-} from '@/features/pitch-visualization';
+import { ConfidenceMeter, ScrollingPitchCanvas, usePitchTrail } from '@/features/pitch-visualization';
 import { midiToName } from '@/shared/lib/music';
 import { LOW_CONFIDENCE_THRESHOLD, useGuidedRangeDetection, type RangeDirection } from '../lib/guidedDetection';
 
 export interface DetectionResult {
-    midi: number;
-    confidence: number;
+  midi: number;
+  confidence: number;
 }
 
 const TITLE = translatedRecord<RangeDirection>({
-    low: 'vocalRange.detect.titleLow',
-    high: 'vocalRange.detect.titleHigh',
+  low: 'vocalRange.detect.titleLow',
+  high: 'vocalRange.detect.titleHigh',
 });
 const INSTRUCTION = translatedRecord<RangeDirection>({
-    low: 'vocalRange.detect.instructionLow',
-    high: 'vocalRange.detect.instructionHigh',
+  low: 'vocalRange.detect.instructionLow',
+  high: 'vocalRange.detect.instructionHigh',
 });
 
 /**
@@ -34,160 +28,118 @@ const INSTRUCTION = translatedRecord<RangeDirection>({
  * component; only the thin screen wrappers around it differ in what they do
  * with a captured result.
  */
-export function DetectionFlow({
-                                  direction,
-                                  onCaptured,
-                                  onBack,
-                              }: {
-    direction: RangeDirection;
-    onCaptured: (result: DetectionResult) => void;
-    onBack: () => void;
+export function DetectionFlow({ direction, onCaptured, onBack }: {
+  direction: RangeDirection;
+  onCaptured: (result: DetectionResult) => void;
+  onBack: () => void;
 }) {
-    const { t } = useTranslation();
-    const { palette, spacing, radii, gradient, typography } = useTheme();
-    const {
-        status,
-        errorMessage,
-        currentMidi,
-        currentFrequency,
-        liveConfidence,
-        holdProgress,
-        bestMidi,
-        bestConfidence,
-        message,
-        start,
-        stop,
-        retry,
-    } = useGuidedRangeDetection(direction);
+  const { t } = useTranslation();
+  const detection = useGuidedRangeDetection(direction);
+  const { status, errorMessage, currentMidi, currentFrequency, liveConfidence, bestMidi, bestConfidence, start, stop, retry } =
+    detection;
+  const { trail, now, push, reset: resetTrail } = usePitchTrail();
 
-    const shownNote = useStabilizedNote(currentMidi);
-    const { trail, now, push, reset: resetTrail } = usePitchTrail();
+  useEffect(() => {
+    start();
+    return () => stop();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    useEffect(() => {
-        start();
-        return () => stop();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+  // feed live pitch into the trail buffer
+  useEffect(() => {
+    push(currentMidi);
+  }, [currentMidi, push]);
 
-    // feed live pitch into the trail buffer
-    useEffect(() => {
-        push(currentMidi);
-    }, [currentMidi, push]);
+  return (
+    <View style={styles.fill}>
+      <AppText variant="headline" center gradient style={styles.title}>
+        {TITLE[direction]}
+      </AppText>
+      <AppText variant="label" center gradient style={styles.instruction}>
+        {INSTRUCTION[direction]}
+      </AppText>
 
-    const confidenceColor = liveConfidence >= 0.35 ? palette.accent : palette.textFaint;
-    const lowConfidence = bestMidi !== null && bestConfidence < LOW_CONFIDENCE_THRESHOLD;
-
-    return (
-        <View style={{ flex: 1 }}>
-            <AppText
-                gradient
-                color={palette.white}
-                style={{
-                    fontSize: 32,
-                    lineHeight: Platform.OS === 'android' ? 40 : 34,
-                    paddingTop: 10,
-                    fontFamily: typography.family.bold,
-                    textAlign: 'center'
-                }}
-            >
-                {TITLE[direction]}
-            </AppText>
-            <AppText color={palette.white}
-                     gradient style={{
-                fontSize: 16,
-                marginTop: spacing.lg,
-                lineHeight: 18,
-                textAlign: 'center',
-                paddingHorizontal: spacing.sm
-            }}>
-                {INSTRUCTION[direction]}
-            </AppText>
-
-            {status === 'error' ? (
-                <View style={styles.center}>
-                    <AppText variant="body" color={palette.danger} style={{ textAlign: 'center' }}>
-                        {errorMessage}
-                    </AppText>
-                    <View style={{ marginTop: spacing.lg, width: '100%' }}>
-                        <Button variant="transparent" title={t('common.tryAgain')} onPress={start}/>
-                    </View>
-                </View>
-            ) : (
-                <>
-
-                    <View style={styles.capturedBlock}>
-                        <AppText variant="caption" color={palette.textFaint}>{bestMidi !== null ? t('vocalRange.detect.captured') : ' '}</AppText>
-                        <AppText
-                            variant="title"
-                            color={'#EEFF88'}
-                            style={{ fontSize: 40, fontFamily: typography.family.bold, marginTop: 2 }}
-                        >
-                            {bestMidi !== null ? midiToName(bestMidi) : ' '}
-                        </AppText>
-                    </View>
-
-                    <View style={[styles.canvasWrap, { marginTop: bestMidi !== null ? spacing.md : spacing.xl }]}>
-                        <ScrollingPitchCanvas
-                            trail={trail}
-                            liveMidi={currentMidi}
-                            liveCents={null}
-                            targetMidi={null}
-                            currentTime={now}
-                            trailColor={confidenceColor}
-                            liveFrequency={currentFrequency}
-                        />
-                    </View>
-
-                    <View style={{ marginTop: spacing.xxl * 2 }}>
-                        <ConfidenceMeter confidence={liveConfidence}/>
-                    </View>
-                    {/*<View style={[styles.holdTrack, { backgroundColor: palette.borderSubtle, borderRadius: radii.pill, marginTop: spacing.sm }]}>*/}
-                    {/*  <View style={[styles.holdFill, { width: `${Math.round(holdProgress * 100)}%`, borderRadius: radii.pill, overflow: 'hidden' }]}>*/}
-                    {/*    <LinearGradient colors={gradient.accent} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />*/}
-                    {/*  </View>*/}
-                    {/*</View>*/}
-
-                    {lowConfidence && (
-                        <AppText variant="caption" color={palette.warning}
-                                 style={{ marginTop: spacing.sm, textAlign: 'center' }}>
-                            {t('vocalRange.detect.lowConfidence')}
-                        </AppText>
-                    )}
-
-                    <View style={styles.spacer}/>
-
-                    <View style={{ gap: spacing.md, marginTop: spacing.md }}>
-                        {bestMidi !== null ? (
-                            <>
-                                <Button
-                                    title={t('common.tryAgain')}
-                                    variant="transparent"
-                                    onPress={() => {
-                                        retry();
-                                        resetTrail();
-                                    }}
-                                />
-                                <Button
-                                    title={t('common.continue')}
-                                    onPress={() => onCaptured({ midi: bestMidi, confidence: bestConfidence })}
-                                    style={{ backgroundColor: '#ffffff' }}
-                                />
-                            </>
-                        ) : (
-                            <Button title={t('common.back')} variant="ghost" onPress={onBack}/>
-                        )}
-                    </View>
-                </>
-            )}
+      {status === 'error' ? (
+        <View style={styles.center}>
+          <AppText variant="body" color={palette.danger} center>
+            {errorMessage}
+          </AppText>
+          <Button variant="transparent" title={t('common.tryAgain')} onPress={start} style={styles.retry} />
         </View>
-    );
+      ) : (
+        <>
+          <CapturedNote midi={bestMidi} />
+
+          <View style={[styles.canvas, bestMidi !== null ? styles.canvasAfterCapture : styles.canvasBeforeCapture]}>
+            <ScrollingPitchCanvas
+              trail={trail}
+              liveMidi={currentMidi}
+              currentTime={now}
+              trailColor={liveConfidence >= 0.35 ? palette.accent : palette.textFaint}
+              liveFrequency={currentFrequency}
+            />
+          </View>
+
+          <View style={styles.meter}>
+            <ConfidenceMeter confidence={liveConfidence} />
+          </View>
+
+          {bestMidi !== null && bestConfidence < LOW_CONFIDENCE_THRESHOLD && (
+            <AppText variant="caption" color={palette.warning} center style={styles.lowConfidence}>
+              {t('vocalRange.detect.lowConfidence')}
+            </AppText>
+          )}
+
+          <View style={styles.fill} />
+
+          <View style={styles.actions}>
+            {bestMidi !== null ? (
+              <>
+                <Button
+                  title={t('common.tryAgain')}
+                  variant="transparent"
+                  onPress={() => {
+                    retry();
+                    resetTrail();
+                  }}
+                />
+                <Button title={t('common.continue')} onPress={() => onCaptured({ midi: bestMidi, confidence: bestConfidence })} />
+              </>
+            ) : (
+              <Button title={t('common.back')} variant="ghost" onPress={onBack} />
+            )}
+          </View>
+        </>
+      )}
+    </View>
+  );
+}
+
+/** the best note held so far, or a blank of the same height before there is one */
+function CapturedNote({ midi }: { midi: number | null }) {
+  const { t } = useTranslation();
+  return (
+    <View style={styles.captured}>
+      <AppText variant="caption">{midi !== null ? t('vocalRange.detect.captured') : ' '}</AppText>
+      <AppText variant="score" color={palette.accent} style={styles.capturedNote}>
+        {midi !== null ? midiToName(midi) : ' '}
+      </AppText>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-    center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-    capturedBlock: { alignItems: 'center', marginTop: 48, marginBottom: 16 },
-    canvasWrap: { height: 180 },
-    holdTrack: { height: 6, overflow: 'hidden' },
-    holdFill: { height: '100%' },
-    spacer: { flex: 1 },
+  fill: { flex: 1 },
+  title: { paddingTop: 10 },
+  instruction: { marginTop: spacing.lg, paddingHorizontal: spacing.sm },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  retry: { marginTop: spacing.lg, alignSelf: 'stretch' },
+  captured: { alignItems: 'center', marginTop: 48, marginBottom: spacing.lg },
+  capturedNote: { marginTop: 2 },
+  canvas: { height: 180 },
+  canvasAfterCapture: { marginTop: spacing.md },
+  canvasBeforeCapture: { marginTop: spacing.xl },
+  meter: { marginTop: spacing.xxl * 2 },
+  lowConfidence: { marginTop: spacing.sm },
+  actions: { gap: spacing.md, marginTop: spacing.md },
 });

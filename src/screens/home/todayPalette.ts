@@ -1,4 +1,4 @@
-import { accentAlpha, palette } from '@/shared/theme';
+import { accentAlpha, glow, palette } from '@/shared/theme';
 
 /**
  * Dark, atmospheric palette for the Today screen only. Close cousin of the
@@ -10,14 +10,14 @@ import { accentAlpha, palette } from '@/shared/theme';
  */
 
 export const todayColor = {
-  bg: '#08070C',
-  surface: 'rgba(255, 255, 255, 0.06)',
+  bg: palette.background,
+  surface: palette.surface,
   surfaceMuted: 'rgba(255, 255, 255, 0.035)',
 
   ink: '#F7F5FB',
-  inkSecondary: '#A1A0A5',
-  inkFaint: '#A1A0A5',
-  inkOnDark: '#FFFFFF',
+  inkSecondary: palette.textFaint,
+  inkFaint: palette.textFaint,
+  inkOnDark: palette.white,
 
   buttonDark: '#131018',
   shadow: 'rgba(0, 0, 0, 0.55)',
@@ -25,14 +25,16 @@ export const todayColor = {
   // dark ink for text/icons that sit on top of the light banner and lime
   // button fills below, where the usual off-white `ink` has no contrast
   inkOnBanner: '#2B2038',
-  inkOnAccent: '#171B08',
+  /** the banner ink, softened for its eyebrow and sub-copy */
+  inkOnBannerMuted: 'rgba(43, 32, 56, 0.7)',
+  inkOnAccent: palette.inkOnAccent,
 
   orange: palette.accent,
-  peach: '#F3C79B',
-  coral: '#EE8672',
-  blue: '#6FA0E8',
-  lavender: '#B79FE8',
-  indigo: '#7B7FE0',
+  peach: glow.peach,
+  coral: glow.coral,
+  blue: glow.blue,
+  lavender: glow.lavender,
+  indigo: glow.indigo,
 
   // the hero card's own light banner hue — a deliberate exception to the
   // rest of the screen's dark surfaces, so it reads as the one bright,

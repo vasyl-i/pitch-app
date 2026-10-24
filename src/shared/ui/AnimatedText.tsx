@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { StyleSheet, TextInput, type TextStyle } from 'react-native';
 import Animated, { useAnimatedProps, useAnimatedStyle, type DerivedValue } from 'react-native-reanimated';
-import { isManrope, MANROPE_SIZE_SCALE, SATOSHI_LINE_HEIGHT } from '@/shared/theme';
+import { isManrope, MANROPE_SIZE_SCALE, textVariants, useTheme, type TextVariant, type TextWeight } from '@/shared/theme';
 
 const AnimatedTextInput = Animated.createAnimatedComponent(TextInput);
 
@@ -11,34 +11,34 @@ const AnimatedTextInput = Animated.createAnimatedComponent(TextInput);
  * second. A read-only TextInput underneath, the usual trick: it is the one
  * text view whose content can be set as a native prop.
  *
- * Its size is not re-measured when the text changes, so give it a fixed
- * `width` (and `textAlign`) wide enough for the longest value. No gradient
+ * Same type scale as AppText (`variant`, `weight`). Its size is not
+ * re-measured when the text changes, so give it a fixed `width` (and
+ * `textAlign`) in `style`, wide enough for the longest value. No gradient
  * mask, unlike white AppText.
  */
-export function AnimatedText({
-  text,
-  color,
-  style,
-}: {
+export function AnimatedText({ text, color, variant = 'body', weight, style }: {
   /** a shared or derived value */
   text: DerivedValue<string>;
   /** a fixed colour, or one that follows a shared or derived value */
   color: string | DerivedValue<string>;
-  /** must carry `fontFamily`, `fontSize` and a `width` */
-  style: TextStyle;
+  variant?: TextVariant;
+  weight?: TextWeight;
+  /** layout: width, alignment, tabular numbers */
+  style?: TextStyle;
 }) {
+  const { typography } = useTheme();
+  const v = textVariants[variant];
+  const fontFamily = typography.family[weight ?? v.weight];
+  const font = {
+    fontFamily,
+    fontSize: isManrope(fontFamily) ? v.fontSize * MANROPE_SIZE_SCALE : v.fontSize,
+    lineHeight: v.lineHeight,
+  };
+
   // the animated `text` prop only lands on a change; seed the first value
   const [initial] = useState(() => text.value);
   const animatedProps = useAnimatedProps(() => ({ text: text.value }) as object);
   const animatedColor = useAnimatedStyle(() => (typeof color === 'string' ? {} : { color: color.value }));
-  // the same Manrope sizing AppText applies, so the readout matches its neighbours
-  const metrics =
-    isManrope(style.fontFamily) && style.fontSize
-      ? {
-          fontSize: style.fontSize * MANROPE_SIZE_SCALE,
-          lineHeight: style.lineHeight ?? Math.round(style.fontSize * SATOSHI_LINE_HEIGHT),
-        }
-      : null;
 
   return (
     <AnimatedTextInput
@@ -48,7 +48,7 @@ export function AnimatedText({
       underlineColorAndroid="transparent"
       defaultValue={initial}
       animatedProps={animatedProps}
-      style={[styles.base, style, metrics, typeof color === 'string' && { color }, animatedColor]}
+      style={[styles.base, font, style, typeof color === 'string' && { color }, animatedColor]}
     />
   );
 }

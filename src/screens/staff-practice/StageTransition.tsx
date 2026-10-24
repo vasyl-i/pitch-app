@@ -2,8 +2,10 @@ import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { AppText } from '@/shared/ui';
-import { useTheme } from '@/shared/theme';
+import { spacing } from '@/shared/theme';
 import { useTranslation } from '@/shared/i18n';
+
+const EASE_IN = { duration: 320, easing: Easing.out(Easing.quad) };
 
 /**
  * The beat between the assisted attempt and the unaided one.
@@ -15,27 +17,23 @@ import { useTranslation } from '@/shared/i18n';
  */
 export function StageTransition({ startingNote = false }: { startingNote?: boolean }) {
   const { t } = useTranslation();
-  const { palette, spacing } = useTheme();
   const opacity = useSharedValue(0);
   const lift = useSharedValue(12);
 
   useEffect(() => {
-    opacity.value = withTiming(1, { duration: 320, easing: Easing.out(Easing.quad) });
-    lift.value = withTiming(0, { duration: 320, easing: Easing.out(Easing.quad) });
+    opacity.value = withTiming(1, EASE_IN);
+    lift.value = withTiming(0, EASE_IN);
   }, [opacity, lift]);
 
-  const style = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ translateY: lift.value }],
-  }));
+  const style = useAnimatedStyle(() => ({ opacity: opacity.value, transform: [{ translateY: lift.value }] }));
 
   return (
     <View style={styles.center}>
       <Animated.View style={style}>
-        <AppText variant="title" style={[styles.text, { marginBottom: spacing.sm }]}>
+        <AppText variant="title" center style={styles.title}>
           {t('staff.transition.title')}
         </AppText>
-        <AppText variant="body" color={palette.textSecondary} style={styles.text}>
+        <AppText variant="body" center>
           {startingNote ? t('staff.transition.firstNote') : t('staff.transition.onYourOwn')}
         </AppText>
       </Animated.View>
@@ -44,6 +42,6 @@ export function StageTransition({ startingNote = false }: { startingNote?: boole
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
-  text: { textAlign: 'center' },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xxl },
+  title: { marginBottom: spacing.sm },
 });

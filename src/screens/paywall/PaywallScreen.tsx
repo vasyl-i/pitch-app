@@ -6,7 +6,7 @@
  * layout, trial copy, and A/B testing without app updates.
  */
 import { useEffect } from 'react';
-import { Dimensions } from 'react-native';
+import { StyleSheet } from 'react-native';
 import RevenueCatUI, { CustomVariableValue } from 'react-native-purchases-ui';
 import Toast from 'react-native-toast-message';
 import {
@@ -17,9 +17,8 @@ import {
 } from '@/features/subscription';
 import type { RootScreenProps } from '@/app/navigation/types';
 import { t } from '@/shared/i18n';
+import { COMPACT_SCREEN } from '@/shared/ui';
 
-// iPhone SE (2nd/3rd gen) is 667pt tall; every modern iPhone is 812pt or more
-const isSmallScreen = Dimensions.get('screen').height < 700;
 
 export function PaywallScreen({ navigation, route }: RootScreenProps<'Paywall'>) {
   const source = route.params?.source ?? 'unknown';
@@ -90,11 +89,11 @@ export function PaywallScreen({ navigation, route }: RootScreenProps<'Paywall'>)
 
   return (
     <RevenueCatUI.Paywall
-      style={{ flex: 1 }}
+      style={styles.fill}
       options={{
         displayCloseButton: true,
         customVariables: {
-          is_small_screen: CustomVariableValue.boolean(isSmallScreen),
+          is_small_screen: CustomVariableValue.boolean(COMPACT_SCREEN),
         },
       }}
       onDismiss={handleDismiss}
@@ -103,3 +102,7 @@ export function PaywallScreen({ navigation, route }: RootScreenProps<'Paywall'>)
     />
   );
 }
+
+const styles = StyleSheet.create({
+  fill: { flex: 1 },
+});

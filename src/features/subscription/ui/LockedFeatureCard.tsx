@@ -9,7 +9,7 @@
  */
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '@/shared/theme';
+import { palette, spacing } from '@/shared/theme';
 import { useTranslation } from '@/shared/i18n';
 import { AppText, Card } from '@/shared/ui';
 import { PremiumBadge } from './PremiumBadge';
@@ -29,16 +29,8 @@ interface LockedFeatureCardProps {
   onPress: () => void;
 }
 
-export function LockedFeatureCard({
-  title,
-  description,
-  preview,
-  bullets,
-  cta,
-  onPress,
-}: LockedFeatureCardProps) {
+export function LockedFeatureCard({ title, description, preview, bullets, cta, onPress }: LockedFeatureCardProps) {
   const { t } = useTranslation();
-  const { palette, spacing } = useTheme();
 
   return (
     <Pressable
@@ -46,40 +38,35 @@ export function LockedFeatureCard({
       accessibilityLabel={t('subscription.featureA11y', { title })}
       accessibilityHint={t('session.results.overlayHint')}
       onPress={onPress}
-      style={({ pressed }) => [pressed && { opacity: 0.85 }]}
+      style={({ pressed }) => pressed && styles.pressed}
     >
-      <Card variant="highlighted" style={{ padding: spacing.lg }}>
+      <Card variant="highlighted" style={styles.card}>
         <View style={styles.headerRow}>
           <PremiumBadge locked />
           <Ionicons name="lock-closed" size={13} color={palette.textFaint} />
         </View>
 
-        <AppText variant="label" style={{ fontSize: 17, marginTop: spacing.sm }}>
+        <AppText variant="subtitle" weight="regular" style={styles.title}>
           {title}
         </AppText>
-        <AppText variant="body" style={{ marginTop: 4 }}>
+        <AppText variant="body" style={styles.description}>
           {description}
         </AppText>
 
         {preview !== undefined && (
-          <View
-            style={[
-              styles.preview,
-              { borderLeftColor: palette.accent, marginTop: spacing.md, paddingLeft: spacing.md },
-            ]}
-          >
-            <AppText variant="caption" color={palette.textSecondary} style={{ fontStyle: 'italic' }}>
+          <View style={styles.preview}>
+            <AppText variant="caption" color={palette.textSecondary} style={styles.italic}>
               {preview}
             </AppText>
           </View>
         )}
 
         {bullets && bullets.length > 0 && (
-          <View style={{ marginTop: spacing.md, gap: 6 }}>
+          <View style={styles.bullets}>
             {bullets.map((b) => (
               <View key={b} style={styles.bulletRow}>
                 <Ionicons name="checkmark" size={13} color={palette.accent} />
-                <AppText variant="caption" style={{ flex: 1 }}>
+                <AppText variant="caption" style={styles.bulletText}>
                   {b}
                 </AppText>
               </View>
@@ -87,8 +74,8 @@ export function LockedFeatureCard({
           </View>
         )}
 
-        <View style={[styles.ctaRow, { marginTop: spacing.md }]}>
-          <AppText variant="label" color={palette.accent} style={{ fontSize: 14 }}>
+        <View style={styles.ctaRow}>
+          <AppText variant="small" color={palette.accent}>
             {cta ?? t('subscription.seePremium')}
           </AppText>
           <Ionicons name="arrow-forward" size={14} color={palette.accent} />
@@ -99,8 +86,15 @@ export function LockedFeatureCard({
 }
 
 const styles = StyleSheet.create({
+  pressed: { opacity: 0.85 },
+  card: { padding: spacing.lg },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  preview: { borderLeftWidth: 2 },
-  bulletRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  ctaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  title: { marginTop: spacing.sm },
+  description: { marginTop: spacing.xs },
+  preview: { borderLeftWidth: 2, borderLeftColor: palette.accent, marginTop: spacing.md, paddingLeft: spacing.md },
+  italic: { fontStyle: 'italic' },
+  bullets: { marginTop: spacing.md, gap: 6 },
+  bulletRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  bulletText: { flex: 1 },
+  ctaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: spacing.md },
 });

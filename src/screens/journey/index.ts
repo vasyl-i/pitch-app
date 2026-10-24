@@ -1,2 +1,2 @@
 export { JourneyScreen } from './JourneyScreen';
-export { JourneyAreaScreen } from './JourneyAreaScreen';
+export { JourneyAreaScreen } from './area/JourneyAreaScreen';

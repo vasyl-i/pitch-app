@@ -9,7 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BaseToastProps } from 'react-native-toast-message';
 import { AppText } from './AppText';
-import { palette, typography, radii, spacing, blur } from '@/shared/theme';
+import { palette, radii, spacing, blur } from '@/shared/theme';
 
 function ToastBase({ text1, text2, type }: BaseToastProps & { type: 'success' | 'info' | 'error' }) {
   const insets = useSafeAreaInsets();
@@ -20,16 +20,16 @@ function ToastBase({ text1, text2, type }: BaseToastProps & { type: 'success' | 
     <View style={[styles.wrapper, { marginTop: insets.top }]}>
       <View style={styles.container}>
         <BlurView intensity={blur.sheet} tint="dark" style={StyleSheet.absoluteFill} />
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: palette.surface }]} />
+        <View style={styles.surface} />
         <Ionicons name={iconMap[type]} size={22} color={colorMap[type]} />
         <View style={styles.textContainer}>
           {text1 ? (
-            <AppText style={{ fontFamily: typography.family.medium, fontSize: 14, lineHeight: 18 }} color={palette.textPrimary}>
+            <AppText variant="small" weight="medium" color={palette.textPrimary}>
               {text1}
             </AppText>
           ) : null}
           {text2 ? (
-            <AppText style={{ fontFamily: typography.family.regular, fontSize: 13, lineHeight: 17, marginTop: 2 }} color={palette.textSecondary}>
+            <AppText variant="small" style={styles.message}>
               {text2}
             </AppText>
           ) : null}
@@ -59,7 +59,9 @@ const styles = StyleSheet.create({
     borderRadius: radii.lg,
     overflow: 'hidden',
   },
+  surface: { ...StyleSheet.absoluteFill, backgroundColor: palette.surface },
   textContainer: {
     flex: 1,
   },
+  message: { marginTop: 2 },
 });

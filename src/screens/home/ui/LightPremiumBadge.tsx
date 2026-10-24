@@ -1,6 +1,7 @@
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/shared/ui';
+import { radii, spacing } from '@/shared/theme';
 import { useTranslation } from '@/shared/i18n';
 import { todayColor } from '../todayPalette';
 
@@ -8,21 +9,23 @@ import { todayColor } from '../todayPalette';
 export function LightPremiumBadge({ label, locked = false }: { label?: string; locked?: boolean }) {
   const { t } = useTranslation();
   return (
-    <View
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-        borderRadius: 999,
-        paddingHorizontal: 9,
-        paddingVertical: 3,
-        backgroundColor: todayColor.indigoTint,
-      }}
-    >
+    <View style={styles.badge}>
       <Ionicons name={locked ? 'lock-closed' : 'sparkles'} size={9} color={todayColor.indigoDeep} />
-      <AppText color={todayColor.indigoDeep} style={{ fontSize: 12, fontWeight: '600' }}>
+      <AppText variant="caption" weight="medium" color={todayColor.indigoDeep}>
         {label ?? t('subscription.premium')}
       </AppText>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    borderRadius: radii.pill,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+    backgroundColor: todayColor.indigoTint,
+  },
+});

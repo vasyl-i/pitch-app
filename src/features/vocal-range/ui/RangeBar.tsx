@@ -1,7 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AppText } from '@/shared/ui';
-import { useTheme } from '@/shared/theme';
+import { gradient, palette, radii, spacing } from '@/shared/theme';
 import { midiToName } from '@/shared/lib/music';
 
 /** Piano-ish span showing the captured range and the live pitch marker. */
@@ -19,51 +19,37 @@ export function RangeBar({
   floor?: number;
   ceiling?: number;
 }) {
-  const { palette, radii, gradient } = useTheme();
   const pct = (midi: number) => Math.max(0, Math.min(100, ((midi - floor) / (ceiling - floor)) * 100));
+  const hasRange = lowMidi !== null && highMidi !== null;
 
   return (
     <View>
-      <View style={[styles.track, { backgroundColor: palette.borderSubtle, borderRadius: radii.pill }]}>
-        {lowMidi !== null && highMidi !== null && (
-          <View
-            style={[
-              styles.span,
-              {
-                left: `${pct(lowMidi)}%`,
-                width: `${Math.max(1.5, pct(highMidi) - pct(lowMidi))}%`,
-                borderRadius: radii.pill,
-                overflow: 'hidden',
-                opacity: 0.55,
-              },
-            ]}
-          >
-            <LinearGradient colors={gradient.accent} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />
+      <View style={styles.track}>
+        {hasRange && (
+          <View style={[styles.span, { left: `${pct(lowMidi)}%`, width: `${Math.max(1.5, pct(highMidi) - pct(lowMidi))}%` }]}>
+            <LinearGradient colors={gradient.accent} start={START} end={END} style={StyleSheet.absoluteFill} />
           </View>
         )}
-        {currentMidi !== null && (
-          <View style={[styles.marker, { left: `${pct(currentMidi)}%`, backgroundColor: palette.textPrimary }]} />
-        )}
+        {currentMidi !== null && <View style={[styles.marker, { left: `${pct(currentMidi)}%` }]} />}
       </View>
 
       <View style={styles.labels}>
-        <AppText variant="caption" style={{ fontSize: 12 }}>
-          {midiToName(floor)}
+        <AppText variant="caption">{midiToName(floor)}</AppText>
+        <AppText variant="small" color={palette.accent}>
+          {hasRange ? `${midiToName(lowMidi)} – ${midiToName(highMidi)}` : '—'}
         </AppText>
-        <AppText variant="label" color={palette.accent} style={{ fontSize: 15 }}>
-          {lowMidi !== null && highMidi !== null ? `${midiToName(lowMidi)} – ${midiToName(highMidi)}` : '—'}
-        </AppText>
-        <AppText variant="caption" style={{ fontSize: 12 }}>
-          {midiToName(ceiling)}
-        </AppText>
+        <AppText variant="caption">{midiToName(ceiling)}</AppText>
       </View>
     </View>
   );
 }
 
+const START = { x: 0, y: 0 };
+const END = { x: 1, y: 0 };
+
 const styles = StyleSheet.create({
-  track: { height: 16, position: 'relative', overflow: 'hidden' },
-  span: { position: 'absolute', top: 0, bottom: 0 },
-  marker: { position: 'absolute', top: -3, width: 3, height: 22, marginLeft: -1.5, borderRadius: 2 },
-  labels: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
+  track: { height: 16, position: 'relative', overflow: 'hidden', borderRadius: radii.pill, backgroundColor: palette.borderSubtle },
+  span: { position: 'absolute', top: 0, bottom: 0, borderRadius: radii.pill, overflow: 'hidden', opacity: 0.55 },
+  marker: { position: 'absolute', top: -3, width: 3, height: 22, marginLeft: -1.5, borderRadius: 2, backgroundColor: palette.textPrimary },
+  labels: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: spacing.sm },
 });

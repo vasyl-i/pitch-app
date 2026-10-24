@@ -3,26 +3,22 @@
  * title, difficulty, and status/accuracy on the right. Card-style with
  * translucent surface background.
  */
-import { Image, Pressable, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import type { GuidedStep } from '@/features/learning';
 import { SLOT_LABELS, guidedStepTitle } from '@/features/learning';
 import type { TodayExerciseStat } from '@/features/progress';
 import { AppText, ProgressCircle } from '@/shared/ui';
-import { useTheme } from '@/shared/theme';
+import { palette, spacing } from '@/shared/theme';
 import { useTranslation } from '@/shared/i18n';
 import { todayColor } from '../todayPalette';
-import { EXERCISE_CAT_ICONS, DEFAULT_CAT_ICON, EXERCISE_DESCRIPTIONS } from './exerciseIcons';
+import { EXERCISE_DESCRIPTIONS } from './exerciseIcons';
+import { ExerciseIcon } from '../../exercises/ui/ExerciseIcon';
 
 type StepStatus = 'completed' | 'in-progress' | 'ready' | 'upcoming';
 
-export function ExerciseRow({
-  step,
-  status,
-  index,
-  stat,
-  partialRounds,
-  onPress,
-}: {
+const ICON_SIZE = 56;
+
+export function ExerciseRow({ step, status, partialRounds, onPress }: {
   step: GuidedStep;
   status: StepStatus;
   index: number;
@@ -31,50 +27,26 @@ export function ExerciseRow({
   onPress: () => void;
 }) {
   const { t } = useTranslation();
-  const { typography, spacing, radii } = useTheme();
   const done = status === 'completed';
-  const catIcon = EXERCISE_CAT_ICONS[step.activityId] ?? DEFAULT_CAT_ICON;
-  const inset = catIcon.inset ?? 0;
-  const imgSize = 56 - inset * 2;
+  const description =
+    EXERCISE_DESCRIPTIONS[step.activityId] ??
+    `${SLOT_LABELS[step.slot] ?? t('home.practice')} · ${t('common.minutesShort', { count: step.estMinutes })}`;
 
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => ({
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: spacing.sm,
-        opacity: pressed ? 0.7 : 1,
-      })}
-    >
-      {/* Icon square */}
-      <View style={{ width: 56, height: 56, borderRadius: 14, backgroundColor: '#1E1D1F', alignItems: 'center', justifyContent: 'flex-end', overflow: 'hidden', opacity: done ? 0.4 : 1 }}>
-        <Image source={catIcon.source} style={{ width: imgSize, height: imgSize }} resizeMode="contain" />
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
+      <View style={done && styles.done}>
+        <ExerciseIcon id={step.activityId} size={ICON_SIZE} radius={14} color={palette.iconWell} />
       </View>
 
-      {/* Title + meta */}
-      <View style={{ flex: 1, marginLeft: spacing.md, marginRight: spacing.sm, opacity: done ? 0.4 : 1 }}>
-        <AppText
-          color={todayColor.ink}
-          style={{
-            fontFamily: typography.family.bold,
-            fontSize: 18,
-            lineHeight: 20,
-          }}
-          numberOfLines={1}
-        >
+      <View style={[styles.text, done && styles.done]}>
+        <AppText variant="subtitle" weight="bold" color={todayColor.ink} numberOfLines={1}>
           {guidedStepTitle(step)}
         </AppText>
-        <AppText
-          color={todayColor.inkFaint}
-          style={{ fontFamily: typography.family.regular, fontSize: 14, lineHeight: 16, marginTop: 6 }}
-          numberOfLines={1}
-        >
-          {EXERCISE_DESCRIPTIONS[step.activityId] ?? `${SLOT_LABELS[step.slot] ?? t('home.practice')} · ${t('common.minutesShort', { count: step.estMinutes })}`}
+        <AppText variant="small" color={todayColor.inkFaint} numberOfLines={1} style={styles.description}>
+          {description}
         </AppText>
       </View>
 
-      {/* Right: progress circle */}
       <ProgressCircle
         completedRounds={done ? step.totalRounds : (partialRounds ?? 0)}
         totalRounds={step.totalRounds}
@@ -85,3 +57,11 @@ export function ExerciseRow({
     </Pressable>
   );
 }
+
+const styles = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.sm },
+  pressed: { opacity: 0.7 },
+  done: { opacity: 0.4 },
+  text: { flex: 1, marginLeft: spacing.md, marginRight: spacing.sm },
+  description: { marginTop: 6 },
+});

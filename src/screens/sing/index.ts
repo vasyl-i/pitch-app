@@ -1,4 +1,4 @@
-export { SingHubScreen } from './SingHubScreen';
-export { InstrumentalUploadScreen } from './InstrumentalUploadScreen';
+export { SingHubScreen } from './hub/SingHubScreen';
+export { InstrumentalUploadScreen } from './upload/InstrumentalUploadScreen';
 export { InstrumentalAnalyzingScreen } from './InstrumentalAnalyzingScreen';
-export { InstrumentalSingScreen } from './InstrumentalSingScreen';
+export { InstrumentalSingScreen } from './track/InstrumentalSingScreen';

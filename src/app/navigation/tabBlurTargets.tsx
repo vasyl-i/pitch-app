@@ -1,5 +1,5 @@
 import { createContext, type ReactNode, type RefObject, useContext, useLayoutEffect, useRef, useState } from 'react';
-import type { View } from 'react-native';
+import { StyleSheet, type View } from 'react-native';
 import { BlurTargetView } from 'expo-blur';
 
 /**
@@ -39,7 +39,7 @@ export function TabBlurTarget({ routeKey, backgroundColor, children }: {
     }, [registry, routeKey]);
 
     return (
-        <BlurTargetView ref={ref} collapsable={false} style={{ flex: 1, backgroundColor }}>
+        <BlurTargetView ref={ref} collapsable={false} style={[styles.fill, { backgroundColor }]}>
             {children}
         </BlurTargetView>
     );
@@ -61,3 +61,7 @@ export function useTabBlurTarget(routeKey: string): RefObject<View | null> | und
 
     return registry?.targets.get(routeKey);
 }
+
+const styles = StyleSheet.create({
+  fill: { flex: 1 },
+});

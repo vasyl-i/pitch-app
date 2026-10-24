@@ -1,2 +1,2 @@
 export { EarSessionScreen } from './EarSessionScreen';
-export { PracticeCompleteScreen } from './PracticeCompleteScreen';
+export { PracticeCompleteScreen } from './complete/PracticeCompleteScreen';

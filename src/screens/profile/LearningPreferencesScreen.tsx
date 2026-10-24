@@ -2,7 +2,7 @@
  * Edit learning preferences any time. Saves live into the preferences store;
  * historical learning data is untouched by design (separate store).
  */
-import { ScrollView, View } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 import {
   DEFAULT_PREFERENCES,
   GENRE_LABELS,
@@ -12,8 +12,8 @@ import {
   type LearningGoal,
   type LearningPreferences,
 } from '@/features/learning';
-import { AppText, BackButton, ChipGroup, Screen, type ChipOption } from '@/shared/ui';
-import { useTheme } from '@/shared/theme';
+import { BackButton, ChipGroup, Screen, ScreenHeader, type ChipOption } from '@/shared/ui';
+import { spacing } from '@/shared/theme';
 import { formatHour, t, useTranslation } from '@/shared/i18n';
 import type { RootScreenProps } from '@/app/navigation/types';
 
@@ -62,7 +62,6 @@ function buildOptions() {
 
 export function LearningPreferencesScreen({ navigation }: RootScreenProps<'LearningPreferences'>) {
   const { t } = useTranslation();
-  const { spacing } = useTheme();
   const options = buildOptions();
   const prefs = usePreferencesStore((s) => s.preferences) ?? { ...DEFAULT_PREFERENCES, updatedAt: 0 };
   const setPreferences = usePreferencesStore((s) => s.setPreferences);
@@ -76,16 +75,10 @@ export function LearningPreferencesScreen({ navigation }: RootScreenProps<'Learn
 
   return (
     <Screen noBottomPadding>
-      <View style={{ paddingBottom: 16 }}>
-      <BackButton onPress={() => navigation.goBack()} />
-      </View>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: spacing.xxl }}>
-        <AppText variant="title" style={{ fontSize: 34, marginTop: spacing.sm }}>
-          {t('profile.prefs.title')}
-        </AppText>
-        <AppText variant="body" style={{ marginTop: spacing.xs }}>
-          {t('profile.prefs.subtitle')}
-        </AppText>
+      {/* fixed above the scrolling list */}
+      <BackButton onPress={navigation.goBack} />
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+        <ScreenHeader title={t('profile.prefs.title')} subtitle={t('profile.prefs.subtitle')} large />
 
         <ChipGroup
           title={t('profile.prefs.primaryGoal')}
@@ -115,3 +108,7 @@ export function LearningPreferencesScreen({ navigation }: RootScreenProps<'Learn
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  content: { paddingTop: spacing.lg + spacing.sm, paddingBottom: spacing.xxl },
+});

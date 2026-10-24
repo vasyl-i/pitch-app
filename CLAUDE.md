@@ -77,6 +77,8 @@ Import direction: `app -> screens -> features -> entities -> shared` (no reverse
 
 - Dark theme: background `#08070C`, lime accent `#EEFF88`, violet `#8B7CFF` (premium only)
 - All values in `shared/theme/tokens.ts` -- never hardcode colors/spacing/fonts
+- Text: `<AppText variant weight color center>` on the `textVariants` scale (caption 12, small 14, body/label 16, subtitle 18, heading 20, title 26, headline 32, score 40, display 72) -- no `fontSize`/`fontFamily` in styles; `style` is for layout only
+- Styles in `StyleSheet.create` (inline only for values computed from props/layout); colours from `palette`, `whiteAlpha(a)`, `blackAlpha(a)`, `accentAlpha(a)`
 - Font: **Satoshi** (Regular, Medium, Bold, Black) -- always set `fontFamily` explicitly, `fontWeight` alone doesn't work
 - Ukrainian UI uses **Manrope** (Satoshi has no Cyrillic; Portuguese stays on Satoshi, but avoid ª/º — no glyphs) -- `typography.family` swaps automatically by phone language; never name a font family directly
 - No borders on cards -- use translucent fill + soft shadow

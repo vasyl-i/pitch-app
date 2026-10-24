@@ -1,11 +1,9 @@
 import { StyleSheet, View } from 'react-native';
 import { AppText } from '@/shared/ui';
-import { useTheme } from '@/shared/theme';
+import { spacing, whiteAlpha } from '@/shared/theme';
 import { useTranslation } from '@/shared/i18n';
 import { formatPracticeTime } from '@/features/progress';
 import { todayColor } from '../todayPalette';
-
-const DIVIDER_COLOR = 'rgba(255, 255, 255, 0.14)';
 
 interface Props {
   accuracy: number;
@@ -13,46 +11,33 @@ interface Props {
   practiceTime: string;
 }
 
+/** "Your progress": accuracy, streak and practice time in three columns */
 export function ProgressSection({ accuracy, streak, practiceTime }: Props) {
   const { t } = useTranslation();
-  const { typography, spacing } = useTheme();
+  const hasPracticeTime = practiceTime && practiceTime !== formatPracticeTime(0);
 
   return (
-    <View style={{ marginTop: spacing.xl }}>
-      <AppText color={todayColor.ink} style={{ fontFamily: typography.family.medium, fontSize: 16 }}>
+    <View style={styles.section}>
+      <AppText variant="label" weight="medium" color={todayColor.ink}>
         {t('home.progress.title')}
       </AppText>
-      <View style={[styles.row, { marginTop: spacing.md }]}>
+      <View style={styles.row}>
         <Stat value={accuracy > 0 ? `${accuracy}%` : '—'} label={t('home.stats.accuracy')} />
         <Stat value={streak > 0 ? t('common.daysShort', { count: streak }) : '—'} label={t('home.stats.inARow')} divider />
-        <Stat value={practiceTime && practiceTime !== formatPracticeTime(0) ? practiceTime : '—'} label={t('home.stats.practiceTime')} divider />
+        <Stat value={hasPracticeTime ? practiceTime : '—'} label={t('home.stats.practiceTime')} divider />
       </View>
     </View>
   );
 }
 
 function Stat({ value, label, divider = false }: { value: string; label: string; divider?: boolean }) {
-  const { typography, spacing } = useTheme();
-
   return (
-    <View
-      style={[
-        styles.stat,
-        divider && { paddingLeft: spacing.md, borderLeftWidth: 1, borderLeftColor: DIVIDER_COLOR, alignItems: 'center' as const },
-      ]}
-    >
+    <View style={[styles.stat, divider && styles.divided]}>
       <View>
-        <AppText
-          color={todayColor.inkFaint}
-          style={{ fontFamily: typography.family.regular, fontSize: 12, lineHeight: 18 }}
-          numberOfLines={1}
-        >
+        <AppText variant="caption" color={todayColor.inkFaint} numberOfLines={1}>
           {label}
         </AppText>
-        <AppText
-          color={todayColor.ink}
-          style={{ fontFamily: typography.family.medium, fontSize: 26, lineHeight: 34, marginTop: 2 }}
-        >
+        <AppText variant="title" weight="medium" color={todayColor.ink} style={styles.value}>
           {value}
         </AppText>
       </View>
@@ -61,11 +46,9 @@ function Stat({ value, label, divider = false }: { value: string; label: string;
 }
 
 const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-  },
-  stat: {
-    flex: 1,
-    minWidth: 0,
-  },
+  section: { marginTop: spacing.xl },
+  row: { flexDirection: 'row', marginTop: spacing.md },
+  stat: { flex: 1, minWidth: 0 },
+  divided: { paddingLeft: spacing.md, borderLeftWidth: 1, borderLeftColor: whiteAlpha(0.14), alignItems: 'center' },
+  value: { marginTop: 2 },
 });

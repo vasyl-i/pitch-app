@@ -5,10 +5,11 @@
  * plan details, cancellation, refund requests, and restore purchases.
  * Configured remotely in the RevenueCat dashboard.
  */
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import RevenueCatUI from 'react-native-purchases-ui';
 import { fetchSubscriptionState, useSubscriptionStore } from '@/features/subscription';
 import { BackButton, Screen } from '@/shared/ui';
+import { spacing } from '@/shared/theme';
 import type { RootScreenProps } from '@/app/navigation/types';
 
 export function ManageSubscriptionScreen({ navigation }: RootScreenProps<'ManageSubscription'>) {
@@ -25,14 +26,19 @@ export function ManageSubscriptionScreen({ navigation }: RootScreenProps<'Manage
 
   return (
     <Screen noHorizontalPadding noBottomPadding>
-      <View style={{ paddingHorizontal: 16 }}>
+      <View style={styles.back}>
         <BackButton onPress={handleDismiss} />
       </View>
       <RevenueCatUI.CustomerCenterView
-        style={{ flex: 1 }}
+        style={styles.fill}
         shouldShowCloseButton={false}
         onDismiss={handleDismiss}
       />
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  back: { paddingHorizontal: spacing.lg },
+  fill: { flex: 1 },
+});
