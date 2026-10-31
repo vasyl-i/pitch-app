@@ -12,7 +12,7 @@ export { IconBubble } from './IconBubble';
 export { ProgressBar } from './ProgressBar';
 export { ProgressCircle } from './ProgressCircle';
 export { FlowScreen } from './FlowScreen';
-export { Screen } from './Screen';
+export { Screen, useBottomInset } from './Screen';
 export { ScreenHeader } from './ScreenHeader';
 export { SearchField } from './SearchField';
 export { StatTile } from './StatTile';

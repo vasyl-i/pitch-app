@@ -5,6 +5,15 @@ import { palette, spacing } from '@/shared/theme';
 import { AppBackground } from './AppBackground';
 
 /**
+ * Bottom padding for content that ends at the screen's bottom edge: the safe
+ * area inset, but never flush to the edge when there is none (older Android,
+ * iPhone SE) — buttons always keep some room below them.
+ */
+export function useBottomInset() {
+  return Math.max(useSafeAreaInsets().bottom, spacing.lg);
+}
+
+/**
  * Screen scaffold atom: dark background + the app's atmospheric corner-glow
  * backdrop + safe area + standard padding, so every screen gets the same
  * premium background without repeating the effect.
@@ -17,13 +26,13 @@ import { AppBackground } from './AppBackground';
  * on tap — useful for screens with text inputs.
  */
 export function Screen({ children, style, backdrop, overlay, dismissKeyboard, avoidKeyboard, noHorizontalPadding, noBottomPadding }: PropsWithChildren<{ style?: ViewStyle; backdrop?: ReactNode; overlay?: ReactNode; dismissKeyboard?: boolean; avoidKeyboard?: boolean; noHorizontalPadding?: boolean; noBottomPadding?: boolean }>) {
-  const insets = useSafeAreaInsets();
+  const bottomInset = useBottomInset();
 
   const content = (
     <View
       style={[
         styles.content,
-        { paddingBottom: noBottomPadding ? 0 : insets.bottom },
+        { paddingBottom: noBottomPadding ? 0 : bottomInset },
         !noHorizontalPadding && styles.horizontalPadding,
         style,
       ]}

@@ -7,7 +7,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { BlurTargetView, BlurView } from 'expo-blur';
 import { exerciseById, useEarTrainingStore } from '@/features/ear-training';
 import { palette, spacing } from '@/shared/theme';
-import { AppText, Button, ScoreBoard } from '@/shared/ui';
+import { AppText, Button, ScoreBoard, useBottomInset } from '@/shared/ui';
 import { useTranslation } from '@/shared/i18n';
 import { RoundBreakdown } from './RoundBreakdown';
 
@@ -25,6 +25,7 @@ export interface ResultsActions {
 
 export function SessionResults({ session, actions }: { session: SessionControls; actions: ResultsActions }) {
   const { t } = useTranslation();
+  const bottomInset = useBottomInset();
   const blurTargetRef = useRef<View>(null);
   const exerciseId = useEarTrainingStore((s) => s.exerciseId);
   const results = useEarTrainingStore((s) => s.results);
@@ -54,7 +55,7 @@ export function SessionResults({ session, actions }: { session: SessionControls;
         </ScrollView>
       </BlurTargetView>
 
-      <BlurView intensity={10} tint="dark" blurTarget={blurTargetRef} blurMethod="dimezisBlurViewSdk31Plus" style={styles.footer}>
+      <BlurView intensity={10} tint="dark" blurTarget={blurTargetRef} blurMethod="dimezisBlurViewSdk31Plus" style={[styles.footer, { paddingBottom: bottomInset }]}>
         <Button title={actions.primary.title} onPress={actions.primary.onPress} />
         <Button title={actions.secondary.title} variant="ghost" onPress={actions.secondary.onPress} />
         {actions.tertiary && <Button title={actions.tertiary.title} variant="transparent" onPress={actions.tertiary.onPress} />}

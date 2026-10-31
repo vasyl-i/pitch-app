@@ -1,9 +1,8 @@
 import type { PropsWithChildren } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { spacing } from '@/shared/theme';
 import { BackButton } from './BackButton';
-import { Screen } from './Screen';
+import { Screen, useBottomInset } from './Screen';
 
 /**
  * A step of a flow (range detection, its results): a fixed back button, then
@@ -11,14 +10,14 @@ import { Screen } from './Screen';
  * rather than clips when it doesn't fit a short phone.
  */
 export function FlowScreen({ onBack, children }: PropsWithChildren<{ onBack: () => void }>) {
-  const insets = useSafeAreaInsets();
+  const bottomInset = useBottomInset();
   return (
     <Screen noBottomPadding>
       <View style={styles.back}>
         <BackButton onPress={onBack} />
       </View>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <View style={[styles.fill, { paddingBottom: insets.bottom + spacing.lg }]}>{children}</View>
+        <View style={[styles.fill, { paddingBottom: bottomInset + spacing.lg }]}>{children}</View>
       </ScrollView>
     </Screen>
   );

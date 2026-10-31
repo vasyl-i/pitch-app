@@ -63,7 +63,7 @@ export function EarSessionScreen({ navigation, route }: RootScreenProps<'EarSess
       };
 
   return (
-    <Screen noHorizontalPadding={completed} overlay={phase === 'listening' ? <MicGlow /> : undefined}>
+    <Screen noHorizontalPadding={completed} noBottomPadding={completed} overlay={phase === 'listening' ? <MicGlow /> : undefined}>
       <View style={!completed && styles.stepLabelSpace}>
         {stepLabel && (
           <AppText variant="caption" color={palette.white} center style={styles.stepLabel}>

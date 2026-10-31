@@ -5,10 +5,9 @@
 import { useRef } from 'react';
 import { Image, ScrollView, StyleSheet, View } from 'react-native';
 import { BlurTargetView, BlurView } from 'expo-blur';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLessonSessionStore } from '@/features/learning';
 import { usePaywall, usePremiumStatus } from '@/features/subscription';
-import { AppText, Button, CalendarIcon, COMPACT_SCREEN, ExercisesIcon, Screen, TimeIcon } from '@/shared/ui';
+import { AppText, Button, CalendarIcon, COMPACT_SCREEN, ExercisesIcon, Screen, TimeIcon, useBottomInset } from '@/shared/ui';
 import { spacing } from '@/shared/theme';
 import { useTranslation } from '@/shared/i18n';
 import type { RootScreenProps } from '@/app/navigation/types';
@@ -19,7 +18,7 @@ import { UnlockCard } from './UnlockCard';
 
 export function PracticeCompleteScreen({ navigation }: RootScreenProps<'PracticeComplete'>) {
   const { t } = useTranslation();
-  const insets = useSafeAreaInsets();
+  const bottomInset = useBottomInset();
   const blurTargetRef = useRef<View>(null);
   const stepCount = useLessonSessionStore((s) => s.steps.length);
   const { isPremium } = usePremiumStatus();
@@ -29,7 +28,7 @@ export function PracticeCompleteScreen({ navigation }: RootScreenProps<'Practice
   return (
     <Screen noHorizontalPadding noBottomPadding>
       <BlurTargetView ref={blurTargetRef} collapsable={false} style={styles.fill}>
-        <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 5 * spacing.xxl }]}>
+        <ScrollView contentContainerStyle={[styles.content, { paddingBottom: bottomInset + 5 * spacing.xxl }]}>
           <Image source={require('../../../../assets/practice-complete.png')} />
           <AppText variant="score" center>
             {t('session.complete.title')}
@@ -57,7 +56,7 @@ export function PracticeCompleteScreen({ navigation }: RootScreenProps<'Practice
         tint="dark"
         blurTarget={blurTargetRef}
         blurMethod="dimezisBlurViewSdk31Plus"
-        style={[styles.footer, { paddingBottom: insets.bottom }]}
+        style={[styles.footer, { paddingBottom: bottomInset }]}
       >
         <Button title={t('common.done')} onPress={() => resetToTab(navigation, 'HomeTab')} />
         <Button
