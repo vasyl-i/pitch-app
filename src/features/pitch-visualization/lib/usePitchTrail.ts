@@ -23,7 +23,7 @@ const FLUSH_INTERVAL_MS = 160;
  * Both `trail` and `now` are flushed together at FLUSH_INTERVAL_MS to avoid
  * triggering separate React re-renders.
  */
-export function usePitchTrail(trailSeconds = TRAIL_SECONDS) {
+export function usePitchTrail(trailSeconds = TRAIL_SECONDS, flushIntervalMs = FLUSH_INTERVAL_MS) {
   const bufRef = useRef<TrailSample[]>([]);
   const startRef = useRef(Date.now());
   const lastFlushRef = useRef(0);
@@ -54,13 +54,13 @@ export function usePitchTrail(trailSeconds = TRAIL_SECONDS) {
 
       // Throttle state flushes to reduce React re-renders + path rebuilds
       const elapsed = Date.now() - lastFlushRef.current;
-      if (elapsed >= FLUSH_INTERVAL_MS) {
+      if (elapsed >= flushIntervalMs) {
         doFlush();
       } else if (!flushTimerRef.current) {
-        flushTimerRef.current = setTimeout(doFlush, FLUSH_INTERVAL_MS - elapsed);
+        flushTimerRef.current = setTimeout(doFlush, flushIntervalMs - elapsed);
       }
     },
-    [trailSeconds, doFlush],
+    [trailSeconds, flushIntervalMs, doFlush],
   );
 
   const reset = useCallback(() => {

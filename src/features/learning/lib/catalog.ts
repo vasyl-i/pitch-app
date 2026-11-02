@@ -52,7 +52,7 @@ const EAR_DRILLS: Omit<Activity, 'minutes'>[] = [
     title: 'Echo the melody',
     tier: 'free',
     skills: ['melody-reproduction', 'musical-memory', 'rhythm-memory'],
-    difficulties: ['beginner', 'intermediate', 'advanced'],
+    difficulties: ['intermediate', 'advanced'],
     secondsPerRep: 13,
     challenge: 0.35,
     rounds: 4,

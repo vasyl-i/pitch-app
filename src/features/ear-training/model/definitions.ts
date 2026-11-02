@@ -250,10 +250,13 @@ const pitchMemory: ExerciseDefinition = {
  * Echo Short Melodies                                                 *
  * ------------------------------------------------------------------ */
 
+/**
+ * Two options: 3–4 notes and 5–8. A two-note phrase is just "Echo the
+ * interval", so there's no shorter tier — and a stale `beginner` (an old saved
+ * plan or lesson) falls into the shorter one.
+ */
 function melodyLength(difficulty: string | null): number {
-  if (difficulty === 'advanced') return randomInt(5, 8);
-  if (difficulty === 'intermediate') return randomInt(3, 4);
-  return 2;
+  return difficulty === 'advanced' ? randomInt(5, 8) : randomInt(3, 4);
 }
 
 const melodyEcho: ExerciseDefinition = {
@@ -263,11 +266,10 @@ const melodyEcho: ExerciseDefinition = {
   needsMic: true,
   rounds: 4,
   difficulties: [
-    level('beginner', 'earTraining.levels.notes', { range: '2' }),
     level('intermediate', 'earTraining.levels.notes', { range: '3–4' }),
     level('advanced', 'earTraining.levels.notes', { range: '5–8' }),
   ],
-  defaultDifficulty: 'beginner',
+  defaultDifficulty: 'intermediate',
   resultMs: 3200,
   makeRound(ctx: RoundContext): EarRound {
     const notes = generateMelody(melodyLength(ctx.difficulty), ctx.range);

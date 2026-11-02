@@ -8,8 +8,8 @@ import { useTranslation } from '@/shared/i18n';
 import { spacing } from '@/shared/theme';
 import { useFloatingTabBarClearance } from '@/app/navigation/FloatingTabBar';
 import type { HomeScreenProps } from '@/app/navigation/types';
-import { PremiumBanner } from '@/screens/subscription';
 import { continuePractice } from '../session/lessonFlow';
+import { VocalMonitorBanner } from './ui/VocalMonitorBanner';
 import { ProgressSection } from './ui/ProgressSection';
 import { TodayExerciseList } from './ui/TodayExerciseList';
 import { useTodayOverview } from './useTodayOverview';
@@ -24,15 +24,13 @@ export function TodayScreen({ navigation }: HomeScreenProps<'Today'>) {
 
   return (
     <Screen noHorizontalPadding noBottomPadding>
-      {/* horizontal padding lives on the content so the scroll view doesn't
-          clip the trial reminder poking past the banner's right edge */}
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.content, { paddingBottom: tabBarClearance }]}>
         <Pressable onPress={onHeadingTap}>
           <AppText variant="title">{t('home.heading')}</AppText>
         </Pressable>
 
         {/* same gap under the heading as on Account, so the banner holds still across tabs */}
-        <PremiumBanner source="today" style={styles.banner} />
+        <VocalMonitorBanner onPress={() => navigation.navigate('VocalMonitor')} style={styles.banner} />
 
         <ProgressSection accuracy={overall.accuracy} streak={overall.streak} practiceTime={overall.time} />
 

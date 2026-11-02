@@ -65,8 +65,7 @@ export const SKILL_TREE: LessonNode[] = localizeContent('skillTree', [
   node('chords-4', 'Complex chords', 'chords', 'ear', 'chord-tones', 'chord-singing', [{ skill: 'chord-singing', mastery: 60 }], 'advanced'),
 
   // Melody — echo short phrases, then longer, then complete them
-  node('melody-1', 'Echo two notes', 'melody', 'ear', 'melody-echo', 'melody-reproduction', [], 'beginner'),
-  node('melody-2', 'Echo short phrases', 'melody', 'ear', 'melody-echo', 'melody-reproduction', [{ skill: 'melody-reproduction', mastery: 40 }], 'intermediate'),
+  node('melody-2', 'Echo short phrases', 'melody', 'ear', 'melody-echo', 'melody-reproduction', [], 'intermediate'),
   node('melody-3', 'Sing a full song', 'melody', 'melody', 'twinkle', 'melody-reproduction', [{ skill: 'melody-reproduction', mastery: 50 }]),
   node('melody-4', 'Echo long phrases', 'melody', 'ear', 'melody-echo', 'melody-reproduction', [{ skill: 'melody-reproduction', mastery: 65 }], 'advanced'),
 

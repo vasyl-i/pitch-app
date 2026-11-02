@@ -1,5 +1,9 @@
 export const home = {
   heading: 'Let’s practice 🎧️️',
+  monitorBanner: {
+    title: 'See your voice live',
+    subtitle: 'Sing freely and watch every note',
+  },
   trialEndsTomorrow: 'Trial ends tomorrow',
   practice: 'Practice',
   shine: {

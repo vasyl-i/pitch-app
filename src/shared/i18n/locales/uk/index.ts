@@ -17,6 +17,7 @@ import { session } from './session';
 import { sing } from './sing';
 import { staff, pitch } from './staff';
 import { subscription } from './subscription';
+import { vocalMonitor } from './vocalMonitor';
 import { vocalRange } from './vocalRange';
 export { ukContent } from './content';
 
@@ -41,5 +42,6 @@ export const uk: LocaleShape<typeof en> = {
   staff,
   pitch,
   subscription,
+  vocalMonitor,
   vocalRange,
 };

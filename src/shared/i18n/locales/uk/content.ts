@@ -161,7 +161,6 @@ export const ukContent: ContentOverlay = {
     'chords-2': { title: 'Знайдіть акорд' },
     'chords-3': { title: 'Співайте звуки акорду' },
     'chords-4': { title: 'Складні акорди' },
-    'melody-1': { title: 'Повторіть дві ноти' },
     'melody-2': { title: 'Повторіть короткі фрази' },
     'melody-3': { title: 'Заспівайте цілу пісню' },
     'melody-4': { title: 'Повторіть довгі фрази' },

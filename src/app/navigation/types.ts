@@ -96,6 +96,7 @@ export type RootStackParamList = {
   SoundSettings: undefined;
   LanguageSettings: undefined;
   ManageSubscription: undefined;
+  VocalMonitor: undefined;
   VocalRangeSettings: undefined;
   RedetectLow: undefined;
   RedetectHigh: { low: DetectionResult };

@@ -3,6 +3,10 @@ import type { home as en } from '../en/home';
 
 export const home: LocaleShape<typeof en> = {
   heading: 'Час практикуватися 🎧️️',
+  monitorBanner: {
+    title: 'Вокальний монітор',
+    subtitle: 'Дивіться на точність і стабільність',
+  },
   trialEndsTomorrow: 'Пробний період завершується завтра',
   practice: 'Практика',
   shine: {

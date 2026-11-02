@@ -15,6 +15,7 @@ import { session } from './session';
 import { sing } from './sing';
 import { staff, pitch } from './staff';
 import { subscription } from './subscription';
+import { vocalMonitor } from './vocalMonitor';
 import { vocalRange } from './vocalRange';
 
 export const en = {
@@ -38,5 +39,6 @@ export const en = {
   staff,
   pitch,
   subscription,
+  vocalMonitor,
   vocalRange,
 } as const;

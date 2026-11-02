@@ -22,6 +22,8 @@ import { displayMinutes, sessionSeconds } from './catalog';
 export const MAX_EAR_ROUND_FACTOR = 3;
 /** most keys a scale or arpeggio climbs through in one session */
 export const MAX_LADDER_ROUNDS = 4;
+/** most rounds any exercise runs in one session, however long the day's budget */
+export const MAX_ROUNDS = 6;
 
 /**
  * The most repetitions one session of `activity` may be stretched to. A
@@ -29,10 +31,10 @@ export const MAX_LADDER_ROUNDS = 4;
  * (`trainingRange`) bounds it too; without one it may take every round.
  */
 export function maxReps(activity: Activity, range: PitchRange | null = null): number {
-  if (activity.kind === 'ear') return Math.min(activity.rounds * MAX_EAR_ROUND_FACTOR, activity.maxRounds ?? Infinity);
+  if (activity.kind === 'ear') return Math.min(activity.rounds * MAX_EAR_ROUND_FACTOR, activity.maxRounds ?? Infinity, MAX_ROUNDS);
   const exercise = melodyById(activity.id);
   if (!exercise || categoryRepeats(exercise.category) === 'once') return 1;
-  return Math.min(MAX_LADDER_ROUNDS, ladderRoom(exercise, range));
+  return Math.min(MAX_LADDER_ROUNDS, MAX_ROUNDS, ladderRoom(exercise, range));
 }
 
 /**

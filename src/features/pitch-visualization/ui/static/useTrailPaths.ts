@@ -14,7 +14,7 @@ export type BandPaths = Record<'lime' | 'yellow' | 'orange' | 'red' | 'gray', Sk
 /** a gap longer than this in the samples breaks the line */
 const MAX_JOIN_SEC = 0.25;
 
-const emptyPaths = (): BandPaths => ({
+export const emptyPaths = (): BandPaths => ({
   lime: Skia.Path.Make(),
   yellow: Skia.Path.Make(),
   orange: Skia.Path.Make(),
@@ -22,7 +22,7 @@ const emptyPaths = (): BandPaths => ({
   gray: Skia.Path.Make(),
 });
 
-function bandOf(paths: BandPaths, cents: number | null): SkPath {
+export function bandOf(paths: BandPaths, cents: number | null): SkPath {
   if (cents === null) return paths.gray;
   const a = Math.abs(cents);
   return a <= PERFECT_CENTS ? paths.lime : a <= SLIGHT_CENTS ? paths.yellow : a <= NOTICEABLE_CENTS ? paths.orange : paths.red;

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { fitLessonToBudget, MAX_LADDER_ROUNDS, maxReps } from '../lib/budget';
+import { fitLessonToBudget, MAX_LADDER_ROUNDS, MAX_ROUNDS, maxReps } from '../lib/budget';
 import { CATALOG, sessionSeconds } from '../lib/catalog';
 import type { DailyLesson } from '../model/types';
 
@@ -30,12 +30,12 @@ test('a song runs once; a scale or arpeggio climbs keys, as far as the range all
   assert.deepEqual(fit.steps.map((s) => s.rounds), [1, 2]);
 });
 
-test('a 5-minute day of three exercises reaches its budget', () => {
-  const fit = fitLessonToBudget(lesson(['note-echo', 'c-major-scale', 'major-arpeggio']), 5);
-  assert.ok(fittedSeconds(fit) >= 5 * 60, `${fittedSeconds(fit)}s`);
+test('a 4-minute day of three exercises reaches its budget', () => {
+  const fit = fitLessonToBudget(lesson(['note-echo', 'c-major-scale', 'major-arpeggio']), 4);
+  assert.ok(fittedSeconds(fit) >= 4 * 60, `${fittedSeconds(fit)}s`);
   // and overshoots by at most one repetition
   const longestRep = Math.max(...fit.steps.map((s) => s.activity.secondsPerRep));
-  assert.ok(fittedSeconds(fit) < 5 * 60 + longestRep);
+  assert.ok(fittedSeconds(fit) < 4 * 60 + longestRep);
 });
 
 test('repetitions stay between the default and the cap', () => {
@@ -54,7 +54,12 @@ test('a day already over budget is left at default repetitions', () => {
 });
 
 test('time spreads across exercises rather than piling onto one', () => {
-  const fit = fitLessonToBudget(lesson(['note-echo', 'c-major-scale', 'major-arpeggio']), 5);
+  const fit = fitLessonToBudget(lesson(['note-echo', 'c-major-scale', 'major-arpeggio']), 4);
   const secs = fit.steps.map((s) => sessionSeconds(s.activity, s.rounds));
   assert.ok(Math.max(...secs) - Math.min(...secs) <= Math.max(...fit.steps.map((s) => s.activity.secondsPerRep)) + 10);
+});
+
+test('no exercise ever runs more than MAX_ROUNDS rounds, however long the day', () => {
+  assert.equal(MAX_ROUNDS, 6);
+  for (const a of CATALOG) assert.ok(maxReps(a) <= MAX_ROUNDS, a.id);
 });

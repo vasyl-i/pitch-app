@@ -161,7 +161,6 @@ export const ptContent: ContentOverlay = {
     'chords-2': { title: 'Identifique o acorde' },
     'chords-3': { title: 'Cante as notas do acorde' },
     'chords-4': { title: 'Acordes complexos' },
-    'melody-1': { title: 'Repita duas notas' },
     'melody-2': { title: 'Repita frases curtas' },
     'melody-3': { title: 'Cante uma canção inteira' },
     'melody-4': { title: 'Repita frases longas' },

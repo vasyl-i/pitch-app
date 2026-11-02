@@ -1,12 +1,15 @@
 /**
  * Shared live-pitch UI: the piano keyboard, the confidence meter, and the
  * piano-roll canvases — a scrolling one for open-ended singing (range
- * detection) and a static one that lays a whole exercise out at once.
+ * detection), a static one that lays a whole exercise out at once, and an
+ * endless target-less one for the vocal monitor.
  */
 export { PitchKeyboard } from './ui/PitchKeyboard';
 export { ConfidenceMeter } from './ui/ConfidenceMeter';
 export { ScrollingPitchCanvas } from './ui/scrolling/ScrollingPitchCanvas';
 export { StaticPitchCanvas } from './ui/static/StaticPitchCanvas';
+export { MonitorPitchCanvas } from './ui/monitor/MonitorPitchCanvas';
+export type { LivePitchValues } from './ui/static/LiveDot';
 
 /**
  * Display stabilization — the UI-only half of the pitch path.

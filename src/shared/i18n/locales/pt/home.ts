@@ -3,6 +3,10 @@ import type { home as en } from '../en/home';
 
 export const home: PtLocaleShape<typeof en> = {
   heading: 'Hora de praticar 🎧️️',
+  monitorBanner: {
+    title: 'Veja a sua voz ao vivo',
+    subtitle: 'Cante à vontade e veja cada nota',
+  },
   trialEndsTomorrow: 'O período experimental termina amanhã',
   practice: 'Praticar',
   shine: {

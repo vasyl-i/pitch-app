@@ -3,6 +3,7 @@ import { initReactI18next } from 'react-i18next';
 import { en } from './locales/en';
 import { uk, ukContent } from './locales/uk';
 import { pt, ptContent } from './locales/pt';
+import { installPluralRules } from './pluralRules';
 
 export const SUPPORTED_LANGUAGES = ['en', 'uk', 'pt'] as const;
 export type Language = (typeof SUPPORTED_LANGUAGES)[number];
@@ -24,6 +25,9 @@ export const resources = {
   uk: { translation: uk, content: ukContent },
   'pt-PT': { translation: pt, content: ptContent },
 } as const;
+
+// Hermes may lack Intl.PluralRules; without it every Ukrainian count but 1 reads as `_other`
+installPluralRules();
 
 /**
  * Initialised synchronously with English so pure `lib/` code (and node tests)

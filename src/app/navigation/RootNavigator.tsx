@@ -18,6 +18,7 @@ import { WeakSpotsScreen } from '@/screens/weak-spots';
 import { ManageSubscriptionScreen } from '@/screens/subscription';
 import { StaffPracticeScreen } from '@/screens/staff-practice';
 import { NewPasswordScreen, CheckEmailScreen } from '@/screens/auth';
+import { VocalMonitorScreen } from '@/screens/vocal-monitor';
 import { VocalRangeSettingsScreen, RedetectLowScreen, RedetectHighScreen, RedetectResultsScreen } from '@/screens/vocal-range';
 import type { RootStackParamList } from './types';
 import { OnboardingNavigator, STACK_OPTIONS } from './stacks';
@@ -61,6 +62,7 @@ export function RootNavigator() {
       <RootStack.Screen name="SoundSettings" component={SoundSettingsScreen} />
       <RootStack.Screen name="LanguageSettings" component={LanguageSettingsScreen} />
       <RootStack.Screen name="ManageSubscription" component={ManageSubscriptionScreen} />
+      <RootStack.Screen name="VocalMonitor" component={VocalMonitorScreen} />
       <RootStack.Screen name="VocalRangeSettings" component={VocalRangeSettingsScreen} />
       <RootStack.Screen name="RedetectLow" component={RedetectLowScreen} />
       <RootStack.Screen name="RedetectHigh" component={RedetectHighScreen} />

@@ -23,12 +23,14 @@ export function LiveDot({ live, transform, H, midCenter, semiH }: {
   /** the playhead's translateX */
   transform: DerivedValue<{ translateX: number }[]>;
   H: number;
-  midCenter: number;
+  /** the pitch at the canvas's vertical centre; a shared value when the view follows the voice */
+  midCenter: number | SharedValue<number>;
   semiH: number;
 }) {
   const y = useDerivedValue(() => {
     const m = live.midi.value;
-    return Number.isNaN(m) ? -1000 : H / 2 - (m - midCenter) * semiH;
+    const centre = typeof midCenter === 'number' ? midCenter : midCenter.value;
+    return Number.isNaN(m) ? -1000 : H / 2 - (m - centre) * semiH;
   }, [H, midCenter, semiH]);
   const opacity = useDerivedValue(() => (Number.isNaN(live.midi.value) ? 0 : 1));
   const labelY = useDerivedValue(() => y.value + 5);
