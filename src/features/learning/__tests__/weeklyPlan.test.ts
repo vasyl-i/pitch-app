@@ -72,7 +72,8 @@ test('a free week covers the whole free catalog', () => {
   // 10 minutes: enough core slots across the week for every free exercise
   const plan = generateDefaultWeeklyPlan(10, 'free', mulberry32(7));
   const used = new Set(DAYS.flatMap((d) => ids(plan, d)));
-  for (const a of FREE_CATALOG) assert.ok(used.has(a.id), `${a.id} never scheduled`);
+  // what the current UI language offers of it (some songs are offered in one language only)
+  for (const a of catalogForTier('free')) assert.ok(used.has(a.id), `${a.id} never scheduled`);
   for (const id of used) assert.ok(FREE_CATALOG.some((a) => a.id === id), `${id} is not free`);
 });
 

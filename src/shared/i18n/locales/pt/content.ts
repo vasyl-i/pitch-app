@@ -17,6 +17,12 @@ export const ptContent: ContentOverlay = {
     twinkle: { source: 'Tradicional · domínio público' },
     'mary-lamb': { source: 'Tradicional · domínio público' },
     'frere-jacques': { source: 'Tradicional · domínio público' },
+    'london-bridge': { source: 'Tradicional · domínio público' },
+    'old-macdonald': { source: 'Tradicional · domínio público' },
+    'baa-baa-black-sheep': { source: 'Tradicional · domínio público' },
+    'yankee-doodle': { source: 'Tradicional · domínio público' },
+    'happy-birthday': { source: 'Tradicional · domínio público' },
+    'three-blind-mice': { source: 'Tradicional · domínio público' },
     'ode-to-joy': { source: 'Beethoven · domínio público' },
     'd-dorian-mode': {
       title: 'Ré dórico',

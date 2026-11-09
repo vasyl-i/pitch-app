@@ -12,6 +12,8 @@ export const exercises: LocaleShape<typeof en> = {
   speedCaption: 'Темп, уд/хв',
   keysA11y: 'Тональності {{direction}}',
   lowToHigh: 'Знизу вгору',
+  wholeSong: 'Уся пісня',
+  wholeSongA11y: 'Заспівати всю пісню',
   highToLow: 'Згори вниз',
   alreadySet: 'Уже додано на {{day}}: {{count}}',
   empty: 'Порожньо',

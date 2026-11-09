@@ -54,6 +54,8 @@ interface ProfileState {
   onboardingStep: OnboardingStep;
   /** user preference: transpose exercises into range (default on) */
   autoTranspose: boolean;
+  /** when the synced fields (profile, autoTranspose) last changed on this device; 0 = never. Lets sync tell which side is newer. */
+  updatedAt: number;
 
   /** record a fresh detection pass — resets comfort/training back to the derived default and clears any temporary reduction */
   setDetectedRange: (maximumRange: PitchRange, confidence: number, detectedAt?: number) => void;
@@ -62,6 +64,16 @@ interface ProfileState {
   /** back to the range `deriveComfortRange` would produce from the last detection */
   resetToDetected: () => void;
   setTemporaryAdjustment: (adjustment: TemporaryAdjustment | null) => void;
+  /** apply the server's copy as-is (keeps its timestamp, so it is not mistaken for a newer local edit) */
+  importProfile: (remote: {
+    maximumRange: PitchRange;
+    comfortRange: PitchRange | null;
+    confidence: number;
+    detectedAt: number;
+    temporaryAdjustment: TemporaryAdjustment | null;
+    autoTranspose: boolean | null;
+    updatedAt: number;
+  }) => void;
   clearProfile: () => void;
   setAutoTranspose: (v: boolean) => void;
   /** advance onboarding to a specific step without marking fully complete */
@@ -77,6 +89,7 @@ export const useProfileStore = create<ProfileState>()(
       hasOnboarded: false,
       onboardingStep: 'not-started' as OnboardingStep,
       autoTranspose: true,
+      updatedAt: 0,
 
       setDetectedRange: (maximumRange, confidence, detectedAt = Date.now()) => {
         const comfortRange = deriveComfortRange(maximumRange);
@@ -90,6 +103,7 @@ export const useProfileStore = create<ProfileState>()(
             temporaryAdjustment: null,
           },
           onboardingStep: 'range-complete',
+          updatedAt: Date.now(),
         });
       },
 
@@ -107,6 +121,7 @@ export const useProfileStore = create<ProfileState>()(
             comfortRange: range,
             trainingRange: computeTrainingRange(range, current.temporaryAdjustment),
           },
+          updatedAt: Date.now(),
         });
       },
 
@@ -121,6 +136,7 @@ export const useProfileStore = create<ProfileState>()(
             trainingRange: computeTrainingRange(comfortRange, current.temporaryAdjustment),
             temporaryAdjustment: null,
           },
+          updatedAt: Date.now(),
         });
       },
 
@@ -133,11 +149,31 @@ export const useProfileStore = create<ProfileState>()(
             temporaryAdjustment: adjustment,
             trainingRange: computeTrainingRange(current.comfortRange, adjustment),
           },
+          updatedAt: Date.now(),
         });
       },
 
-      clearProfile: () => set({ profile: null, hasOnboarded: false, onboardingStep: 'not-started' }),
-      setAutoTranspose: (autoTranspose) => set({ autoTranspose }),
+      importProfile: (remote) => {
+        const comfortRange = remote.comfortRange ?? deriveComfortRange(remote.maximumRange);
+        const step = get().onboardingStep;
+        set({
+          profile: {
+            maximumRange: remote.maximumRange,
+            comfortRange,
+            trainingRange: computeTrainingRange(comfortRange, remote.temporaryAdjustment),
+            detectedAt: remote.detectedAt,
+            confidence: remote.confidence,
+            temporaryAdjustment: remote.temporaryAdjustment,
+          },
+          ...(remote.autoTranspose != null ? { autoTranspose: remote.autoTranspose } : {}),
+          // a profile on the server means the range step is done; never move a user backwards
+          onboardingStep: step === 'not-started' ? 'range-complete' : step,
+          updatedAt: remote.updatedAt,
+        });
+      },
+
+      clearProfile: () => set({ profile: null, hasOnboarded: false, onboardingStep: 'not-started', updatedAt: 0 }),
+      setAutoTranspose: (autoTranspose) => set({ autoTranspose, updatedAt: Date.now() }),
       advanceOnboarding: (step) => set({ onboardingStep: step }),
       completeOnboarding: () => set({ hasOnboarded: true, onboardingStep: 'complete' }),
     }),

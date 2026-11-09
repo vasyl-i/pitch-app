@@ -37,6 +37,33 @@ export const WAVE_LAYERS: WaveLayer[] = [
 ];
 
 const SEGMENTS = 128;
+/** below this share of the available room the wave is drawn exactly as computed */
+const KNEE = 0.7;
+
+/**
+ * Room (px) a layer needs between its centre line and the canvas edge for its
+ * stroke and blur to stay inside: half the stroke plus ~3σ of the blur
+ * (Skia turns a blur radius r into σ ≈ 0.577·r + 0.5).
+ */
+function edgeMargin(layer: WaveLayer) {
+  const blurExtent = layer.blur > 0 ? 3 * (0.57735 * layer.blur + 0.5) : 0;
+  return layer.width / 2 + blurExtent;
+}
+
+/**
+ * Soft limit: untouched up to KNEE·limit, then eased so it approaches `limit`
+ * but never reaches it. Loud input flattens against the edge instead of being
+ * cut off by it, and quiet/normal levels look exactly as before.
+ */
+function softLimit(offset: number, limit: number) {
+  'worklet';
+  const knee = limit * KNEE;
+  const abs = Math.abs(offset);
+  if (abs <= knee) return offset;
+  const room = limit - knee;
+  const eased = knee + room * Math.tanh((abs - knee) / room);
+  return offset < 0 ? -eased : eased;
+}
 
 /** one sine layer of the waveform, rebuilt on the UI thread each frame from the phase and smoothed level */
 export function WavePath({
@@ -54,6 +81,8 @@ export function WavePath({
   height: number;
   color: string;
 }) {
+  // how far this layer may travel from the centre line and still be fully visible
+  const limit = Math.max(height / 2 - edgeMargin(layer), 1);
 
   const path = useDerivedValue(() => {
     const p = Skia.Path.Make();
@@ -72,7 +101,7 @@ export function WavePath({
       const envelope = Math.sin(t * Math.PI);
       const wave1 = Math.sin(t * Math.PI * 2 * freq + ph);
       const wave2 = 0.3 * Math.sin(t * Math.PI * 3 * freq + ph * 1.3);
-      const y = midY + (wave1 + wave2) * amplitude * envelope;
+      const y = midY + softLimit((wave1 + wave2) * amplitude * envelope, limit);
       p.lineTo(x, y);
     }
 

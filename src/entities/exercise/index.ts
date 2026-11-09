@@ -1,6 +1,7 @@
 /** Target-melody exercises: the content model, how to fit it to a voice, and how to grade it. */
 export type { Exercise, TargetNote, ExerciseCategory, ExercisePattern, Difficulty } from './types';
-export { exercises, odeToJoy, melodyById, isSong } from './library';
+export { exercises, odeToJoy, melodyById, isSong, offeredIn, wholeSong } from './library';
+export { notation } from './notation';
 export { EXERCISE_CATEGORIES, categoriesInOrder, categoryMeta, categoryRepeats, categoryTier } from './categories';
 export type { ExerciseCategoryMeta, ExerciseRepeat, ExerciseTier } from './categories';
 export { fitToRange, keyLadder, keyRoom, ladderRoom, nextSweepKey, randomKey, transposeExercise, transposeKeyLabel } from './transpose';

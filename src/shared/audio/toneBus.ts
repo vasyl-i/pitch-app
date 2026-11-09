@@ -105,8 +105,10 @@ export function createToneGroup({ claimsSpeaker = true }: ToneGroupOptions = {})
       }
 
       // extend the speaker-busy horizon, converting the audio clock to wall
-      // clock at scheduling time (the two clocks are unrelated)
-      sounding?.extendTo(Date.now() + (at + duration - ctx.currentTime) * 1000);
+      // clock at scheduling time (the two clocks are unrelated). A very short
+      // note sounds a little longer than asked, so its voice's stop decides.
+      const stopAt = pv?.stopAt ?? at + duration;
+      sounding?.extendTo(Date.now() + (stopAt - ctx.currentTime) * 1000);
     },
 
     cancel() {

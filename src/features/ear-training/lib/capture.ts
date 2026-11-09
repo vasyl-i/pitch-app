@@ -9,7 +9,13 @@
  * (the other half is that live and final scoring run the same evaluator over
  * this log).
  *
- * The log holds **raw** detector pitch. A pitch smoother used to sit between the
+ * The log holds **raw** detector pitch, minus the detector's stray readings:
+ * a pitch outside its trusted band, or a jump of more than a few semitones
+ * that the next frames don't confirm, is dropped by the jump guard (see
+ * `createPitchJumpGuard`). It never alters a pitch it lets through, and a
+ * confirmed leap is logged in full at the times it was sung.
+ *
+ * A pitch smoother used to sit between the
  * gate and the log; it was measured as the largest source of user-visible pitch
  * error on real singing and no longer exists in this path. Visual steadiness for
  * the live note name is a presentation concern, handled by the note stabilizer
@@ -22,7 +28,7 @@
  * estimate from scratch would leave it unsettled for the first seconds of a
  * sing window.
  */
-import { createVoiceGate, type PitchFrame } from '@/features/pitch-detection';
+import { createPitchJumpGuard, createVoiceGate, type PitchFrame } from '@/features/pitch-detection';
 import { createNoteStabilizer } from '@/shared/lib/noteStabilizer';
 import { freqToMidi, midiToName } from '@/shared/lib/music';
 
@@ -59,14 +65,19 @@ export interface SingCapture {
   reset(): void;
 }
 
+/** while the jump guard holds a frame back the live readout stays put, but not for longer than this */
+const LIVE_HOLD_MS = 120;
+
 export function createSingCapture(): SingCapture {
   const gate = createVoiceGate();
+  const jumpGuard = createPitchJumpGuard();
   // display only — never touches `frames`, which is what scoring reads
   const displayNote = createNoteStabilizer();
   let frames: SungFrame[] = [];
   let live: LivePitch = { note: null, midi: null };
   let collecting = false;
   let openedAt = 0;
+  let lastLoggedAt = 0;
 
   return {
     begin() {
@@ -74,6 +85,7 @@ export function createSingCapture(): SingCapture {
       live = { note: null, midi: null };
       displayNote.reset();
       collecting = true;
+      jumpGuard.reset();
       openedAt = Date.now();
     },
 
@@ -91,15 +103,23 @@ export function createSingCapture(): SingCapture {
       const isVoice = gate.accept(frame.rms, rawMidi, now);
       if (!collecting) return;
 
-      if (rawMidi === null || !isVoice) {
+      // every voiced frame keeps the gate's continuity, held or not — as the
+      // native gate does — so a soft note stays on the lower sustain bar
+      if (isVoice && rawMidi !== null) gate.confirm(rawMidi, now);
+      const released = jumpGuard.push(isVoice ? rawMidi : null, now);
+      for (const { midi, at } of released) {
+        frames.push({ t: (at - openedAt) / 1000, midi });
+        lastLoggedAt = at;
+      }
+      const last = released[released.length - 1];
+      if (last) {
+        const shown = displayNote.push(last.midi);
+        live = { note: shown === null ? null : midiToName(shown, 'ascii'), midi: last.midi };
+      } else if (!isVoice || now - lastLoggedAt > LIVE_HOLD_MS) {
+        // a frame held for confirmation leaves the readout as it was, briefly
         displayNote.push(null);
         live = { note: null, midi: null };
-        return;
       }
-      gate.confirm(rawMidi, now);
-      frames.push({ t: (now - openedAt) / 1000, midi: rawMidi });
-      const shown = displayNote.push(rawMidi);
-      live = { note: shown === null ? null : midiToName(shown, 'ascii'), midi: rawMidi };
     },
 
     get frames() {
@@ -115,6 +135,7 @@ export function createSingCapture(): SingCapture {
       frames = [];
       live = { note: null, midi: null };
       gate.reset();
+      jumpGuard.reset();
       displayNote.reset();
     },
   };

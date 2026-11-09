@@ -43,6 +43,8 @@ interface PreferencesState {
   /** null until the user has answered the onboarding questions (or skipped into defaults) */
   preferences: LearningPreferences | null;
   setPreferences: (update: Partial<Omit<LearningPreferences, 'updatedAt'>>) => void;
+  /** apply the server's copy as-is, keeping its timestamp (so it is not mistaken for a newer local edit) */
+  importPreferences: (remote: LearningPreferences) => void;
   clearPreferences: () => void;
 }
 
@@ -55,6 +57,8 @@ export const usePreferencesStore = create<PreferencesState>()(
         const current = get().preferences ?? { ...DEFAULT_PREFERENCES, updatedAt: 0 };
         set({ preferences: { ...current, ...update, updatedAt: Date.now() } });
       },
+
+      importPreferences: (remote) => set({ preferences: remote }),
 
       clearPreferences: () => set({ preferences: null }),
     }),

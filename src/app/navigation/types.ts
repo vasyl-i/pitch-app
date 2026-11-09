@@ -72,7 +72,8 @@ export type RootStackParamList = {
   /** an ear/voice drill session; guided steps auto-advance the daily lesson */
   EarSession: { exerciseId: string; difficultyId?: string; guided?: boolean };
   /** a staff-practice melody session */
-  MelodyPractice: { exerciseId: string; guided?: boolean };
+  /** `whole`: sing the whole song rather than its excerpt (library only, never a lesson step) */
+  MelodyPractice: { exerciseId: string; guided?: boolean; whole?: boolean };
   /** singing along to an uploaded instrumental against its detected key */
   InstrumentalSing: { trackId: string };
   /** end-of-lesson summary for the guided flow */

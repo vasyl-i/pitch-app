@@ -1,4 +1,4 @@
-import { localizeContent } from '../../shared/i18n';
+import { currentLanguage, localizeContent, type Language } from '../../shared/i18n';
 import type { Exercise, TargetNote } from './types';
 
 // Build sequential notes from [midi, beats, lyric?] triples at a given tempo.
@@ -114,14 +114,133 @@ const frereJacques: Exercise = {
   title: 'Frère Jacques',
   source: 'Traditional · public domain',
   key: 'C major',
-  bpm: 108,
+  bpm: 110,
   category: 'melody',
   difficulty: 'medium',
-  notes: seq(108, [
+  // the whole song once through, taken from a piano MIDI and moved from F down to C
+  notes: seq(110, [
     [C4, 1, 'Frè'], [D4, 1, 're'], [E4, 1, 'Jac'], [C4, 1, 'ques'],
     [C4, 1, 'Frè'], [D4, 1, 're'], [E4, 1, 'Jac'], [C4, 1, 'ques'],
     [E4, 1, 'Dor'], [F4, 1, 'mez'], [G4, 2, 'vous'],
     [E4, 1, 'Dor'], [F4, 1, 'mez'], [G4, 2, 'vous'],
+    [G4, 0.5, 'Son'], [A4, 0.5, 'nez'], [G4, 0.5, 'les'], [F4, 0.5, 'ma'], [E4, 1, 'ti'], [C4, 1, 'nes'],
+    [G4, 0.5, 'Son'], [A4, 0.5, 'nez'], [G4, 0.5, 'les'], [F4, 0.5, 'ma'], [E4, 1, 'ti'], [C4, 1, 'nes'],
+    [C4, 1, 'Ding'], [G3, 1, 'dang'], [C4, 2, 'dong'],
+    [C4, 1, 'Ding'], [G3, 1, 'dang'], [C4, 2, 'dong'],
+  ]),
+};
+
+// ---- songs taken from MIDI files ------------------------------------------
+//
+// The top line of each file's melody part, with the rhythm snapped to the
+// written values. Songs in flat keys are moved to the nearest key the staff
+// spells without flats (the session moves every song into the singer's range
+// anyway). Long ones are cut at the end of a phrase that resolves home.
+
+const londonBridge: Exercise = {
+  id: 'london-bridge',
+  title: 'London Bridge Is Falling Down',
+  source: 'Traditional · public domain',
+  key: 'C major',
+  bpm: 84,
+  category: 'melody',
+  difficulty: 'easy',
+  notes: seq(84, [
+    [G4, 0.75, 'Lon'], [A4, 0.25, 'don'], [G4, 0.5, 'Bridge'], [F4, 0.5, 'is'], [E4, 0.5, 'fall'], [F4, 0.5, 'ing'], [G4, 1, 'down'],
+    [D4, 0.5, 'fall'], [E4, 0.5, 'ing'], [F4, 1, 'down'], [E4, 0.5, 'fall'], [F4, 0.5, 'ing'], [G4, 1, 'down'],
+    [G4, 0.75, 'Lon'], [A4, 0.25, 'don'], [G4, 0.5, 'Bridge'], [F4, 0.5, 'is'], [E4, 0.5, 'fall'], [F4, 0.5, 'ing'], [G4, 1, 'down'],
+    [D4, 1, 'my'], [G4, 1, 'fair'], [E4, 0.5, 'la'], [C4, 1.5, 'dy'],
+  ]),
+};
+
+// the first two lines (up to the second E-I-E-I-O), moved from F up to G
+const oldMacDonald: Exercise = {
+  id: 'old-macdonald',
+  title: 'Old MacDonald Had a Farm',
+  source: 'Traditional · public domain',
+  key: 'G major',
+  bpm: 90,
+  category: 'melody',
+  difficulty: 'easy',
+  notes: seq(90, [
+    [G4, 0.5, 'Old'], [G4, 0.5, 'Mac'], [G4, 0.5, 'Don'], [D4, 0.5, 'ald'], [E4, 0.5, 'had'], [E4, 0.5, 'a'], [D4, 1, 'farm'],
+    [B4, 0.5, 'E'], [B4, 0.5, 'I'], [A4, 0.5, 'E'], [A4, 0.5, 'I'], [G4, 1.5, 'O'], [D4, 0.5, 'And'],
+    [G4, 0.5, 'on'], [G4, 0.5, 'his'], [G4, 0.5, 'farm'], [D4, 0.5, 'he'], [E4, 0.5, 'had'], [E4, 0.5, 'a'], [D4, 1, 'cow'],
+    [B4, 0.5, 'E'], [B4, 0.5, 'I'], [A4, 0.5, 'E'], [A4, 0.5, 'I'], [G4, 2, 'O'],
+  ]),
+};
+
+const baaBaa: Exercise = {
+  id: 'baa-baa-black-sheep',
+  title: 'Baa, Baa, Black Sheep',
+  source: 'Traditional · public domain',
+  key: 'C major',
+  bpm: 98,
+  category: 'melody',
+  difficulty: 'medium',
+  notes: seq(98, [
+    [C4, 1, 'Baa'], [C4, 1, 'baa'], [G4, 1, 'black'], [G4, 1, 'sheep'],
+    [A4, 0.5, 'have'], [B4, 0.5, 'you'], [C5, 0.5, 'a'], [A4, 0.5, 'ny'], [G4, 2, 'wool'],
+    [F4, 1, 'Yes'], [F4, 1, 'sir'], [E4, 1, 'yes'], [E4, 1, 'sir'], [D4, 1, 'three'], [D4, 1, 'bags'], [C4, 2, 'full'],
+    [G4, 1, 'One'], [G4, 0.5, 'for'], [G4, 0.5, 'the'], [F4, 1, 'mas'], [F4, 0.5, 'ter'], [F4, 0.5, 'and'],
+    [E4, 1, 'one'], [E4, 0.5, 'for'], [E4, 0.5, 'the'], [D4, 1.5, 'dame'], [D4, 0.5, 'and'],
+    [G4, 1, 'one'], [G4, 0.5, 'for'], [G4, 0.5, 'the'], [F4, 0.5, 'lit'], [G4, 0.5, 'tle'], [A4, 0.5, 'boy'], [F4, 0.5, 'who'],
+    [E4, 1, 'lives'], [D4, 0.5, 'down'], [D4, 0.5, 'the'], [C4, 2, 'lane'],
+  ]),
+};
+
+// the tune is the piccolo line of a band arrangement, an octave down
+const yankeeDoodle: Exercise = {
+  id: 'yankee-doodle',
+  title: 'Yankee Doodle',
+  source: 'Traditional · public domain',
+  key: 'G major',
+  bpm: 116,
+  category: 'melody',
+  difficulty: 'medium',
+  notes: seq(116, [
+    [G4, 1, 'Yan'], [G4, 1, 'kee'], [A4, 1, 'Doo'], [B4, 1, 'dle'], [G4, 1, 'went'], [B4, 1, 'to'], [A4, 1, 'town'], [D4, 1, 'a'],
+    [G4, 1, 'rid'], [G4, 1, 'ing'], [A4, 1, 'on'], [B4, 1, 'a'], [G4, 2, 'po'], [FS4, 2, 'ny'],
+    [G4, 1, 'Stuck'], [G4, 1, 'a'], [A4, 1, 'feath'], [B4, 1, 'er'], [C5, 1, 'in'], [B4, 1, 'his'], [A4, 1, 'cap'], [G4, 1, 'and'],
+    [FS4, 1, 'called'], [D4, 1, 'it'], [E4, 1, 'ma'], [FS4, 1, 'ca'], [G4, 2, 'ro'], [G4, 2, 'ni'],
+  ]),
+};
+
+// one verse, moved from E♭ down to D; the name is "singer" so every note has a syllable
+const happyBirthday: Exercise = {
+  id: 'happy-birthday',
+  title: 'Happy Birthday to You',
+  source: 'Traditional · public domain',
+  key: 'D major',
+  bpm: 84,
+  category: 'melody',
+  difficulty: 'medium',
+  notes: seq(84, [
+    [D4, 0.75, 'Hap'], [D4, 0.25, 'py'], [E4, 1, 'birth'], [D4, 1, 'day'], [G4, 1, 'to'], [FS4, 2, 'you'],
+    [D4, 0.75, 'Hap'], [D4, 0.25, 'py'], [E4, 1, 'birth'], [D4, 1, 'day'], [A4, 1, 'to'], [G4, 2, 'you'],
+    [D4, 0.75, 'Hap'], [D4, 0.25, 'py'], [D5, 1, 'birth'], [B4, 1, 'day'], [G4, 1, 'dear'], [FS4, 1, 'sing'], [E4, 1, 'er'],
+    [C5, 0.75, 'Hap'], [C5, 0.25, 'py'], [B4, 1, 'birth'], [G4, 1, 'day'], [A4, 1, 'to'], [G4, 3, 'you'],
+  ]),
+};
+
+// the whole round; the "farmer's wife" run is quick, so it starts well below the file's 135
+const threeBlindMice: Exercise = {
+  id: 'three-blind-mice',
+  title: 'Three Blind Mice',
+  source: 'Traditional · public domain',
+  key: 'C major',
+  bpm: 104,
+  category: 'melody',
+  difficulty: 'hard',
+  notes: seq(104, [
+    [E4, 1.5, 'Three'], [D4, 1.5, 'blind'], [C4, 3, 'mice'],
+    [E4, 1.5, 'Three'], [D4, 1.5, 'blind'], [C4, 3, 'mice'],
+    [G4, 1.5, 'See'], [F4, 1, 'how'], [F4, 0.5, 'they'], [E4, 3, 'run'],
+    [G4, 1.5, 'See'], [F4, 1, 'how'], [F4, 0.5, 'they'], [E4, 2.5, 'run'], [G4, 0.5, 'They'],
+    [C5, 1, 'all'], [C5, 0.5, 'ran'], [B4, 0.5, 'af'], [A4, 0.5, 'ter'], [B4, 0.5, 'the'], [C5, 1, 'far'], [G4, 0.5, "mer's"], [G4, 1, 'wife'], [G4, 0.5, 'who'],
+    [C5, 0.5, 'cut'], [C5, 0.5, 'off'], [C5, 0.5, 'their'], [B4, 0.5, 'tails'], [A4, 0.5, 'with'], [B4, 0.5, 'a'], [C5, 1, 'carv'], [G4, 0.5, 'ing'], [G4, 1, 'knife'], [G4, 0.5, 'did'],
+    [C5, 0.5, 'ev'], [C5, 0.5, 'er'], [C5, 0.5, 'you'], [B4, 0.5, 'see'], [A4, 0.5, 'such'], [B4, 0.5, 'a'], [C5, 0.5, 'thing'], [G4, 0.5, 'in'], [G4, 0.5, 'your'], [G4, 1, 'life'], [F4, 0.5, 'as'],
+    [E4, 1.5, 'three'], [D4, 1.5, 'blind'], [C4, 3, 'mice'],
   ]),
 };
 
@@ -383,8 +502,14 @@ const basicExercises: Exercise[] = [
   minorArpeggio,
   twinkle,
   maryLamb,
+  londonBridge,
+  oldMacDonald,
+  baaBaa,
+  yankeeDoodle,
   odeToJoy,
   frereJacques,
+  happyBirthday,
+  threeBlindMice,
 ];
 
 const advancedExercises: Exercise[] = [
@@ -403,6 +528,18 @@ const advancedExercises: Exercise[] = [
   mixVoiceLadder,
   harmonyThirds,
 ];
+
+/** whether the exercise is offered in this UI language (some songs are offered in one only) */
+export function offeredIn(e: { languages?: readonly string[] }, language: Language = currentLanguage()): boolean {
+  return !e.languages || e.languages.includes(language);
+}
+
+/** the exercise over its whole song, when it is an excerpt of one; null otherwise */
+export function wholeSong(e: Exercise): Exercise | null {
+  if (!e.fullNotes) return null;
+  const { fullNotes, ...rest } = e;
+  return { ...rest, notes: fullNotes };
+}
 
 /** Songs (the `melody` category) are proper names — their titles stay as written in every language. */
 export function isSong(e: Pick<Exercise, 'category'>): boolean {

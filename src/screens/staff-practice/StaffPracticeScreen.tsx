@@ -6,7 +6,9 @@ import { StaffSession } from './session/StaffSession';
 /** A piano-roll exercise: one `StaffSession` per round, each in that round's key (see `usePracticeRounds`). */
 export function StaffPracticeScreen({ navigation, route }: RootScreenProps<'MelodyPractice'>) {
   const guided = route.params.guided === true;
-  const rounds = usePracticeRounds(route.params.exerciseId, guided);
+  // a whole song is a library choice; a lesson step always sings the excerpt
+  const whole = route.params.whole === true && !guided;
+  const rounds = usePracticeRounds(route.params.exerciseId, guided, whole);
   const premium = usePremiumStatus().isPremium;
   const openPaywall = usePaywall('melody-practice');
 
@@ -15,9 +17,10 @@ export function StaffPracticeScreen({ navigation, route }: RootScreenProps<'Melo
       // the round too: a range with room for one key repeats it, and each
       // round still needs a fresh run; not the rate: a new speed restarts the
       // run in place (see useStaffSession)
-      key={`${rounds.exercise.id}-${rounds.roundShift}-${rounds.round}`}
+      key={`${rounds.exercise.id}-${whole}-${rounds.roundShift}-${rounds.round}`}
       navigation={navigation}
       guided={guided}
+      whole={whole}
       exercise={rounds.exercise}
       shift={rounds.roundShift}
       round={rounds.round}

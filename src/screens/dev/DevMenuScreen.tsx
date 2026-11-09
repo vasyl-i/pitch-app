@@ -51,6 +51,7 @@ const SCREENS: ScreenEntry[] = [
 
   // Onboarding flow
   { label: '👋 Onboarding (Welcome)', onPress: (n) => n.navigate('Onboarding') },
+  { label: '🎯 Improvement Goals', onPress: (n) => n.navigate('Onboarding', { screen: 'Goals' }) },
   { label: '🎵 Practice Rhythm', onPress: (n) => n.navigate('Onboarding', { screen: 'PracticeRhythm' }) },
 
   // Mic calibration states

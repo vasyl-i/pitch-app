@@ -325,9 +325,11 @@ describe('stage 3 — sing independently', () => {
     }
   });
 
-  it('lets a single-frame outlier through to scoring rather than filtering it', () => {
-    // The old median-of-3 removed isolated blips before scoring. Robustness now
-    // belongs to the scorer's own aggregate; the frame stream stays honest.
+  it('drops a single-frame octave error but keeps the singing around it', () => {
+    // The detector's stray readings (an octave off for a frame or two, common
+    // over speaker playback) are rejected by the jump guard before scoring.
+    // Nothing is smoothed: every frame that does get through is a pitch that
+    // was actually detected, unaltered (see the ramp test above).
     const { state, controller } = setup();
     reachAccompanied(controller);
     performAccompanied(controller);
@@ -341,10 +343,8 @@ describe('stage 3 — sing independently', () => {
     sing(controller, 60, 10); // carry on, so a UI tick publishes the trail
 
     const trail = state.pitch?.trail ?? [];
-    assert.ok(
-      trail.some((p) => Math.abs(p.midi - blip) < 1e-9),
-      'the outlier must reach the pitch path unmodified'
-    );
+    assert.ok(!trail.some((p) => Math.abs(p.midi - blip) < 1e-9), 'the octave blip must not reach the pitch path');
+    assert.ok(trail.filter((p) => p.midi === 60).length >= 10, 'the sung note around it must be kept');
   });
 
   it('reflects wrong notes rather than the reference', () => {

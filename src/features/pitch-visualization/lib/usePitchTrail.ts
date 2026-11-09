@@ -40,9 +40,10 @@ export function usePitchTrail(trailSeconds = TRAIL_SECONDS, flushIntervalMs = FL
   }, []);
 
   const push = useCallback(
-    (midi: number | null, cents: number | null = null) => {
-      const t = (Date.now() - startRef.current) / 1000;
-      latestT.current = t;
+    /** `at` (epoch ms) places a sample sung earlier than now, e.g. one released late by a filter */
+    (midi: number | null, cents: number | null = null, at = Date.now()) => {
+      const t = (at - startRef.current) / 1000;
+      latestT.current = Math.max(latestT.current, t);
 
       if (midi !== null) {
         bufRef.current.push({ t, midi, cents });

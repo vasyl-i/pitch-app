@@ -7,9 +7,10 @@ import { activeStepLabel } from '../../session/lessonFlow';
  * and round, or how far the melody was moved for the singer's range, else
  * its source) and the results card's round label.
  */
-export function useRunContext({ exercise, guided, endless, shift, round, rounds }: {
+export function useRunContext({ exercise, guided, whole, endless, shift, round, rounds }: {
   exercise: Exercise;
   guided: boolean;
+  whole: boolean;
   endless: boolean;
   shift: number;
   round: number;
@@ -25,8 +26,10 @@ export function useRunContext({ exercise, guided, endless, shift, round, rounds 
     : endless
       ? `${keyLabel} · ${roundLabel}`
       : shift !== 0
-        ? `${keyLabel} · ${t('staff.header.forRange', { shift: `${shift > 0 ? '+' : ''}${shift}` })}`
-        : exercise.source;
+        ? `${whole ? `${t('staff.header.wholeSong')} · ` : ''}${keyLabel} · ${t('staff.header.forRange', { shift: `${shift > 0 ? '+' : ''}${shift}` })}`
+        : whole
+          ? t('staff.header.wholeSong')
+          : exercise.source;
 
   return { keyLabel, headerLine, roundLabel };
 }

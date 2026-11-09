@@ -50,6 +50,17 @@ export const PianoRollGrid = memo(function PianoRollGrid({ rows, beatLines, W, H
   );
 });
 
+/** beat and bar lines, apart from the grid so they can scroll with the notes */
+export const BeatLines = memo(function BeatLines({ beatLines, H }: { beatLines: PianoRollLayout['beatLines']; H: number }) {
+  return (
+    <>
+      {beatLines.map((bl, i) => (
+        <Line key={`bl${i}`} p1={vec(bl.x, 0)} p2={vec(bl.x, H)} color={bl.isBar ? BAR_LINE : BEAT_LINE} strokeWidth={bl.isBar ? 1 : 0.5} />
+      ))}
+    </>
+  );
+});
+
 /** the target notes; re-rendered only when the active note moves */
 export const TargetBlocks = memo(function TargetBlocks({ rects, font, showLabels }: { rects: TargetRect[]; font: SkFont | null; showLabels: boolean }) {
   return (

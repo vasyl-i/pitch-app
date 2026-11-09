@@ -39,6 +39,31 @@ export function usePhraseClock({ currentTime, rate = 1, running, ready }: {
   return useDerivedValue(() => (runningSV.value ? (clock.value / 1000) * rateSV.value + offsetSec.value : pausedSV.value));
 }
 
+/**
+ * The scroll of a roll longer than its window, on the UI thread: the view
+ * holds still until the playhead is `lead` of the way across, then keeps it
+ * there, and stops at the end of the phrase. No scroll when it all fits.
+ */
+export function useScrollTransform(time: { value: number }, { scrolls, totalSec, shownSec, pxPerSec, lead = 0.3 }: {
+  scrolls: boolean;
+  totalSec: number;
+  shownSec: number;
+  pxPerSec: number;
+  lead?: number;
+}) {
+  const params = useSharedValue({ scrolls, totalSec, shownSec, pxPerSec, lead });
+  const p = params.value;
+  if (p.scrolls !== scrolls || p.totalSec !== totalSec || p.shownSec !== shownSec || p.pxPerSec !== pxPerSec || p.lead !== lead) {
+    params.value = { scrolls, totalSec, shownSec, pxPerSec, lead };
+  }
+  return useDerivedValue(() => {
+    const q = params.value;
+    if (!q.scrolls) return [{ translateX: 0 }];
+    const start = Math.min(Math.max(time.value - q.shownSec * q.lead, 0), q.totalSec - q.shownSec);
+    return [{ translateX: -start * q.pxPerSec }];
+  });
+}
+
 /** a translateX that follows `x(t) = origin + slope · t` on the UI thread */
 export function useLinearTransform(time: { value: number }, origin: number, slope: number) {
   const originSV = useSharedValue(origin);

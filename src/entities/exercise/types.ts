@@ -13,6 +13,7 @@ export interface TargetNote {
 }
 
 import type { ExerciseCategory } from './categories';
+import type { Language } from '../../shared/i18n';
 
 export type Difficulty = 'easy' | 'medium' | 'hard';
 
@@ -39,6 +40,13 @@ export interface Exercise {
   /** optional technique note shown before the exercise starts */
   hint?: string;
   notes: TargetNote[];
+  /**
+   * The whole song, when `notes` is only part of it (a verse, a verse and its
+   * chorus). Sung only on request from the library — never in a lesson.
+   */
+  fullNotes?: TargetNote[];
+  /** the UI languages it is offered in; absent means every language */
+  languages?: readonly Language[];
 }
 
 export type { ExerciseCategory };

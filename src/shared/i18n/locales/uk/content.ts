@@ -17,6 +17,12 @@ export const ukContent: ContentOverlay = {
     twinkle: { source: 'Народна · суспільне надбання' },
     'mary-lamb': { source: 'Народна · суспільне надбання' },
     'frere-jacques': { source: 'Народна · суспільне надбання' },
+    'london-bridge': { source: 'Народна · суспільне надбання' },
+    'old-macdonald': { source: 'Народна · суспільне надбання' },
+    'baa-baa-black-sheep': { source: 'Народна · суспільне надбання' },
+    'yankee-doodle': { source: 'Народна · суспільне надбання' },
+    'happy-birthday': { source: 'Народна · суспільне надбання' },
+    'three-blind-mice': { source: 'Народна · суспільне надбання' },
     'ode-to-joy': { source: 'Бетховен · суспільне надбання' },
     'd-dorian-mode': {
       title: 'Ре дорійський',

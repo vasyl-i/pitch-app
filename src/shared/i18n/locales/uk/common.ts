@@ -31,6 +31,9 @@ export const common: LocaleShape<typeof en> = {
   daysShort_few: '{{count}} д',
   daysShort_many: '{{count}} д',
   daysShort_other: '{{count}} д',
+  offline: 'Офлайн',
+  offlineToastTitle: 'Немає інтернету',
+  offlineToastMessage: 'Прогрес зберігається на пристрої й синхронізується, коли з’явиться зʼєднання.',
 };
 
 export const nav: LocaleShape<typeof enNav> = {

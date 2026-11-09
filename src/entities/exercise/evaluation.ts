@@ -266,6 +266,12 @@ export interface PhraseEvaluator {
   collectCompleted(upto: number): NoteResult[];
   /** phrase summary over everything fed so far */
   summary(): PhraseSummary;
+  /**
+   * Summary over only the notes that had finished by `upto` — a run left
+   * part-way is scored on what was reached, not failed on what wasn't.
+   * Null when no note had finished yet.
+   */
+  summaryUpTo(upto: number): PhraseSummary | null;
   reset(): void;
 }
 
@@ -300,6 +306,12 @@ export function createPhraseEvaluator(notes: TargetNote[]): PhraseEvaluator {
 
     summary() {
       return gradePhrase(notes, frames);
+    },
+
+    summaryUpTo(upto) {
+      let reached = 0;
+      while (reached < notes.length && notes[reached].start + notes[reached].duration <= upto) reached++;
+      return reached === 0 ? null : gradePhrase(notes.slice(0, reached), frames);
     },
 
     reset() {

@@ -5,6 +5,8 @@ import type { RootScreenProps } from '@/app/navigation/types';
 export interface StaffSessionProps {
   navigation: RootScreenProps<'MelodyPractice'>['navigation'];
   guided: boolean;
+  /** the whole song, sung along once from start to end (see `singAlongOnly`) */
+  whole: boolean;
   exercise: Exercise;
   /** semitones this round is moved from the authored key */
   shift: number;

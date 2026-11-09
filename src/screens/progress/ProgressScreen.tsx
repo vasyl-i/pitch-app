@@ -6,7 +6,7 @@
  */
 import { Image, ScrollView, StyleSheet, View } from 'react-native';
 import { PracticeCalendar } from '@/features/progress';
-import { AppText, Card, Screen } from '@/shared/ui';
+import { AppText, Card, OfflineBadge, Screen } from '@/shared/ui';
 import { palette, spacing } from '@/shared/theme';
 import { useTranslation } from '@/shared/i18n';
 import { useFloatingTabBarClearance } from '@/app/navigation/FloatingTabBar';
@@ -30,6 +30,9 @@ export function ProgressScreen({ navigation }: ProgressScreenProps<'ProgressOver
         <View style={styles.titleRow}>
           <AppText variant="title">{t('nav.progress')}</AppText>
           <Image source={MICROPHONE} style={styles.titleIcon} accessibilityIgnoresInvertColors />
+          <View style={styles.badge}>
+            <OfflineBadge />
+          </View>
         </View>
 
         {!p.hasSessions ? (
@@ -65,6 +68,7 @@ export function ProgressScreen({ navigation }: ProgressScreenProps<'ProgressOver
 const styles = StyleSheet.create({
   content: {},
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  badge: { marginLeft: 'auto' },
   titleIcon: { width: 24, height: 24 },
   empty: { padding: 18, marginTop: spacing.lg },
   line: { marginTop: spacing.lg },

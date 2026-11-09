@@ -6,8 +6,9 @@ import type { OnboardingStackParamList } from './types';
 /**
  * When the root can pick its first screen, and which. It waits for the
  * profile store to hydrate (Zustand's persist can defer, and choosing early
- * would flash a returning user through onboarding) and for the post-login
- * server pull, which restores whether the user has onboarded. A user who
+ * would flash a returning user through onboarding). Someone not yet onboarded
+ * locally also waits for the post-login server pull, which restores whether
+ * they have. A user who
  * quit mid-onboarding resumes at their step.
  */
 export function useRootReady() {
@@ -31,5 +32,10 @@ export function useRootReady() {
   const onboardingStart: keyof OnboardingStackParamList =
     step === 'goals-complete' ? 'PracticeRhythm' : step === 'range-complete' ? 'Goals' : 'Welcome';
 
-  return { ready: hydrated && synced, onboarded: step === 'complete', onboardingStart };
+  const onboarded = step === 'complete';
+  // A user who already onboarded on this device doesn't need the server to
+  // pick their screen — show it now and let the sync catch up in the background.
+  // Only a fresh sign-in (nothing local yet) waits for the pull (bounded by
+  // the sync gate's own timeout), since the server says whether they onboarded.
+  return { ready: hydrated && (onboarded || synced), onboarded, onboardingStart };
 }

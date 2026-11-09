@@ -3,6 +3,7 @@
  * work, and which specific exercises to include or exclude.
  */
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
+import { offeredIn } from '@/entities/exercise';
 import { CATALOG, DEFAULT_PREFERENCES, usePreferencesStore, type LearningPreferences } from '@/features/learning';
 import { AppText, BackButton, ChipGroup, Screen, ScreenHeader, type ChipOption } from '@/shared/ui';
 import { palette, spacing } from '@/shared/theme';
@@ -19,6 +20,8 @@ export function ExerciseSettingsScreen({ navigation }: RootScreenProps<'Exercise
   const prefs = usePreferencesStore((s) => s.preferences) ?? { ...DEFAULT_PREFERENCES, updatedAt: 0 };
   const setPreferences = usePreferencesStore((s) => s.setPreferences);
   const disabled = new Set(prefs.disabledExercises ?? []);
+  // songs offered in another UI language only are left out
+  const melodyActivities = MELODY_ACTIVITIES.filter((a) => offeredIn(a));
 
   const balanceOptions: ChipOption<number>[] = [
     { value: 0.2, label: t('profile.exerciseSettingsScreen.moreEar') },
@@ -50,7 +53,7 @@ export function ExerciseSettingsScreen({ navigation }: RootScreenProps<'Exercise
         />
 
         <ExerciseToggleList title={t('profile.exerciseSettingsScreen.earExercises')} items={EAR_ACTIVITIES} isEnabled={isEnabled} onToggle={toggle} />
-        <ExerciseToggleList title={t('profile.exerciseSettingsScreen.melodyExercises')} items={MELODY_ACTIVITIES} isEnabled={isEnabled} onToggle={toggle} />
+        <ExerciseToggleList title={t('profile.exerciseSettingsScreen.melodyExercises')} items={melodyActivities} isEnabled={isEnabled} onToggle={toggle} />
 
         <Pressable onPress={() => setPreferences({ exerciseBalance: 0.5, disabledExercises: [] })} style={styles.reset} hitSlop={12}>
           {({ pressed }) => (

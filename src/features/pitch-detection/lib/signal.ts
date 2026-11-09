@@ -13,6 +13,9 @@
  * original call sites is unchanged.
  */
 
+import { freqToMidi } from '@/shared/lib/music';
+import { MAX_RELIABLE_F0, MIN_RELIABLE_F0 } from './yin';
+
 /* ------------------------------------------------------------------ *
  * Voice gate                                                          *
  * ------------------------------------------------------------------ */
@@ -164,6 +167,157 @@ export function createVoiceGate(): VoiceGate {
       sortedRms.length = 0;
       lastVoiceAt = 0;
       lastVoiceMidi = null;
+    },
+  };
+}
+
+/* ------------------------------------------------------------------ *
+ * Pitch jump guard                                                    *
+ * ------------------------------------------------------------------ */
+
+/** a frame this close to the last accepted pitch is ordinary voice movement */
+const JUMP_MAX_SEMITONES = 3;
+/**
+ * A far jump *away from a sounding line* is shown only once this many
+ * consecutive frames agree (~58ms). The measured strays are 1–5 frames long
+ * and all of them happen mid-line, so this is where the strictness belongs.
+ */
+const JUMP_CONFIRM_FRAMES = 5;
+/**
+ * A fresh onset — nothing sung for `JUMP_ANCHOR_MS` — has nothing to jump
+ * *from*, so it needs far less proof (~23ms): enough to drop a lone noise
+ * blip, not enough to swallow a short or soft note. Every confirmed run is
+ * back-filled, so this costs latency only, never sung frames.
+ */
+const ONSET_CONFIRM_FRAMES = 2;
+/** consecutive frames of one candidate may drift this much and still agree */
+const JUMP_AGREE_SEMITONES = 1;
+/**
+ * Dropouts (an unvoiced or out-of-band frame) a candidate run survives. Soft
+ * and breathy singing loses a frame here and there to the gate or the
+ * detector; without this one such frame threw the whole run away, and quiet
+ * notes were simply never drawn.
+ */
+const JUMP_MAX_GAP_FRAMES = 2;
+/** after this long without an accepted frame there is nothing to jump *from* */
+const JUMP_ANCHOR_MS = 300;
+
+/** the detector's trusted band (see `MIN_RELIABLE_F0`) as MIDI — nothing outside it is shown */
+const TRUSTED_LOW_MIDI = freqToMidi(MIN_RELIABLE_F0);
+const TRUSTED_HIGH_MIDI = freqToMidi(MAX_RELIABLE_F0);
+
+export interface GuardedPitch<T = void> {
+  midi: number;
+  /** the `now` it was pushed with */
+  at: number;
+  /** whatever the caller pushed with it, e.g. the frame's phrase time */
+  data: T;
+}
+
+export interface PitchJumpGuard<T = void> {
+  /**
+   * Feed the raw MIDI pitch of a voiced frame (null when unvoiced) at
+   * wall-clock `now` (ms). Returns the frames released by this one, oldest
+   * first: this frame alone when it continues the line, nothing while a jump
+   * or onset awaits confirmation or the pitch is implausible, and the whole
+   * held run once it is confirmed — so a real leap loses no history, only a
+   * few frames of immediacy. `data` rides along untouched.
+   */
+  push(midi: number | null, now: number, data: T): readonly GuardedPitch<T>[];
+  /**
+   * The oldest frame being held for confirmation, or null. Always recent
+   * (a held run is shorter than the confirmation plus its allowed gaps,
+   * ~80ms), so a caller that finalizes results up to some time can wait for
+   * it without stalling.
+   */
+  readonly oldestHeld: GuardedPitch<T> | null;
+  reset(): void;
+}
+
+/**
+ * Rejects the detector's isolated wild readings without touching the pitch
+ * of anything it lets through.
+ *
+ * Measured on a 47s take of professional vocals over speaker playback, the
+ * stray frames are 1–5 frames long and land an octave (or an octave and a
+ * fifth) below the voice, or 30+ semitones above it on cymbals and
+ * sibilance. Clarity can't separate them — their distribution matches real
+ * singing's — and neither can a frequency cut: an octave-low reading is the
+ * detector picking a doubled period, not energy at that frequency, so a
+ * filter has nothing to remove. Their *shape* can: a voice never teleports
+ * for 20ms and comes back. So a pitch far from the last accepted one is held
+ * as a candidate and released only if the following frames confirm it, and a
+ * pitch outside what the detector can trust (`lo`..`hi`) is never released.
+ *
+ * Sensitivity is kept where the strays aren't: a note starting from silence
+ * needs only two agreeing frames, and a candidate survives the odd dropped
+ * frame instead of starting over.
+ *
+ * Unlike the retired smoother (see below) this adds no lag to a moving
+ * pitch — glides, vibrato and scoops move far less than the jump limit per
+ * frame and pass through as they are. Timing is wall-clock on purpose: the
+ * limits describe the detector and the voice, not a slowed-down phrase.
+ */
+export function createPitchJumpGuard<T = void>(lo = TRUSTED_LOW_MIDI, hi = TRUSTED_HIGH_MIDI): PitchJumpGuard<T> {
+  let anchor: number | null = null;
+  let anchorAt = 0;
+  let held: GuardedPitch<T>[] = [];
+  /** frames lost since the held run's last frame */
+  let gap = 0;
+  /** proof the held run needs: fewer for an onset than for a jump off a sounding line */
+  let needed = JUMP_CONFIRM_FRAMES;
+  const none: readonly GuardedPitch<T>[] = [];
+
+  const accept = (frame: GuardedPitch<T>) => {
+    anchor = frame.midi;
+    anchorAt = frame.at;
+  };
+  const drop = () => {
+    held = [];
+    gap = 0;
+  };
+  const anchored = (now: number) => anchor !== null && now - anchorAt <= JUMP_ANCHOR_MS;
+
+  return {
+    push(midi, now, data) {
+      if (midi === null || midi < lo || midi > hi) {
+        if (held.length && ++gap > JUMP_MAX_GAP_FRAMES) drop();
+        return none;
+      }
+      const frame = { midi, at: now, data };
+
+      if (anchored(now) && Math.abs(midi - anchor!) <= JUMP_MAX_SEMITONES) {
+        drop();
+        accept(frame);
+        return [frame];
+      }
+
+      const last = held[held.length - 1];
+      if (last && Math.abs(midi - last.midi) <= JUMP_AGREE_SEMITONES) {
+        held.push(frame);
+      } else {
+        held = [frame];
+        // decided once per candidate: a jump that outlives its anchor while
+        // being held is still a jump
+        needed = anchored(now) ? JUMP_CONFIRM_FRAMES : ONSET_CONFIRM_FRAMES;
+      }
+      gap = 0;
+
+      if (held.length < needed) return none;
+      const released = held;
+      drop();
+      accept(frame);
+      return released;
+    },
+
+    get oldestHeld() {
+      return held[0] ?? null;
+    },
+
+    reset() {
+      anchor = null;
+      anchorAt = 0;
+      drop();
     },
   };
 }

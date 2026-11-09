@@ -286,16 +286,29 @@ export function schedulePianoNote(
     source.detune.value = detuneCents;
   }
 
+  // A quick note must still be heard. Below attack + release the ramps used to
+  // overlap: the hold began before the attack had finished, so the note never
+  // reached its level and came out as a faint click, or nothing. Now a note
+  // sounds for at least MIN_SOUNDING_SEC, into the next note if need be (each
+  // note is its own voice), and the ramps shrink to fit inside it in order.
+  const sounding = Math.max(duration, MIN_SOUNDING_SEC);
+  const rise = Math.min(attack, sounding * 0.25);
+  const fall = Math.min(release, sounding * 0.4);
+  const end = at + sounding;
+
   const gain = ctx.createGain();
   gain.gain.setValueAtTime(0, at);
-  gain.gain.linearRampToValueAtTime(volume, at + attack);
-  gain.gain.setValueAtTime(volume, at + duration - release);
-  gain.gain.linearRampToValueAtTime(0, at + duration);
+  gain.gain.linearRampToValueAtTime(volume, at + rise);
+  gain.gain.setValueAtTime(volume, end - fall);
+  gain.gain.linearRampToValueAtTime(0, end);
 
   source.connect(gain);
   gain.connect(ctx.destination);
   source.start(at);
-  source.stop(at + duration);
+  source.stop(end);
 
-  return { source, stopAt: at + duration };
+  return { source, stopAt: end };
 }
+
+/** the shortest a scheduled note sounds, however short it was asked to be */
+const MIN_SOUNDING_SEC = 0.1;

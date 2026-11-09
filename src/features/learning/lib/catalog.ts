@@ -14,7 +14,7 @@
  * under plain `node --test`.)
  */
 import { categoryTier, type ExerciseCategory } from '../../../entities/exercise/categories';
-import { exercises as melodyLibrary, isSong } from '../../../entities/exercise/library';
+import { exercises as melodyLibrary, isSong, offeredIn } from '../../../entities/exercise/library';
 import { localizeContent } from '../../../shared/i18n';
 import type { Activity, SkillId } from '../model/types';
 
@@ -214,6 +214,7 @@ export const MELODY_ACTIVITIES: Activity[] = melodyLibrary.map((e) => {
     secondsPerRep: Math.round(2 * (MELODY_LEAD_IN_SEC + phraseSec) + MELODY_RUN_OVERHEAD_SEC),
     challenge: Math.max(profile.minChallenge, DIFFICULTY_CHALLENGE[e.difficulty] ?? 0.4),
     rounds: 1,
+    ...(e.languages && { languages: e.languages }),
   });
 });
 // song titles stay as written (see `isSong`)
@@ -225,13 +226,16 @@ export const CATALOG: Activity[] = [...EAR_ACTIVITIES, ...MELODY_ACTIVITIES];
 export const FREE_CATALOG: Activity[] = CATALOG.filter((a) => a.tier === 'free');
 
 /**
- * The catalog a given user may be recommended from. Generators take this
- * rather than reaching for entitlements themselves, which keeps the whole lib
- * layer pure and makes "what would a Premium plan look like?" trivially
- * previewable by passing the other tier.
+ * The catalog a given user may be recommended from: their tier's, less what
+ * the current UI language doesn't offer (some songs are offered in one
+ * language only). Generators take this rather than reaching for entitlements
+ * themselves, which keeps the whole lib layer pure and makes "what would a
+ * Premium plan look like?" trivially previewable by passing the other tier.
+ * `CATALOG` itself stays complete, so a plan entry still resolves by id
+ * after a language switch.
  */
 export function catalogForTier(tier: 'free' | 'premium'): Activity[] {
-  return tier === 'premium' ? CATALOG : FREE_CATALOG;
+  return (tier === 'premium' ? CATALOG : FREE_CATALOG).filter((a) => offeredIn(a));
 }
 
 /** All known activities — ear + melody — for lookups. */

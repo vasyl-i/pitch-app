@@ -29,6 +29,9 @@ export const common: PtLocaleShape<typeof en> = {
   daysShort_one: '{{count}} d',
   daysShort_many: '{{count}} d',
   daysShort_other: '{{count}} d',
+  offline: 'Offline',
+  offlineToastTitle: 'Sem ligação à internet',
+  offlineToastMessage: 'O teu progresso fica guardado no dispositivo e sincroniza quando voltares a ter ligação.',
 };
 
 export const nav: PtLocaleShape<typeof enNav> = {

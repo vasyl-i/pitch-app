@@ -29,8 +29,9 @@ export {
   createSustainTracker,
   createStabilityTracker,
   createVibratoDetector,
+  createPitchJumpGuard,
 } from './lib/signal';
-export type { VoiceGate, SustainTracker, StabilityTracker, VibratoDetector, VibratoState } from './lib/signal';
+export type { PitchJumpGuard, GuardedPitch, VoiceGate, SustainTracker, StabilityTracker, VibratoDetector, VibratoState } from './lib/signal';
 
 /**
  * The detector's measured operating range and its confidence vocabulary.

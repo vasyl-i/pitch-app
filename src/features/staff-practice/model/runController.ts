@@ -48,7 +48,7 @@ import {
   type NoteResult,
   type PhraseSummary,
 } from '@/entities/exercise';
-import { createThrottle } from '@/features/pitch-detection';
+import { createPitchJumpGuard, createThrottle, type GuardedPitch } from '@/features/pitch-detection';
 import { NativeVoiceGate } from '../../../../modules/pitch-native/src';
 import { freqToMidi } from '@/shared/lib/music';
 import { SKIP_ACCOMPANIED_STAGE } from '@/shared/lib/featureFlags';
@@ -60,6 +60,8 @@ const UI_UPDATE_MS = 33;
 const TRAIL_SECONDS = 6;
 /** grade a note only once the playhead is clear of it */
 const GRADE_LAG_SEC = 0.05;
+/** while the jump guard holds a frame back the live pitch stays put, but not for longer than this */
+const LIVE_HOLD_MS = 120;
 /** silent beat between one stage's audio ending and the next beginning */
 export const DEMO_GAP_MS = 600;
 /** how long the "now try it on your own" card holds before the solo stage */
@@ -70,6 +72,11 @@ export const TRANSITION_MS = 1600;
  * never produce a score or a recorded session.
  */
 export const SILENCE_TIMEOUT_MS = 20000;
+/**
+ * A few stray mic frames (ambient noise leaking through the voice gate) are
+ * not a performance: fewer voiced frames than this and a pass has no score.
+ */
+const MIN_VOICED_FRAMES = 10;
 
 export interface RunFrame {
   frequency: number | null;
@@ -118,6 +125,12 @@ export interface RunControllerOptions {
    * by then
    */
   cueSolo?(): void;
+  /**
+   * The run is the sing-along alone: no listen stage before it, no solo pass
+   * after, and its score is the result. For a whole song, where hearing it,
+   * singing along and then singing it unaided would triple a long song.
+   */
+  singAlongOnly?: boolean;
   now?(): number;
 }
 
@@ -134,6 +147,12 @@ export interface RunController {
   accompanimentFinished(): void;
   /** the stage-3 phrase timeline has run out */
   phraseFinished(): void;
+  /**
+   * A sing-along-only run left part-way: the score over the notes the
+   * playhead had passed, or null when too little was sung to count. Still
+   * answers after `dispose`, so it can be read while the screen unmounts.
+   */
+  partialSummary(): PhraseSummary | null;
   onFrame(frame: RunFrame): void;
   /**
    * This run's voice gate, for the mic to run in the same native call as
@@ -155,6 +174,7 @@ export function createRunController({
   onWellSungNote,
   onBeforeStage,
   cueSolo,
+  singAlongOnly = false,
   now = Date.now,
 }: RunControllerOptions): RunController {
   // one evaluator per scored attempt: same engine, same exercise, two
@@ -168,6 +188,13 @@ export function createRunController({
   const shouldUpdateTrail = createThrottle(TRAIL_STORE_MS);
   const trail: SungSample[] = [];
   const delivery = createDeliveryLag();
+  /**
+   * Drops the detector's stray readings (out-of-band pitches, unconfirmed
+   * octave-sized jumps) before they reach the evaluator; carries each frame's
+   * phrase time so a confirmed leap is graded at the moment it was sung.
+   */
+  const jumpGuard = createPitchJumpGuard<number>();
+  let lastReleasedAt = 0;
   /** last graded frame's phrase time — back-dating must never reorder frames */
   let lastFrameT = -Infinity;
   /** phrase time a frame was sung at, kept in order for the evaluator's binary search */
@@ -185,7 +212,12 @@ export function createRunController({
   let heardVoiceInAccompanied = false;
   /** count of voiced frames in the solo pass — a handful of noise frames don't count */
   let soloVoicedFrames = 0;
+  let accompaniedVoicedFrames = 0;
   let accompaniedSummary: PhraseSummary | null = null;
+  /** furthest phrase time the sing-along's playhead reached */
+  let accompaniedReached = 0;
+  /** a sing-along-only run that has produced its result (or found no voice) */
+  let concluded = false;
 
   const clearTimers = () => {
     if (stageTimer) clearTimeout(stageTimer);
@@ -204,6 +236,7 @@ export function createRunController({
     stage === 'listen' ? demo : stage === 'accompanied' ? accompaniment : stage === 'solo' ? solo : null;
 
   const publishPlayback = (t: number, at: number) => {
+    if (stage === 'accompanied') accompaniedReached = Math.max(accompaniedReached, t);
     const noteIdx = activeNoteAt(t);
     store.setPlayback({
       position: t,
@@ -243,6 +276,7 @@ export function createRunController({
     store.clearStageFeedback();
     trail.length = 0;
     delivery.reset();
+    jumpGuard.reset();
     lastFrameT = -Infinity;
     player.start();
     // Position must be written BEFORE status: when status flips to 'listen' or
@@ -275,6 +309,7 @@ export function createRunController({
     store.clearStageFeedback();
     trail.length = 0;
     delivery.reset();
+    jumpGuard.reset();
     lastFrameT = -Infinity;
 
     // Start the timeline immediately so the playhead scrolls and the singer
@@ -297,42 +332,57 @@ export function createRunController({
   };
 
   /**
-   * Grade one voiced/unvoiced frame against `evaluator` at phrase time `t`.
-   * `ui` is the throttle's answer for this frame, decided once by the caller —
-   * asking it twice would let the playhead and the pitch overlay land on
-   * different frames.
+   * Grade one frame against `evaluator` at phrase time `t`. `released` is what
+   * the jump guard let through for it — usually this frame alone, nothing
+   * for an unvoiced or held frame, or a confirmed leap's whole run, each at
+   * its own phrase time. `ui` is the throttle's answer for this frame,
+   * decided once by the caller — asking it twice would let the playhead and
+   * the pitch overlay land on different frames.
    */
   const gradeFrame = (
     evaluator: ReturnType<typeof createPhraseEvaluator>,
     t: number,
-    voicedMidi: number | null,
+    released: readonly GuardedPitch<number>[],
+    at: number,
     ui: boolean,
     trailDue: boolean,
     rms: number,
   ) => {
-    for (const result of evaluator.collectCompleted(t - GRADE_LAG_SEC)) {
+    // a note is final only once no frame still awaiting confirmation could
+    // belong to it — so the live verdict and the summary always agree
+    const held = jumpGuard.oldestHeld;
+    for (const result of evaluator.collectCompleted(Math.min(t, held?.data ?? t) - GRADE_LAG_SEC)) {
       store.addResult(result);
       if (result.verdict !== 'wrong' && result.verdict !== 'missed') {
         onWellSungNote?.(exercise.notes[result.noteIndex].midi, result.coverage);
       }
     }
 
-    if (voicedMidi === null) {
-      if (ui) store.setPitch({ liveMidi: null, liveCents: null, liveRms: rms, ...(trailDue && { trail: [...trail] }) });
+    // Raw detector pitch, unaltered, all the way into the evaluator — the
+    // guard only decides which frames are a voice, never what pitch they
+    // carry. A pitch smoother used to sit here and fed both scoring and
+    // rendering; it was measured as the largest source of user-visible pitch
+    // error on real singing. Visual steadiness of the *note name* is applied
+    // at the point of display instead — see features/pitch-visualization's
+    // note stabilizer.
+    let liveCents: number | null = null;
+    for (const { midi, data: sungT } of released) {
+      const noteIdx = activeNoteAt(sungT);
+      liveCents = noteIdx >= 0 ? centsToTarget(midi, exercise.notes[noteIdx].midi) : null;
+      evaluator.addFrame(sungT, midi);
+      trail.push({ t: sungT, midi, cents: liveCents });
+    }
+    while (trail.length && trail[0].t < t - TRAIL_SECONDS) trail.shift();
+
+    const last = released[released.length - 1];
+    if (last) {
+      lastReleasedAt = at;
+      if (ui) store.setPitch({ liveMidi: last.midi, liveCents, liveRms: rms, ...(trailDue && { trail: [...trail] }) });
       return;
     }
-
-    // Raw detector pitch, unfiltered, all the way into the evaluator. A pitch
-    // smoother used to sit here and fed both scoring and rendering; it was
-    // measured as the largest source of user-visible pitch error on real
-    // singing. Visual steadiness of the *note name* is applied at the point of
-    // display instead — see features/pitch-visualization's note stabilizer.
-    const noteIdx = activeNoteAt(t);
-    const cents = noteIdx >= 0 ? centsToTarget(voicedMidi, exercise.notes[noteIdx].midi) : null;
-    evaluator.addFrame(t, voicedMidi);
-    trail.push({ t, midi: voicedMidi, cents });
-    while (trail.length && trail[0].t < t - TRAIL_SECONDS) trail.shift();
-    if (ui) store.setPitch({ liveMidi: voicedMidi, liveCents: cents, liveRms: rms, ...(trailDue && { trail: [...trail] }) });
+    // a frame held for confirmation leaves the live pitch where it was, briefly
+    if (held && at - lastReleasedAt <= LIVE_HOLD_MS) return;
+    if (ui) store.setPitch({ liveMidi: null, liveCents: null, liveRms: rms, ...(trailDue && { trail: [...trail] }) });
   };
 
   const referenceFinished = () => {
@@ -376,13 +426,17 @@ export function createRunController({
       accompaniedSummary = null;
       heardVoiceInAccompanied = false;
       soloVoicedFrames = 0;
+      accompaniedVoicedFrames = 0;
+      accompaniedReached = 0;
+      concluded = false;
       trail.length = 0;
       // the gate deliberately keeps its learned noise floor across a restart —
       // the room hasn't changed, and relearning it wastes the quiet beat the
       // stage gaps give us
   
       store.reset();
-      startPlaybackStage('listen', 'listen', demo);
+      if (singAlongOnly) startPlaybackStage('accompanied', 'accompanied', accompaniment);
+      else startPlaybackStage('listen', 'listen', demo);
     },
 
     referenceFinished,
@@ -403,13 +457,26 @@ export function createRunController({
       // sending them on to the solo stage to fail twice helps no one
       if (!heardVoiceInAccompanied) {
         stage = 'idle';
+        concluded = true;
         store.setStatus('no-input');
         return;
       }
 
       accompaniedSummary = accompaniedEvaluator.summary();
       store.setAccompaniedSummary(accompaniedSummary);
+      if (singAlongOnly) {
+        // the sing-along was the whole run: its score is the result
+        stage = 'idle';
+        concluded = true;
+        store.setSummary(accompaniedSummary, null);
+        return;
+      }
       beginTransition();
+    },
+
+    partialSummary() {
+      if (!singAlongOnly || concluded || accompaniedVoicedFrames < MIN_VOICED_FRAMES) return null;
+      return accompaniedEvaluator.summaryUpTo(accompaniedReached);
     },
 
     phraseFinished() {
@@ -422,7 +489,6 @@ export function createRunController({
       // A few stray mic frames (ambient noise leaking through the voice gate)
       // are not a performance. Require a minimum number of voiced frames before
       // producing a summary — otherwise show the "didn't hear singing" screen.
-      const MIN_VOICED_FRAMES = 10;
       if (soloVoicedFrames < MIN_VOICED_FRAMES) {
         store.setStatus('no-input');
         return;
@@ -451,22 +517,26 @@ export function createRunController({
       if (stage !== 'accompanied' && stage !== 'solo') return;
 
       const voicedMidi = rawMidi !== null && isVoice ? rawMidi : null;
-      if (voicedMidi !== null && !gatedNatively) gate.confirm(voicedMidi, at);
+      // the guide is the clock in stage 2 — the singer follows it rather than
+      // starting it, so there is no onset gate
+      const player = stage === 'accompanied' ? accompaniment : solo;
+      if (!player.playing) return;
+      const t = frameTime(player, lagSec);
+      const released = jumpGuard.push(voicedMidi, at, t);
+      // every voiced frame keeps the gate's continuity, held or not — the
+      // native gate confirms the same way — so a soft note stays on the lower
+      // sustain bar while the guard is still deciding about it
+      if (!gatedNatively && voicedMidi !== null) gate.confirm(voicedMidi, at);
 
       if (stage === 'accompanied') {
-        // the guide is the clock here — the singer follows it rather than
-        // starting it, so there is no onset gate
-        if (!accompaniment.playing) return;
-        if (voicedMidi !== null) heardVoiceInAccompanied = true;
-        gradeFrame(accompaniedEvaluator, frameTime(accompaniment, lagSec), voicedMidi, ui, trailDue, frame.rms);
+        if (released.length) heardVoiceInAccompanied = true;
+        accompaniedVoicedFrames += released.length;
+        gradeFrame(accompaniedEvaluator, t, released, at, ui, trailDue, frame.rms);
         return;
       }
 
-      if (!solo.playing) return;
-      if (voicedMidi !== null) soloVoicedFrames++;
-
-      const t = frameTime(solo, lagSec);
-      gradeFrame(soloEvaluator, t, voicedMidi, ui, trailDue, frame.rms);
+      soloVoicedFrames += released.length;
+      gradeFrame(soloEvaluator, t, released, at, ui, trailDue, frame.rms);
     },
 
     dispose() {

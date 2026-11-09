@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 import { create } from 'zustand';
 import type { Session, User } from '@supabase/supabase-js';
 import * as Crypto from 'expo-crypto';
+import * as SecureStore from 'expo-secure-store';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { supabase } from '@/shared/lib/supabase';
@@ -15,6 +16,19 @@ import { prepareSyncGate } from './syncService';
 import { unregisterPushToken } from '@/shared/lib/notifications';
 import { logOutRevenueCat } from '@/features/subscription';
 import { MissingTokenError } from '../lib/authErrors';
+
+/** the session Supabase persisted (key shape `sb-<ref>-auth-token`), read without any network */
+async function readStoredSession(): Promise<Session | null> {
+  try {
+    const key = (supabase.auth as unknown as { storageKey: string }).storageKey;
+    const raw = await SecureStore.getItemAsync(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<Session> | null;
+    return parsed?.access_token && parsed.refresh_token && parsed.user ? (parsed as Session) : null;
+  } catch {
+    return null;
+  }
+}
 
 GoogleSignin.configure({
   webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
@@ -86,7 +100,12 @@ export const useAuthStore = create<AuthState>((set) => ({
     let hydrated = false;
 
     const hydrate = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      // Read the persisted session straight from storage. `getSession()` would
+      // try to refresh an expired access token first, and offline that retries
+      // for ~30s (and then reports "no session"), holding the whole app on a
+      // blank screen. Supabase's own auto-refresh renews the token in the
+      // background, and `onAuthStateChange` reports it if it is rejected.
+      const session = await readStoredSession();
       if (session && !hasProfile) {
         // Stale Keychain session from a previous install — clear it
         clearedStale = true;
@@ -106,9 +125,13 @@ export const useAuthStore = create<AuthState>((set) => ({
     // Listen for auth changes (sign-in, sign-out, token refresh)
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       // Ignore events until the initial hydrate has settled
       if (!hydrated) return;
+      // A null session is only real on an explicit sign-out. Supabase can also
+      // report null at startup when it could not refresh (offline); the stored
+      // session is still valid, so keep the user signed in.
+      if (!session && event !== 'SIGNED_OUT') return;
       // After clearing a stale session, ignore the SIGNED_OUT echo
       if (clearedStale && !session) return;
       clearedStale = false;

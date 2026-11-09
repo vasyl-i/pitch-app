@@ -11,6 +11,9 @@ export const exercises = {
   keysA11y: 'Keys {{direction}}',
   lowToHigh: 'Low to high',
   highToLow: 'High to low',
+  /** library row button: sing the song from start to end, not just its verse */
+  wholeSong: 'Whole song',
+  wholeSongA11y: 'Sing the whole song',
   alreadySet: '{{count}} already set for {{day}}',
   empty: 'Empty',
 } as const;

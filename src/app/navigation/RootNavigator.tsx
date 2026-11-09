@@ -1,5 +1,8 @@
+import { useEffect, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { useNavigation, type NavigationProp } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { useProfileStore } from '@/entities/profile';
 import { palette } from '@/shared/theme';
 import { InstrumentalSingScreen } from '@/screens/sing';
 import { NotificationsScreen } from '@/screens/notifications';
@@ -20,9 +23,11 @@ import { StaffPracticeScreen } from '@/screens/staff-practice';
 import { NewPasswordScreen, CheckEmailScreen } from '@/screens/auth';
 import { VocalMonitorScreen } from '@/screens/vocal-monitor';
 import { VocalRangeSettingsScreen, RedetectLowScreen, RedetectHighScreen, RedetectResultsScreen } from '@/screens/vocal-range';
-import type { RootStackParamList } from './types';
+import type { OnboardingStackParamList, RootStackParamList } from './types';
 import { OnboardingNavigator, STACK_OPTIONS } from './stacks';
 import { MainTabs } from './MainTabs';
+import { useHideSplash } from '../splash';
+import { resetToTab } from './resetToTab';
 import { useRootReady } from './useRootReady';
 
 export { PasswordResetRedirect } from './PasswordResetRedirect';
@@ -35,14 +40,34 @@ const RootStack = createNativeStackNavigator<RootStackParamList>();
 const MODAL = { presentation: 'modal' } as const;
 const NO_SWIPE_BACK = { gestureEnabled: false } as const;
 
+/**
+ * The onboarding flow, which leaves for the tabs on its own when the user
+ * finishes it. If instead the server tells us (late) that they had already
+ * onboarded, move them to the tabs rather than leave them mid-flow.
+ */
+function OnboardingHost({ initialRoute }: { initialRoute: keyof OnboardingStackParamList }) {
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const onboarded = useProfileStore((s) => s.onboardingStep === 'complete');
+  const wasOnboarded = useRef(onboarded);
+  useEffect(() => {
+    if (onboarded && !wasOnboarded.current) {
+      const routes = navigation.getState()?.routes;
+      if (routes?.[routes.length - 1]?.name === 'Onboarding') resetToTab(navigation, 'HomeTab');
+    }
+    wasOnboarded.current = onboarded;
+  }, [onboarded, navigation]);
+  return <OnboardingNavigator initialRoute={initialRoute} />;
+}
+
 /** Onboarding or the tabs, plus every full-screen flow pushed over them. */
 export function RootNavigator() {
   const { ready, onboarded, onboardingStart } = useRootReady();
+  useHideSplash(ready);
   if (!ready) return <View style={styles.loading} />;
 
   return (
     <RootStack.Navigator initialRouteName={onboarded ? 'Main' : 'Onboarding'} screenOptions={STACK_OPTIONS}>
-      <RootStack.Screen name="Onboarding">{() => <OnboardingNavigator initialRoute={onboardingStart} />}</RootStack.Screen>
+      <RootStack.Screen name="Onboarding">{() => <OnboardingHost initialRoute={onboardingStart} />}</RootStack.Screen>
       <RootStack.Screen name="Main" component={MainTabs} />
       {/* full-screen practice: no tab bar, no mid-session wandering */}
       <RootStack.Screen name="EarSession" component={EarSessionScreen} />

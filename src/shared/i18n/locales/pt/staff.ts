@@ -22,6 +22,7 @@ export const staff: PtLocaleShape<typeof en> = {
   header: {
     todaysPractice: 'Prática de hoje',
     forRange: '{{shift}} para a sua extensão',
+    wholeSong: 'Canção inteira',
   },
   restart: 'Recomeçar',
   skipPreview: 'Saltar pré-visualização',

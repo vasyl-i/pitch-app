@@ -9,6 +9,7 @@ import {
   odeToJoy,
   randomKey,
   transposeExercise,
+  wholeSong,
   type KeyDirection,
 } from '@/entities/exercise';
 import { useProfileStore } from '@/entities/profile';
@@ -33,16 +34,18 @@ import { useTranslation } from '@/shared/i18n';
  * range learning, and a mid-run range update must not change the key and
  * remount the run the singer is in the middle of.
  */
-export function usePracticeRounds(exerciseId: string, guided: boolean) {
+export function usePracticeRounds(exerciseId: string, guided: boolean, whole = false) {
   const { t } = useTranslation();
-  const original = exercises.find((e) => e.id === exerciseId) ?? odeToJoy;
+  const found = exercises.find((e) => e.id === exerciseId) ?? odeToJoy;
+  // the whole song in place of its excerpt: same exercise, same stats, every note
+  const original = useMemo(() => (whole && wholeSong(found)) || found, [found, whole]);
   const [range] = useState(() => useProfileStore.getState().profile?.trainingRange ?? null);
   const autoTranspose = useProfileStore((s) => s.autoTranspose);
   const { shift } = useMemo(() => fitToRange(original, range), [original, range]);
   const fitted = () => (useProfileStore.getState().autoTranspose ? range : null);
 
   // the speed picked for this exercise, remembered as in the library
-  const [rate, setRateState] = useState<SpeedLevel>(() => speedFor(original.id, isPremium(useSubscriptionStore.getState().subscription)));
+  const [rate, setRateState] = useState<SpeedLevel>(() => speedFor(original.id, isPremium(useSubscriptionStore.getState().subscription), original.notes));
   const setRate = useCallback((level: SpeedLevel) => {
     useSpeedStore.getState().setSpeed(original.id, level);
     setRateState(level);

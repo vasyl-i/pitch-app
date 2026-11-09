@@ -8,9 +8,10 @@ import { useTranslation } from '@/shared/i18n';
  * Tempo (and a library scale's direction) while the preview plays. Always
  * laid out, only shown then, so the canvas above never resizes.
  */
-export function TempoControls({ visible, bpm, rate, onRate, premium, onLocked, direction, onDirection }: {
+export function TempoControls({ visible, bpm, levels, rate, onRate, premium, onLocked, direction, onDirection }: {
   visible: boolean;
   bpm: number;
+  levels: readonly SpeedLevel[];
   rate: SpeedLevel;
   onRate: (level: SpeedLevel) => void;
   premium: boolean;
@@ -26,7 +27,7 @@ export function TempoControls({ visible, bpm, rate, onRate, premium, onLocked, d
         {t('exercises.speedCaption')}
       </AppText>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.row}>
-        <SpeedChips bpm={bpm} value={rate} premium={premium} onChange={(level) => level !== rate && onRate(level)} onLocked={onLocked} compact style={styles.noWrap} />
+        <SpeedChips bpm={bpm} levels={levels} value={rate} premium={premium} onChange={(level) => level !== rate && onRate(level)} onLocked={onLocked} compact style={styles.noWrap} />
         {direction && <DirectionChips value={direction} onChange={onDirection} compact style={[styles.noWrap, styles.direction]} />}
       </ScrollView>
     </View>

@@ -42,8 +42,14 @@ import type { PartialProgress } from '@/features/learning';
 import type { EarRound, ExerciseDefinition, SingResponse } from './types';
 
 const LIVE_EVAL_MS = 150;
-/** brief beat on "evaluating" so the transition reads, not to compute anything */
-const EVALUATING_MS = 400;
+/** how much longer than the exercise's own result time the mascot stays up */
+const RESULT_HOLD_FACTOR = 1.5;
+/** the result's staggered exit animations (last delay 600ms + 300ms fade); keep in sync with RoundVisuals */
+const RESULT_EXIT_MS = 900;
+/** the next round's screen is shown this long before the result has fully gone (its last element is already fading out) */
+const SCREEN_LEAD_MS = 200;
+/** between rounds, the prompt's sound waits this long after the screen switches, so it never plays ahead of the UI */
+const SOUND_AFTER_SCREEN_MS = 250;
 const DEFAULT_RESULT_MS = 1700;
 const COUNTDOWN_STEP_MS = 800;
 const WAIT_STEP_MS = 1000;
@@ -196,7 +202,7 @@ export function useEarTrainingSession() {
     else startCountdown(gen, round.response);
   }
 
-  async function playPrompt(gen: number, round: EarRound) {
+  async function playPrompt(gen: number, round: EarRound, entering?: Parameters<typeof setStore>[0], exited?: Promise<void>) {
     listeningRef.current = false;
     capture.end();
     // Release the mic so iOS switches from playAndRecord to playback category,
@@ -209,7 +215,16 @@ export function useEarTrainingSession() {
     // With mic released, ensurePlaybackReady sets the louder playback category
     await ensurePlaybackReady({ micHeld: false });
     if (!guard.isCurrent(gen)) return;
-    setStore({ phase: 'playing', countdown: null, waitSecondsLeft: null, choices: null, live: { note: null, score: null, outcomes: null }, promptDurationMs: round.prompt.length * 1000, promptStartedAt: Date.now() });
+    // the audio side is ready; the screen switches once the result has left it
+    if (exited) await exited;
+    if (!guard.isCurrent(gen)) return;
+    setStore({ ...entering, phase: 'playing', countdown: null, waitSecondsLeft: null, choices: null, live: { note: null, score: null, outcomes: null }, promptDurationMs: round.prompt.length * 1000, promptStartedAt: Date.now() });
+    if (exited) {
+      // let the new screen render before the sound starts
+      await new Promise<void>((resolve) => guard.later(gen, resolve, SOUND_AFTER_SCREEN_MS));
+      if (!guard.isCurrent(gen)) return;
+      setStore({ promptStartedAt: Date.now() }); // the progress ring follows the sound, not the screen
+    }
     const handle = player.play(round.prompt);
     await handle.done;
     setStore({ promptDurationMs: null, promptStartedAt: null });
@@ -280,9 +295,7 @@ export function useEarTrainingSession() {
         listeningRef.current = false;
         micActive.value = false;
         capture.end();
-        setStore({ phase: 'evaluating' });
-        const result = response.evaluate(capture.frames);
-        guard.later(gen, () => showRoundResult(gen, result), EVALUATING_MS);
+        showRoundResult(gen, response.evaluate(capture.frames));
       },
       response.windowMs
     );
@@ -293,6 +306,7 @@ export function useEarTrainingSession() {
     setStore({
       phase: 'round-result',
       roundResult: result,
+      resultLeaving: false,
       results: [...s.results, result],
       live: { note: null, score: null, outcomes: null },
     });
@@ -301,17 +315,23 @@ export function useEarTrainingSession() {
     guard.later(
       gen,
       () => {
+        // hold is over: the result plays its exit animations
+        setStore({ resultLeaving: true });
         if (useEarTrainingStore.getState().round >= totalRoundsRef.current) {
-          completeSession();
+          guard.later(gen, completeSession, RESULT_EXIT_MS);
         } else {
-          void runRound(gen);
+          // prepare the next round while the result leaves, so it starts the
+          // moment the last element is gone instead of after an empty screen
+          const exited = new Promise<void>((resolve) => guard.later(gen, resolve, RESULT_EXIT_MS - SCREEN_LEAD_MS));
+          void runRound(gen, exited);
         }
       },
-      def.resultMs ?? DEFAULT_RESULT_MS
+      (def.resultMs ?? DEFAULT_RESULT_MS) * RESULT_HOLD_FACTOR
     );
   }
 
-  async function runRound(gen: number) {
+  /** `exited` resolves when the previous result has left the screen; the new round's UI waits for it, its audio prep doesn't */
+  async function runRound(gen: number, exited?: Promise<void>) {
     const def = defRef.current;
     if (!def || !guard.isCurrent(gen)) return;
     // re-verified every round: an OS interruption between rounds can suspend
@@ -332,12 +352,14 @@ export function useEarTrainingSession() {
     previousPcRef.current = round.answerPc;
     roundsRef.current.push(round);
     currentRoundRef.current = round;
-    setStore({
+    // applied together with the phase change, so the previous result stays on
+    // screen (matching the "Next" button) until the new round actually starts
+    await playPrompt(gen, round, {
       round: useEarTrainingStore.getState().round + 1,
       instruction: round.instruction,
       roundResult: null,
-    });
-    await playPrompt(gen, round);
+      resultLeaving: false,
+    }, exited);
   }
 
   function completeSession() {
@@ -472,7 +494,8 @@ export function useEarTrainingSession() {
       if (useEarTrainingStore.getState().round >= totalRoundsRef.current) {
         completeSession();
       } else {
-        void runRound(gen);
+        // nothing left to wait out, but the sound still follows the screen
+        void runRound(gen, Promise.resolve());
       }
     },
 

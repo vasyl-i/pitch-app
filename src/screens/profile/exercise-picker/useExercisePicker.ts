@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { categoriesInOrder, exercises, type Exercise } from '@/entities/exercise';
+import { categoriesInOrder, exercises, offeredIn, type Exercise } from '@/entities/exercise';
 import { EXERCISES } from '@/features/ear-training';
 import {
   CATALOG,
@@ -10,6 +10,7 @@ import {
   type WeeklyPlan,
 } from '@/features/learning';
 import { categoryColors } from '@/shared/theme';
+import { useTranslation } from '@/shared/i18n';
 
 export const MAX_PER_DAY = 15;
 
@@ -27,6 +28,8 @@ export function useExercisePicker(day: WeekdayIndex) {
   const dayEntries = weeklyPlan[day] ?? [];
   const atLimit = dayEntries.length >= MAX_PER_DAY;
 
+  // the list follows the UI language: some songs are offered in one only
+  const { i18n } = useTranslation();
   const [search, setSearch] = useState('');
   const query = search.trim().toLowerCase();
 
@@ -44,7 +47,7 @@ export function useExercisePicker(day: WeekdayIndex) {
     const drills = EXERCISES.filter((d) => matches(d.title)).map((drill) => ({ drill, color: nextColor(), minutes: MINUTES.get(drill.id) ?? 2 }));
 
     const byCategory = new Map<string, Exercise[]>();
-    for (const e of exercises) if (matches(e.title)) byCategory.set(e.category, [...(byCategory.get(e.category) ?? []), e]);
+    for (const e of exercises) if (offeredIn(e) && matches(e.title)) byCategory.set(e.category, [...(byCategory.get(e.category) ?? []), e]);
     const categories = categoriesInOrder().flatMap((meta) => {
       const items = byCategory.get(meta.id) ?? [];
       return items.length === 0
@@ -52,7 +55,7 @@ export function useExercisePicker(day: WeekdayIndex) {
         : [{ meta, rows: items.map((exercise) => ({ exercise, color: nextColor(), minutes: MINUTES.get(exercise.id) ?? 3 })) }];
     });
     return { drills, categories };
-  }, [query]);
+  }, [query, i18n.language]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const add = (entry: WeeklyExerciseEntry) => {
     if (atLimit) return;

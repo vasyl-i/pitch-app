@@ -9,7 +9,7 @@
  */
 import { useCallback, useMemo } from 'react';
 import { SectionList, StyleSheet, View, type SectionListData, type SectionListRenderItem } from 'react-native';
-import { AppText, Screen } from '@/shared/ui';
+import { AppText, Screen, TabTitleRow } from '@/shared/ui';
 import { spacing } from '@/shared/theme';
 import { useTranslation } from '@/shared/i18n';
 import { useFloatingTabBarClearance } from '@/app/navigation/FloatingTabBar';
@@ -39,6 +39,8 @@ export function ExercisesHubScreen({ navigation }: ExercisesScreenProps<'Exercis
   );
   const addDrill = useCallback((activityId: string, difficultyId: string | undefined) => pick({ activityId, kind: 'ear', difficultyId }), [pick]);
   const openMelody = useCallback((exerciseId: string) => navigation.navigate('MelodyPractice', { exerciseId }), [navigation]);
+  // the whole song is a library choice only: it can't be added to a plan
+  const openWholeSong = useCallback((exerciseId: string) => navigation.navigate('MelodyPractice', { exerciseId, whole: true }), [navigation]);
   const addMelody = useCallback((activityId: string) => pick({ activityId, kind: 'melody' }), [pick]);
 
   const renderItem: SectionListRenderItem<LibraryItem, LibrarySection> = useCallback(
@@ -55,9 +57,10 @@ export function ExercisesHubScreen({ navigation }: ExercisesScreenProps<'Exercis
           onLocked={openPaywall}
           onPress={openMelody}
           onAdd={addMelody}
+          onWholeSong={openWholeSong}
         />
       ),
-    [best, isPremium, openPaywall, startDrill, addDrill, openMelody, addMelody],
+    [best, isPremium, openPaywall, startDrill, addDrill, openMelody, addMelody, openWholeSong],
   );
   const renderSectionHeader = useCallback(
     ({ section }: { section: SectionListData<LibraryItem, LibrarySection> }) => (
@@ -68,7 +71,9 @@ export function ExercisesHubScreen({ navigation }: ExercisesScreenProps<'Exercis
   const header = useMemo(
     () => (
       <View style={styles.header}>
-        <AppText variant="title">{t('nav.exercises')}</AppText>
+        <TabTitleRow>
+          <AppText variant="title">{t('nav.exercises')}</AppText>
+        </TabTitleRow>
         <AppText variant="body" style={styles.subtitle}>
           {t('exercises.subtitle')}
         </AppText>

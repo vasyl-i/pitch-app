@@ -34,6 +34,8 @@ interface EarTrainingState {
   choices: { id: string; label: string }[] | null;
   live: LiveFeedback;
   roundResult: RoundScore | null;
+  /** the result's hold time is over: its elements are playing their exit animations */
+  resultLeaving: boolean;
   results: RoundScore[];
   summary: SessionSummary | null;
   /** total prompt playback duration in ms (for progress ring UI) */
@@ -59,6 +61,7 @@ const initial = {
   choices: null,
   live: IDLE_LIVE,
   roundResult: null,
+  resultLeaving: false,
   results: [] as RoundScore[],
   summary: null,
   promptDurationMs: null,

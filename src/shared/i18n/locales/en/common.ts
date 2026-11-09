@@ -24,6 +24,9 @@ export const common = {
   minutesShort_other: '{{count}} min',
   daysShort_one: '{{count}}d',
   daysShort_other: '{{count}}d',
+  offline: 'Offline',
+  offlineToastTitle: "You're offline",
+  offlineToastMessage: 'Your progress is saved on this device and will sync when you are back online.',
 } as const;
 
 export const nav = {

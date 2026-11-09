@@ -13,6 +13,7 @@ import { useAppStartup, useScreenTracking } from './useAppStartup';
 import { RootNavigator, PasswordResetRedirect } from './navigation/RootNavigator';
 import { AuthNavigator } from './navigation/AuthNavigator';
 import { LanguageSync } from './sync/LanguageSync';
+import { NetworkSync } from './sync/NetworkSync';
 import { SyncManager } from './sync/SyncManager';
 import { ReminderSync } from './sync/ReminderSync';
 import { TrialReminderSync } from './sync/TrialReminderSync';
@@ -20,15 +21,16 @@ import { WeeklyPlanSync } from './sync/WeeklyPlanSync';
 import { UserPropertiesSync } from './sync/UserPropertiesSync';
 
 export default function App() {
-  const { fontsLoaded, onRootLayout } = useAppStartup();
+  const { fontsLoaded } = useAppStartup();
   const { navigationRef, onStateChange } = useScreenTracking();
   if (!fontsLoaded) return null;
 
   return (
-    <GestureHandlerRootView style={styles.root} onLayout={onRootLayout}>
+    <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
         <ThemeProvider>
           <LanguageSync />
+          <NetworkSync />
           <NavigationContainer ref={navigationRef} theme={NAVIGATION_THEME} onStateChange={onStateChange}>
             <AuthGate fallback={<AuthNavigator />}>
               {/* background work that needs a signed-in (or guest) user */}

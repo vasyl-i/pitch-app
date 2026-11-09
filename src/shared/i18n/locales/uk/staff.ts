@@ -22,6 +22,7 @@ export const staff: LocaleShape<typeof en> = {
   header: {
     todaysPractice: 'Сьогоднішня практика',
     forRange: '{{shift}} під ваш діапазон',
+    wholeSong: 'Уся пісня',
   },
   restart: 'Почати знову',
   skipPreview: 'Пропустити прослуховування',

@@ -11,6 +11,7 @@ import { preloadSamples, useSoundStore } from '@/shared/audio';
 import { supabase } from '@/shared/lib/supabase';
 import { track } from '@/shared/lib/analytics';
 import { APP_FONTS } from './bootstrap';
+import { useHideSplash } from './splash';
 
 /**
  * Supabase auth deep links (email confirmation, password recovery) carry the
@@ -29,8 +30,7 @@ function handleAuthDeepLink(url: string) {
 
 /**
  * Everything the root needs before and while it runs: fonts loaded, auth
- * settled and Apple sign-in availability resolved before the splash hides
- * (so the first screen is fully laid out), auth deep links (cold start and
+ * settled and Apple sign-in availability resolved before the splash hides, auth deep links (cold start and
  * while open), the learning tracker, and the selected instrument's samples
  * decoded so the first note plays instantly.
  */
@@ -57,12 +57,13 @@ export function useAppStartup() {
     preloadSamples(soundType);
   }, [soundType]);
 
-  const ready = fontsLoaded && !authLoading && appleReady;
-  const onRootLayout = useCallback(() => {
-    if (ready) void SplashScreen.hideAsync();
-  }, [ready]);
+  const signedIn = useAuthStore((s) => !!s.session || s.guest);
+  // Signed-in users keep the splash until their first screen is mounted (see
+  // RootNavigator), so its entering animations are seen. The sign-in screens
+  // have no such gate; show them once fonts, auth and Apple availability settle.
+  useHideSplash(fontsLoaded && !authLoading && appleReady && !signedIn);
 
-  return { fontsLoaded, onRootLayout };
+  return { fontsLoaded };
 }
 
 function activeRouteName(state: any): string | undefined {

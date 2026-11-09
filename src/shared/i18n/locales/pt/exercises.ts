@@ -12,6 +12,8 @@ export const exercises: PtLocaleShape<typeof en> = {
   speedCaption: 'Velocidade, bpm',
   keysA11y: 'Tonalidades {{direction}}',
   lowToHigh: 'Do grave ao agudo',
+  wholeSong: 'Canção inteira',
+  wholeSongA11y: 'Cantar a canção inteira',
   highToLow: 'Do agudo ao grave',
   alreadySet: '{{count}} já definidos para {{day}}',
   empty: 'Vazio',

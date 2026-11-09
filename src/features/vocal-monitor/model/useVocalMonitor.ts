@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import {
   acquireMic,
+  createPitchJumpGuard,
   createStabilityTracker,
   createThrottle,
   createVoiceGate,
@@ -27,6 +28,8 @@ const METRICS_TICK_MS = 200;
 const ACCURACY_WINDOW_MS = 4000;
 /** this long without a voiced frame and both readouts return to their empty state (a breath between words doesn't) */
 const SILENCE_RESET_MS = 800;
+/** while the jump guard holds a frame back the dot stays put, but not for longer than this */
+const DOT_HOLD_MS = 120;
 
 export interface MonitorMetrics {
   /** 0–100, null until something has been sung */
@@ -71,6 +74,7 @@ export function useVocalMonitor() {
     resetTrail();
 
     const gate = createVoiceGate();
+    const jumpGuard = createPitchJumpGuard();
     const stability = createStabilityTracker();
     const accuracy = createRollingMean(ACCURACY_WINDOW_MS);
     const metricsTick = createThrottle(METRICS_TICK_MS);
@@ -90,25 +94,35 @@ export function useVocalMonitor() {
         const at = Date.now();
         const rawMidi = frame.frequency ? freqToMidi(frame.frequency) : null;
         const voiced = rawMidi !== null && !frame.clipped && gate.accept(frame.rms, rawMidi, at);
+        // every voiced frame keeps the gate's continuity, held or not — as the
+        // native gate does — so a soft note stays on the lower sustain bar
+        // while the guard is still deciding about it
+        if (voiced) gate.confirm(rawMidi, at);
+        // a voiced frame still has to be a plausible continuation of the line
+        // to be shown; the guard may hold it back, drop it, or release a
+        // confirmed jump together with the frames it held
+        const released = jumpGuard.push(voiced ? rawMidi : null, at);
 
-        if (voiced) {
-          gate.confirm(rawMidi, at);
-          const cents = centsFromNearestNote(rawMidi);
-          const note = publishLive(rawMidi, cents);
+        for (const { midi, at: sungAt } of released) {
+          const cents = centsFromNearestNote(midi);
+          const note = publishLive(midi, cents);
           // a new note starts a new stability window: moving between notes is not a wobble
           if (note !== shownNote) {
             shownNote = note;
             stability.reset();
           }
-          const stdev = stability.push(rawMidi, at);
+          const stdev = stability.push(midi, sungAt);
           if (stdev !== null) lastStability = stabilityScore(stdev);
-          accuracy.push(accuracyScore(cents), at);
-          lastVoicedAt = at;
-          pushRef.current(rawMidi, cents);
-        } else {
-          publishLive(null, null);
-          shownNote = null;
-          stability.reset();
+          accuracy.push(accuracyScore(cents), sungAt);
+          lastVoicedAt = sungAt;
+          pushRef.current(midi, cents, sungAt);
+        }
+        if (!released.length) {
+          if (!voiced || at - lastVoicedAt > DOT_HOLD_MS) {
+            publishLive(null, null);
+            shownNote = null;
+            stability.reset();
+          }
           pushRef.current(null);
         }
         micRms.value = frame.rms;

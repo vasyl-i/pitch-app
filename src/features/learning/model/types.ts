@@ -217,6 +217,8 @@ export interface Activity {
   rounds: number;
   /** hard ceiling on rounds even when a day's plan stretches the session */
   maxRounds?: number;
+  /** the UI languages it is offered in; absent means every language (see `offeredIn`) */
+  languages?: readonly string[];
 }
 
 /* ------------------------------------------------------------------ *

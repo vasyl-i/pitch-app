@@ -6,9 +6,11 @@ export {
   directionFor,
   isPremiumSpeed,
   MAX_FREE_SPEED,
+  resolveSpeed,
   SPEED_LEVELS,
   speedBpm,
   speedFor,
+  speedLevelsFor,
   useSpeedStore,
 } from './model/speedStore';
 export type { ScaleDirection, SpeedLevel } from './model/speedStore';

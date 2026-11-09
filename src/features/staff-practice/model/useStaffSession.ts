@@ -10,7 +10,7 @@
 import { useEffect, useRef } from 'react';
 import { InteractionManager } from 'react-native';
 import { AudioManager } from 'react-native-audio-api';
-import { categoryRepeats, type Exercise } from '@/entities/exercise';
+import { categoryRepeats, type Exercise, type PhraseSummary } from '@/entities/exercise';
 import { recordObservedNote } from '@/entities/profile';
 import { acquireMic, micSettled, MicPermissionError, type MicLease } from '@/features/pitch-detection';
 import { micActive, micGlowTier } from '@/shared/lib/micRmsBus';
@@ -25,6 +25,8 @@ export interface StaffSessionControls {
   restart: () => void;
   /** jump from the listen (preview) stage straight to singing */
   skipListen: () => void;
+  /** a sing-along-only run left part-way: its score so far, if enough was sung (see `RunController.partialSummary`) */
+  partialSummary: () => PhraseSummary | null;
 }
 
 /** the starting-note cue: a beat after the "your turn" card fades in */
@@ -41,9 +43,10 @@ export function cuesStartingNote(exercise: Exercise): boolean {
   return categoryRepeats(exercise.category) === 'ladder';
 }
 
-export function useStaffSession(exercise: Exercise, rate = 1): StaffSessionControls {
+export function useStaffSession(exercise: Exercise, rate = 1, { singAlongOnly = false }: { singAlongOnly?: boolean } = {}): StaffSessionControls {
   const restartRef = useRef<() => void>(() => {});
   const skipListenRef = useRef<() => void>(() => {});
+  const partialRef = useRef<() => PhraseSummary | null>(() => null);
   const exerciseIdRef = useRef<string | null>(null);
 
   // the screen is leaving: drop its feedback. Not in the run's own cleanup,
@@ -187,6 +190,7 @@ export function useStaffSession(exercise: Exercise, rate = 1): StaffSessionContr
       onWellSungNote: recordObservedNote,
       onBeforeStage,
       cueSolo,
+      singAlongOnly,
     });
 
     const begin = async () => {
@@ -218,6 +222,7 @@ export function useStaffSession(exercise: Exercise, rate = 1): StaffSessionContr
       controller.startRun();
     };
     skipListenRef.current = () => controller.skipListen();
+    partialRef.current = () => controller.partialSummary();
 
     // Defer mic acquisition until the screen transition animation finishes —
     // AudioRecorder creation and audio session setup are heavy native calls
@@ -246,5 +251,5 @@ export function useStaffSession(exercise: Exercise, rate = 1): StaffSessionContr
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exercise.id, rate]);
 
-  return { restart: () => restartRef.current(), skipListen: () => skipListenRef.current() };
+  return { restart: () => restartRef.current(), skipListen: () => skipListenRef.current(), partialSummary: () => partialRef.current() };
 }

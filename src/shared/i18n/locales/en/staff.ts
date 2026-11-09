@@ -19,6 +19,7 @@ export const staff = {
   header: {
     todaysPractice: "Today's practice",
     forRange: '{{shift}} for your range',
+    wholeSong: 'Whole song',
   },
   restart: 'Restart',
   skipPreview: 'Skip preview',

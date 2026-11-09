@@ -3,6 +3,7 @@ export { AppText } from './AppText';
 export { HeroActions, HeroMessage } from './HeroMessage';
 export { COMPACT_SCREEN, ScoreBoard } from './ScoreBoard';
 export { toastConfig } from './AppToast';
+export { OfflineBadge, TabTitleRow } from './OfflineBadge';
 export { BackButton } from './BackButton';
 export { Button } from './Button';
 export { Card } from './Card';

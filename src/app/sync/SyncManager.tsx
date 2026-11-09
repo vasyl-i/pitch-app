@@ -3,6 +3,7 @@ import { pullFromServer, startSync, stopSync, useAuthStore } from '@/features/au
 import { registerPushToken } from '@/shared/lib/notifications';
 import { fetchSubscriptionState, identifyRevenueCatUser, onSubscriptionChange, useSubscriptionStore } from '@/features/subscription';
 import { identifyUser, resetAnalyticsUser } from '@/shared/lib/analytics';
+import { onReconnect } from '@/shared/lib/network';
 
 /** Starts cloud sync + pulls latest data when the user is authenticated. */
 export function SyncManager() {
@@ -30,6 +31,8 @@ export function SyncManager() {
     });
     pullFromServer();
     startSync();
+    // back online: reconcile whatever changed while the connection was down
+    const unsubReconnect = onReconnect(() => void pullFromServer());
     registerPushToken(user.id);
 
     // Identify user with RevenueCat and sync subscription state
@@ -47,6 +50,7 @@ export function SyncManager() {
 
     return () => {
       stopSync();
+      unsubReconnect();
       unsubRC();
     };
   }, [user, loading, guest]);

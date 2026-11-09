@@ -11,10 +11,42 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { mmkvStorage } from '@/shared/lib/storage';
+import type { TargetNote } from '@/entities/exercise';
 
-/** the authored tempo and four faster ones; the last two are Premium */
-export const SPEED_LEVELS = [1, 1.25, 1.5, 1.75, 2] as const;
+/**
+ * The authored tempo and five faster ones; the last two are Premium. The
+ * steps are finer at the slow end, where a singer first builds speed.
+ */
+export const SPEED_LEVELS = [1, 1.15, 1.3, 1.5, 1.75, 2] as const;
 export type SpeedLevel = (typeof SPEED_LEVELS)[number];
+
+/**
+ * The shortest note worth asking a singer for. A faster speed is offered only
+ * while every note of the exercise still lasts this long, so a song with
+ * quick notes (a dotted rhythm's short pickup, a run of eighths) tops out
+ * sooner than one in plain quarter notes.
+ */
+const MIN_SINGABLE_NOTE_SEC = 0.13;
+
+/** the speeds an exercise offers: the authored tempo, and each faster one its quickest note survives */
+export function speedLevelsFor(notes: readonly TargetNote[]): SpeedLevel[] {
+  const shortest = notes.reduce((m, n) => Math.min(m, n.duration), Infinity);
+  return SPEED_LEVELS.filter((level) => level === 1 || shortest / level >= MIN_SINGABLE_NOTE_SEC - 1e-6);
+}
+
+/**
+ * The speed actually run, given a pick: the fastest offered level not above
+ * it (a pick from before a cap, or a level that no longer exists, slows to the
+ * nearest one below), and no Premium speed without Premium.
+ */
+export function resolveSpeed(picked: number | undefined, levels: readonly SpeedLevel[], premium: boolean): SpeedLevel {
+  if (picked === undefined) return 1;
+  let best: SpeedLevel = 1;
+  for (const level of levels) {
+    if (level <= picked + 1e-6 && (premium || !isPremiumSpeed(level))) best = level;
+  }
+  return best;
+}
 
 /** the fastest speed the free tier gets */
 export const MAX_FREE_SPEED: SpeedLevel = 1.5;
@@ -57,7 +89,18 @@ export const useSpeedStore = create<SpeedState>()(
     {
       name: 'pitch-coach-melody-speeds',
       storage: createJSONStorage(() => mmkvStorage),
-      version: 1,
+      version: 2,
+      // v2 replaced the 1.25 step with 1.15 and 1.3: keep such a pick on the step just above
+      migrate: (persisted, version) => {
+        const state = persisted as Partial<SpeedState>;
+        if (version < 2 && state.speeds) {
+          const speeds = Object.fromEntries(
+            Object.entries(state.speeds).map(([id, rate]) => [id, (rate as number) === 1.25 ? 1.3 : rate]),
+          ) as Record<string, SpeedLevel>;
+          return { ...state, speeds } as SpeedState;
+        }
+        return state as SpeedState;
+      },
     },
   ),
 );
@@ -68,11 +111,10 @@ export function directionFor(exerciseId: string): ScaleDirection {
 
 /**
  * The rate to run an exercise at: the singer's pick, else the authored
- * tempo. A Premium speed picked while subscribed drops to the fastest free
- * one once Premium lapses — the choice is kept for if they come back.
+ * tempo, held to the speeds this exercise offers. A Premium speed picked
+ * while subscribed drops to the fastest free one once Premium lapses — the
+ * choice is kept for if they come back.
  */
-export function speedFor(exerciseId: string, premium: boolean): SpeedLevel {
-  const rate = useSpeedStore.getState().speeds[exerciseId];
-  if (rate === undefined || !(SPEED_LEVELS as readonly number[]).includes(rate)) return 1;
-  return !premium && isPremiumSpeed(rate) ? MAX_FREE_SPEED : rate;
+export function speedFor(exerciseId: string, premium: boolean, notes: readonly TargetNote[]): SpeedLevel {
+  return resolveSpeed(useSpeedStore.getState().speeds[exerciseId], speedLevelsFor(notes), premium);
 }

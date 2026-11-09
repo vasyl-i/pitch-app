@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { categoriesInOrder, exercises, type Exercise } from '@/entities/exercise';
+import { categoriesInOrder, exercises, offeredIn, type Exercise } from '@/entities/exercise';
 import { EXERCISES, type ExerciseDefinition } from '@/features/ear-training';
 import { CATALOG } from '@/features/learning';
 import { bestScores, useProgressStore } from '@/features/progress';
@@ -55,7 +55,8 @@ export function useExerciseLibrary(drillsLabel: string) {
     };
 
     const byCategory = new Map<string, Exercise[]>();
-    for (const e of exercises) byCategory.set(e.category, [...(byCategory.get(e.category) ?? []), e]);
+    // some songs are offered in one UI language only
+    for (const e of exercises) if (offeredIn(e)) byCategory.set(e.category, [...(byCategory.get(e.category) ?? []), e]);
 
     const categories = categoriesInOrder().flatMap((meta): LibrarySection[] => {
       const items = byCategory.get(meta.id) ?? [];
@@ -78,6 +79,7 @@ export function useExerciseLibrary(drillsLabel: string) {
       ];
     });
     return [drills, ...categories];
+  // drillsLabel is translated, so the list also rebuilds on a language switch
   }, [isPremium, advancedUnlocked, drillsLabel]);
 
   return { sections: library, best, isPremium, openPaywall };

@@ -8,10 +8,12 @@
  *   - Local MMKV remains the primary store for offline use
  */
 import { supabase } from '@/shared/lib/supabase';
+import { isOffline } from '@/shared/lib/network';
 import { useAuthStore } from './authStore';
 import { useProfileStore } from '@/entities/profile';
 import { useProgressStore, type DayHistory, type SessionRecord } from '@/features/progress';
 import {
+  DEFAULT_PREFERENCES,
   useLearningStore,
   useLessonSessionStore,
   usePreferencesStore,
@@ -85,7 +87,7 @@ async function pushVocalProfile() {
     detected_at: profile.detectedAt ? new Date(profile.detectedAt).toISOString() : null,
     temp_adjustment: profile.temporaryAdjustment,
     auto_transpose: useProfileStore.getState().autoTranspose,
-    updated_at: new Date().toISOString(),
+    updated_at: new Date(useProfileStore.getState().updatedAt || Date.now()).toISOString(),
   });
 }
 
@@ -110,7 +112,7 @@ async function pushLearningPreferences() {
     disabled_exercises: prefs.disabledExercises ?? [],
     skip_redo_warning: prefs.skipRedoWarning ?? false,
     weekly_plan: prefs.weeklyPlan ?? null,
-    updated_at: new Date().toISOString(),
+    updated_at: new Date(prefs.updatedAt || Date.now()).toISOString(),
   });
 }
 
@@ -147,26 +149,32 @@ async function pushSkills() {
   }
 }
 
-async function pushSession(session: { exerciseId: string; exerciseTitle: string; at: number; score: number; stars: number; avgCents: number; stability: number; rhythm: number; durationSec?: number; notes: Record<number, unknown>; notesByMidi?: Record<number, unknown>; intervals?: Record<string, unknown> }) {
-  const userId = getUserId();
-  if (!userId) return;
+type PushableSession = { exerciseId: string; exerciseTitle: string; at: number; score: number; stars: number; avgCents: number; stability: number; rhythm: number; durationSec?: number; notes: Record<number, unknown>; notesByMidi?: Record<number, unknown>; intervals?: Record<string, unknown> };
 
-  await supabase.from('sessions').insert({
-    user_id: userId,
-    exercise_id: session.exerciseId,
-    exercise_title: session.exerciseTitle,
-    score: session.score,
-    stars: session.stars,
-    avg_cents: session.avgCents,
-    stability: session.stability,
-    rhythm: session.rhythm,
-    duration_sec: session.durationSec,
-    notes: session.notes,
-    notes_by_midi: session.notesByMidi,
-    intervals: session.intervals,
-    created_at: new Date(session.at).toISOString(),
-  });
+async function pushSessions(sessions: PushableSession[]) {
+  const userId = getUserId();
+  if (!userId || sessions.length === 0) return;
+
+  await supabase.from('sessions').insert(
+    sessions.map((session) => ({
+      user_id: userId,
+      exercise_id: session.exerciseId,
+      exercise_title: session.exerciseTitle,
+      score: session.score,
+      stars: session.stars,
+      avg_cents: session.avgCents,
+      stability: session.stability,
+      rhythm: session.rhythm,
+      duration_sec: session.durationSec,
+      notes: session.notes,
+      notes_by_midi: session.notesByMidi,
+      intervals: session.intervals,
+      created_at: new Date(session.at).toISOString(),
+    })),
+  );
 }
+
+const pushSession = (session: PushableSession) => pushSessions([session]);
 
 async function pushDailyPlan() {
   const userId = getUserId();
@@ -289,74 +297,159 @@ async function syncDailyStats(userId: string) {
   await pushDirtyMastery();
 }
 
-// ── Pull from server (on sign-in) ──────────────────────────────────
-export async function pullFromServer() {
+// ── Reconcile with the server ──────────────────────────────────────
+// Local MMKV is the source of truth for the UI; the server is a replica. Each
+// pull compares both sides per record by timestamp: the newer side wins, and
+// when that is the device, it is sent up. That one rule covers edits made
+// offline (they were never pushed), a second device, and a fresh sign-in.
+const PULL_SESSIONS_LIMIT = 500;
+const SESSION_PUSH_CHUNK = 100;
+/** longest the first screen waits on the server before showing local data */
+const SYNC_GATE_MAX_MS = 6000;
+
+const toMs = (iso: string | null | undefined) => (iso ? new Date(iso).getTime() : 0);
+
+async function reconcileVocalProfile(userId: string) {
+  const { data: vp, error } = await supabase.from('vocal_profiles').select('*').eq('user_id', userId).maybeSingle();
+  if (error) return null; // unreachable or denied: change nothing, and don't mistake it for "no row"
+  const local = useProfileStore.getState();
+  const serverAt = toMs(vp?.updated_at);
+
+  if (vp && (!local.profile || serverAt > local.updatedAt)) {
+    useProfileStore.getState().importProfile({
+      maximumRange: { lowMidi: vp.max_low_midi, highMidi: vp.max_high_midi },
+      comfortRange:
+        vp.comfort_low_midi != null && vp.comfort_high_midi != null
+          ? { lowMidi: vp.comfort_low_midi, highMidi: vp.comfort_high_midi }
+          : null,
+      confidence: vp.confidence,
+      detectedAt: vp.detected_at ? toMs(vp.detected_at) : Date.now(),
+      temporaryAdjustment: vp.temp_adjustment ?? null,
+      autoTranspose: vp.auto_transpose ?? null,
+      updatedAt: serverAt,
+    });
+  } else if (local.profile && (!vp || local.updatedAt > serverAt)) {
+    await pushVocalProfile();
+  }
+  return vp;
+}
+
+async function reconcilePreferences(userId: string) {
+  const { data: lp, error } = await supabase.from('learning_preferences').select('*').eq('user_id', userId).maybeSingle();
+  if (error) return null;
+  const local = usePreferencesStore.getState().preferences;
+  const serverAt = toMs(lp?.updated_at);
+
+  if (lp && (!local || serverAt > local.updatedAt)) {
+    usePreferencesStore.getState().importPreferences({
+      ...(local ?? DEFAULT_PREFERENCES),
+      primaryGoal: lp.primary_goal,
+      secondaryGoal: lp.secondary_goal,
+      dailyMinutes: lp.daily_minutes,
+      experience: lp.experience,
+      musicReading: lp.music_reading,
+      preferredGenres: lp.preferred_genres ?? [],
+      coachStyle: lp.coach_style,
+      reminderHour: lp.reminder_hour ?? null,
+      reminderMinute: lp.reminder_minute ?? 0,
+      preferredDifficulty: lp.preferred_difficulty,
+      exerciseBalance: lp.exercise_balance ?? 0.5,
+      disabledExercises: lp.disabled_exercises ?? [],
+      skipRedoWarning: lp.skip_redo_warning ?? false,
+      weeklyPlan: lp.weekly_plan ?? undefined,
+      updatedAt: serverAt,
+    });
+  } else if (local && (!lp || local.updatedAt > serverAt)) {
+    await pushLearningPreferences();
+  }
+  return lp;
+}
+
+/** merge server sessions in, then send up the local ones the server lacks */
+async function syncSessions(userId: string) {
+  const { data: serverSessions, error } = await supabase
+    .from('sessions')
+    .select('exercise_id, exercise_title, score, stars, avg_cents, stability, rhythm, duration_sec, notes, notes_by_midi, intervals, created_at')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(PULL_SESSIONS_LIMIT);
+  if (error || !serverSessions) return;
+
+  if (serverSessions.length > 0) {
+    const records: SessionRecord[] = serverSessions.map((row) => ({
+      exerciseId: row.exercise_id,
+      exerciseTitle: row.exercise_title ?? '',
+      at: toMs(row.created_at),
+      score: row.score ?? 0,
+      stars: row.stars ?? 0,
+      avgCents: row.avg_cents ?? 0,
+      stability: row.stability ?? 0,
+      rhythm: row.rhythm ?? 0,
+      durationSec: row.duration_sec ?? undefined,
+      notes: row.notes ?? {},
+      notesByMidi: row.notes_by_midi ?? undefined,
+      intervals: row.intervals ?? undefined,
+    }));
+    // already on the server: the session watcher must not send them back
+    importing = true;
+    try {
+      useProgressStore.getState().importSessions(records);
+    } finally {
+      importing = false;
+    }
+  }
+
+  // Local sessions the server doesn't have (recorded offline). When the
+  // server page was full, older local ones may just be beyond it — skip those.
+  const onServer = new Set(serverSessions.map((r) => toMs(r.created_at)));
+  const floor = serverSessions.length >= PULL_SESSIONS_LIMIT ? Math.min(...onServer) : 0;
+  const missing = useProgressStore.getState().sessions.filter((s) => s.at >= floor && !onServer.has(s.at));
+  for (let i = 0; i < missing.length; i += SESSION_PUSH_CHUNK) {
+    await pushSessions(missing.slice(i, i + SESSION_PUSH_CHUNK));
+  }
+}
+
+// ── Pull from server (on sign-in, cold start and reconnect) ────────
+let pulling: Promise<void> | null = null;
+
+export function pullFromServer(): Promise<void> {
   // Gate every pull, not just fresh sign-ins, so consumers that care about
   // server data (e.g. the weekly-plan rebuild) also wait on cold starts.
   // Synchronous, before the first await, so effects that run right after
   // the caller's already see it.
   if (!syncReadyResolve) prepareSyncGate();
-  const userId = getUserId();
-  if (!userId) {
+  // never hold the first screen hostage to a slow or dead connection
+  const gateTimer = setTimeout(resolveSyncGate, SYNC_GATE_MAX_MS);
+
+  if (!getUserId() || isOffline()) {
+    clearTimeout(gateTimer);
     resolveSyncGate();
-    return;
+    return Promise.resolve();
   }
+  if (!pulling) {
+    pulling = runPull()
+      .catch((e) => {
+        if (__DEV__) console.warn('[sync] pull failed', e);
+      })
+      .finally(() => {
+        pulling = null;
+      });
+  }
+  return pulling.finally(() => clearTimeout(gateTimer));
+}
+
+async function runPull() {
+  const userId = getUserId();
+  if (!userId) return;
 
   try {
-    // Vocal profile
-    const { data: vp } = await supabase
-      .from('vocal_profiles')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
-
-    if (vp) {
-      useProfileStore.getState().setDetectedRange(
-        { lowMidi: vp.max_low_midi, highMidi: vp.max_high_midi },
-        vp.confidence,
-        vp.detected_at ? new Date(vp.detected_at).getTime() : undefined,
-      );
-      if (vp.comfort_low_midi != null && vp.comfort_high_midi != null) {
-        useProfileStore.getState().setComfortRange({
-          lowMidi: vp.comfort_low_midi,
-          highMidi: vp.comfort_high_midi,
-        });
-      }
-      if (vp.temp_adjustment) {
-        useProfileStore.getState().setTemporaryAdjustment(vp.temp_adjustment);
-      }
-    }
-
-    // Learning preferences
-    const { data: lp } = await supabase
-      .from('learning_preferences')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
+    const vp = await reconcileVocalProfile(userId);
+    const lp = await reconcilePreferences(userId);
 
     // If both vocal profile and preferences exist on server, the user
     // has fully completed onboarding — mark it so they skip the flow.
     if (vp && lp) {
       useProfileStore.getState().completeOnboarding();
-    }
-
-    if (lp) {
-      usePreferencesStore.getState().setPreferences({
-        primaryGoal: lp.primary_goal,
-        secondaryGoal: lp.secondary_goal,
-        dailyMinutes: lp.daily_minutes,
-        experience: lp.experience,
-        musicReading: lp.music_reading,
-        preferredGenres: lp.preferred_genres ?? [],
-        coachStyle: lp.coach_style,
-        reminderHour: lp.reminder_hour ?? null,
-        reminderMinute: lp.reminder_minute ?? 0,
-        preferredDifficulty: lp.preferred_difficulty,
-        exerciseBalance: lp.exercise_balance ?? 0.5,
-        disabledExercises: lp.disabled_exercises ?? [],
-        skipRedoWarning: lp.skip_redo_warning ?? false,
-        weeklyPlan: lp.weekly_plan ?? undefined,
-      });
     }
 
     // Skill snapshots (for long-term progress charts)
@@ -380,79 +473,57 @@ export async function pullFromServer() {
       useLearningStore.setState({ weekSnapshots: merged.slice(0, 52) });
     }
 
-    // Practice sessions (merge server sessions into local MMKV store)
-    const { data: serverSessions } = await supabase
-      .from('sessions')
-      .select('exercise_id, exercise_title, score, stars, avg_cents, stability, rhythm, duration_sec, notes, notes_by_midi, intervals, created_at')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(500);
-
-    if (serverSessions && serverSessions.length > 0) {
-      const records: SessionRecord[] = serverSessions.map((row) => ({
-        exerciseId: row.exercise_id,
-        exerciseTitle: row.exercise_title ?? '',
-        at: new Date(row.created_at).getTime(),
-        score: row.score ?? 0,
-        stars: row.stars ?? 0,
-        avgCents: row.avg_cents ?? 0,
-        stability: row.stability ?? 0,
-        rhythm: row.rhythm ?? 0,
-        durationSec: row.duration_sec ?? undefined,
-        notes: row.notes ?? {},
-        notesByMidi: row.notes_by_midi ?? undefined,
-        intervals: row.intervals ?? undefined,
-      }));
-      // already on the server: the session watcher must not send them back
-      importing = true;
-      try {
-        useProgressStore.getState().importSessions(records);
-      } finally {
-        importing = false;
-      }
-    }
-
+    await syncSessions(userId);
     await syncDailyStats(userId);
 
-    // Total practice time (server value wins if larger — monotonically increasing)
+    // Total practice time (monotonically increasing: the larger side wins)
     const { data: profileRow } = await supabase
       .from('profiles')
       .select('total_practice_sec')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
     if (profileRow) {
       const serverTotal = profileRow.total_practice_sec ?? 0;
       const localTotal = useProgressStore.getState().totalPracticeSec;
       if (serverTotal > localTotal) {
         useProgressStore.setState({ totalPracticeSec: serverTotal });
+      } else if (localTotal > serverTotal) {
+        await pushTotalPractice();
       }
     }
 
-    // Daily plan progress (restore today's completedSlots from server)
+    // Daily plan progress (today's completedSlots): the newer side wins
     const localSession = useLessonSessionStore.getState();
     const todayDayKey = localSession.dayKey;
     if (todayDayKey) {
-      const { data: dp } = await supabase
+      const { data: dp, error: dpError } = await supabase
         .from('daily_plans')
         .select('plan_data, updated_at')
         .eq('user_id', userId)
         .eq('day_key', todayDayKey)
-        .single();
+        .maybeSingle();
 
-      if (dp?.plan_data) {
-        const serverUpdatedAt = dp.updated_at ? new Date(dp.updated_at).getTime() : 0;
+      if (!dpError) {
+        const serverUpdatedAt = toMs(dp?.updated_at);
         const localUpdatedAt = localSession.updatedAt ?? 0;
-        // Server wins if newer — handles new-device login and multi-device sync
-        if (serverUpdatedAt > localUpdatedAt && Array.isArray(dp.plan_data.completedSlots)) {
+        if (dp?.plan_data && serverUpdatedAt > localUpdatedAt && Array.isArray(dp.plan_data.completedSlots)) {
+          // new-device login or another device ahead of this one
           useLessonSessionStore.setState({
             completedSlots: dp.plan_data.completedSlots,
             ...(dp.plan_data.partialProgress ? { partialProgress: dp.plan_data.partialProgress } : {}),
             updatedAt: serverUpdatedAt,
           });
+        } else if (!dp?.plan_data || localUpdatedAt > serverUpdatedAt) {
+          await pushDailyPlan();
         }
       }
     }
+
+    // Skills and weekly snapshots are replace-style upserts: re-send them so
+    // anything written while offline reaches the server.
+    await pushSkills();
+    await pushWeekSnapshots();
   } finally {
     resolveSyncGate();
   }

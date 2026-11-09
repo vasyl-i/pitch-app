@@ -9,11 +9,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/shared/ui';
 import { palette, radii, spacing } from '@/shared/theme';
 import { useTranslation } from '@/shared/i18n';
-import { isPremiumSpeed, SPEED_LEVELS, speedBpm, type ScaleDirection, type SpeedLevel } from '../model/speedStore';
+import { isPremiumSpeed, speedBpm, type ScaleDirection, type SpeedLevel } from '../model/speedStore';
 
 /** one chip per speed, labelled in bpm; Premium speeds show a lock for free users */
 export function SpeedChips({
   bpm,
+  levels,
   value,
   premium,
   onChange,
@@ -23,6 +24,8 @@ export function SpeedChips({
 }: {
   /** the exercise's authored tempo */
   bpm: number;
+  /** the speeds this exercise offers (see `speedLevelsFor`) */
+  levels: readonly SpeedLevel[];
   value: SpeedLevel;
   premium: boolean;
   onChange: (rate: SpeedLevel) => void;
@@ -35,7 +38,7 @@ export function SpeedChips({
   const { t } = useTranslation();
   return (
     <View style={[styles.chips, style]}>
-      {SPEED_LEVELS.map((level) => {
+      {levels.map((level) => {
         const isSelected = level === value;
         const locked = !premium && isPremiumSpeed(level);
         return (

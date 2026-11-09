@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { CATALOG, FREE_CATALOG, catalogForTier } from '../lib/catalog';
+import { offeredIn } from '../../../entities/exercise/library';
 import { generateDailyLesson, type LessonInput } from '../lib/lessonGenerator';
 import { buildRecommendations, type RecommendationInput } from '../lib/recommendations';
 import { DEFAULT_PREFERENCES } from '../model/preferencesStore';
@@ -20,8 +21,9 @@ test('the premium catalog is a strict superset of the free one', () => {
 });
 
 test('catalogForTier gates correctly', () => {
-  assert.equal(catalogForTier('free').length, FREE_CATALOG.length);
-  assert.equal(catalogForTier('premium').length, CATALOG.length);
+  // the tier's catalog, less what the current (English) UI doesn't offer
+  assert.equal(catalogForTier('free').length, FREE_CATALOG.filter((a) => offeredIn(a)).length);
+  assert.equal(catalogForTier('premium').length, CATALOG.filter((a) => offeredIn(a)).length);
   assert.ok(catalogForTier('free').every((a) => a.tier === 'free'));
 });
 

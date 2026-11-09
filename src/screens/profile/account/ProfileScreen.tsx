@@ -3,7 +3,7 @@
  * preferences, the weekly plan, language, legal and account actions.
  */
 import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
-import { AppText, Screen } from '@/shared/ui';
+import { AppText, Screen, TabTitleRow } from '@/shared/ui';
 import { spacing } from '@/shared/theme';
 import { useTranslation } from '@/shared/i18n';
 import { useFloatingTabBarClearance } from '@/app/navigation/FloatingTabBar';
@@ -25,7 +25,9 @@ export function ProfileScreen({ navigation }: ProfileScreenProps<'ProfileHome'>)
     <Screen noHorizontalPadding noBottomPadding>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: tabBarClearance }}>
         <View style={styles.inset}>
-          <AppText variant="title">{t('profile.title')}</AppText>
+          <TabTitleRow>
+            <AppText variant="title">{t('profile.title')}</AppText>
+          </TabTitleRow>
           {/* same gap under the heading as on Home, so the banner holds still across tabs */}
           <PremiumBanner source="profile" style={styles.banner} />
         </View>

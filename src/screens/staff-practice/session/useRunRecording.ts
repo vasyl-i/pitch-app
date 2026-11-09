@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Exercise } from '@/entities/exercise';
+import type { Exercise, PhraseSummary } from '@/entities/exercise';
 import { buildSessionRecord, elapsedPracticeSeconds, useProgressStore } from '@/features/progress';
 import { useStaffStore, type SpeedLevel } from '@/features/staff-practice';
 
@@ -11,13 +11,18 @@ const NEXT_RUN_DELAY_MS = 600;
  * time, listening and transitions included — and decides whether its summary
  * shows (loop practice goes again instead).
  */
-export function useRunRecording({ exercise, rate, loop, lastRound, restart, onRoundRecorded }: {
+export function useRunRecording({ exercise, rate, loop, lastRound, restart, onRoundRecorded, partialSummary }: {
   exercise: Exercise;
   rate: SpeedLevel;
   loop: boolean;
   lastRound: boolean;
   restart: () => void;
   onRoundRecorded: () => void;
+  /**
+   * Set for a run that may be left part-way and still count (a whole song):
+   * read as the screen goes, it is the score over what was sung so far.
+   */
+  partialSummary?: () => PhraseSummary | null;
 }) {
   const status = useStaffStore((s) => s.status);
   const summary = useStaffStore((s) => s.summary);
@@ -43,6 +48,21 @@ export function useRunRecording({ exercise, rate, loop, lastRound, restart, onRo
     // remembered now, not on "Next round": leaving from the results keeps it
     if (!lastRound && !loop) onRoundRecorded();
   }, [status, summary, exercise, addSession, rate, lastRound, loop, onRoundRecorded]);
+
+  // A whole song left part-way still counts, over the part that was sung:
+  // the notes after the exit are neither passed nor failed. Read at unmount,
+  // through refs, so it sees the run as it was left.
+  const partialRef = useRef(partialSummary);
+  partialRef.current = partialSummary;
+  const latest = useRef({ exercise, rate });
+  latest.current = { exercise, rate };
+  useEffect(() => () => {
+    const partial = partialRef.current?.();
+    if (!partial) return;
+    const at = Date.now();
+    const { exercise: ex, rate: r } = latest.current;
+    useProgressStore.getState().addSession(buildSessionRecord(ex, partial, at, r, elapsedPracticeSeconds(runStartedAtRef.current, at)));
+  }, []);
 
   // loop practice: on finish, go again straight away instead of the summary
   useEffect(() => {

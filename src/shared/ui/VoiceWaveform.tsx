@@ -10,7 +10,7 @@
  * adopt that color (e.g. green for on-pitch, orange for off-pitch).
  * Defaults to blue when no color is provided.
  */
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useWindowDimensions } from 'react-native';
 import { Canvas } from '@shopify/react-native-skia';
 import { useFrameCallback, useSharedValue } from 'react-native-reanimated';
@@ -18,7 +18,7 @@ import { WAVE_LAYERS, WavePath } from './WavePath';
 import { micRms } from '@/shared/lib/micRmsBus';
 import { palette } from '@/shared/theme';
 
-const HEIGHT = 100;
+const HEIGHT = 120;
 const SMOOTHING = 0.15;
 
 const DEFAULT_ACCENT = palette.accentTertiary;
@@ -50,16 +50,19 @@ interface VoiceWaveformProps {
   height?: number;
   /** color for the sharp accent lines — defaults to blue */
   accentColor?: string;
+  /** stop animating (no per-frame path rebuilds) while it isn't visible */
+  paused?: boolean;
 }
 
-export function VoiceWaveform({ active = false, height = HEIGHT, accentColor }: VoiceWaveformProps) {
+export function VoiceWaveform({ active = false, height = HEIGHT, accentColor, paused = false }: VoiceWaveformProps) {
   const { width } = useWindowDimensions();
   const phase = useSharedValue(0);
   const smoothedRms = useSharedValue(0);
 
-  useFrameCallback((info) => {
+  const frame = useFrameCallback((info) => {
     'worklet';
-    const dt = (info.timeSincePreviousFrame ?? 16) / 1000;
+    // clamped: the first frame after a pause reports the whole gap
+    const dt = Math.min(info.timeSincePreviousFrame ?? 16, 50) / 1000;
 
     phase.value += dt * 5.0;
 
@@ -72,6 +75,10 @@ export function VoiceWaveform({ active = false, height = HEIGHT, accentColor }: 
       smoothedRms.value += (idle - smoothedRms.value) * 0.06;
     }
   });
+
+  useEffect(() => {
+    frame.setActive(!paused);
+  }, [frame, paused]);
 
   const resolvedAccent = accentColor ?? DEFAULT_ACCENT;
   const layerColors = useMemo(() => WAVE_LAYERS.map((l) => colorWithOpacity(resolvedAccent, l.opacity)), [resolvedAccent]);

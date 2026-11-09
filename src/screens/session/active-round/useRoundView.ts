@@ -16,6 +16,7 @@ export function useRoundView() {
   const choices = useEarTrainingStore((s) => s.choices);
   const live = useEarTrainingStore((s) => s.live);
   const roundResult = useEarTrainingStore((s) => s.roundResult);
+  const resultLeaving = useEarTrainingStore((s) => s.resultLeaving);
 
   const exercise = exerciseId ? exerciseById(exerciseId) : undefined;
   const isChoice = choices !== null;
@@ -23,8 +24,13 @@ export function useRoundView() {
   // the sung note's colour: accuracy once scored, the accent while there's a note, nothing yet otherwise
   const noteColor = live.score?.signedCents != null ? colorForCents(live.score.signedCents) : live.note ? palette.accent : undefined;
 
+  const isResult = phase === 'round-result';
+  // the result is on its way out and another round follows: bring the next screen's title in now
+  const nextRoundComing = isResult && resultLeaving && round < totalRounds;
+
   const subtitle =
     {
+      'round-result': nextRoundComing ? t('session.round.listen') : '',
       preparing: t('session.round.preparing'),
       playing: t('session.round.listen'),
       waiting: t('session.round.hold'),
@@ -47,7 +53,9 @@ export function useRoundView() {
     liveScore: live.score && live.score.actual !== '—' ? live.score.score : null,
     noteColor,
     roundResult,
+    resultLeaving,
     needsMic,
-    isResult: phase === 'round-result',
+    isResult,
+    nextRoundComing,
   };
 }
