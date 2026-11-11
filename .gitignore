@@ -43,6 +43,7 @@ yarn-error.*
 
 # Google OAuth credential files
 *.plist
+!assets/GoogleService-Info.plist
 client_secret_*.json
 
 # Google Play service account keys
@@ -62,3 +63,7 @@ benchmark-corpus/**/*.verify.wav
 # AI agent tooling
 .agents/
 skills-lock.json
+
+# Python
+__pycache__/
+*.pyc

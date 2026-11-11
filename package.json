@@ -1,6 +1,6 @@
 {
   "name": "pitch-coach",
-  "version": "1.2",
+  "version": "1.3.9",
   "private": true,
   "main": "index.ts",
   "scripts": {
@@ -8,7 +8,13 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "build:android": "eas build --platform android --profile production --local",
+    "ship": "node --env-file-if-exists=.env scripts/release/ship.mjs",
+    "release": "eas build --platform all --profile production --auto-submit",
+    "release:ios": "eas build --platform ios --profile production --auto-submit",
+    "release:android": "eas build --platform android --profile production --auto-submit",
+    "submit:ios": "node --env-file-if-exists=.env scripts/release/submit-ios-review.mjs",
+    "submit:android": "node scripts/release/submit-android-review.mjs",
+    "build:android:local": "eas build --platform android --profile production --local --output ../pitchgym-builds/pitchgym.aab",
     "typecheck": "tsc --noEmit",
     "test": "node --import ./scripts/register-ts.mjs --test 'src/**/__tests__/*.test.ts'",
     "benchmark": "node --import ./scripts/register-ts.mjs src/features/pitch-detection/benchmark/cli.ts",
